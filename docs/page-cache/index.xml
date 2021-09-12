@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Linux Page Cache series on Viacheslav Biriukov</title>
+    <link>http://biriukov.dev/docs/page-cache/</link>
+    <description>Recent content in Linux Page Cache series on Viacheslav Biriukov</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="http://biriukov.dev/docs/page-cache/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>0. Intro</title>
+      <link>http://biriukov.dev/docs/page-cache/0-intro/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://biriukov.dev/docs/page-cache/0-intro/</guid>
+      <description>SRE deep dive into Linux Page Cache: theory, real life examples and tools #  In this post I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE, and can help both in usual and routine every day DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to:</description>
+    </item>
+    
+    <item>
+      <title>1. Prepare environment</title>
+      <link>http://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/</guid>
+      <description>Prepare environment for experiments #  Before I start, I want to be on the same page with the reader, so any example or any code snippet can be executed, compiled and checked. Therefore we need a modern GNU/Linux installation whrer we can play with code and kernel.
+If you are using Windows or Mac OS, I would suggest installing Vagrant with Virtual Box. For GNU/Linux distro I&amp;rsquo;d like to use Arch Linux.</description>
+    </item>
+    
+    <item>
+      <title>2. Essential theory</title>
+      <link>http://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/</guid>
+      <description>Essential Page Cache theory #  First of all let’s start with a bunch of reasonable questions about Page Cache:
+ What is the Linux Page Cache? What problems does it solve? Why do we call it &amp;ldquo;Page&amp;rdquo; Cache ?  In essence the Page Cache is a part of Virtual File System (VFS) which main purpose, as you can guess, is improving IO latency of read and write operation. A write-back cache algorithm is a core building block of the Page Cache.</description>
+    </item>
+    
+    <item>
+      <title>3. Basic file operations</title>
+      <link>http://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/</guid>
+      <description>Page Cache and basic file operations #  Now it&amp;rsquo;s time to roll up our sleeves and get started with some practical examples. By the end of this chapter you will know how to interact with Page Cache and which tools you can use.
+Utils needed for this section:
+ sync (man 1 sync) – a tool to flush all dirty pages to persistent storage; /proc/sys/vm/drop_caches (man 5 proc) – a kernel procfs file to trigger Page Cache clearance; vmtouch – a tool for getting Page Cache info about a particular file by its path.</description>
+    </item>
+    
+    <item>
+      <title>4. Eviction and page reclaim</title>
+      <link>http://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/</guid>
+      <description>Page Cache eviction and page reclaim #  So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in cache and flushing cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&amp;rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache.</description>
+    </item>
+    
+    <item>
+      <title>5. More about `mmap()`</title>
+      <link>http://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/</guid>
+      <description>More about mmap() file access #  Before we start the cgroup chapter, where I&amp;rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve services reliability, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
+mmap() overview #  Memory mapping is one of the most interesting features of the Linux systems.</description>
+    </item>
+    
+    <item>
+      <title>6. Cgroup v2</title>
+      <link>http://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/</guid>
+      <description>Cgroup v2 and Page Cache #  The cgroup subsystem is the way to fairly distribute and limit system resources. It organizes all data in a hierarchy where the leave nodes depend on their parents and inherit their settings. In additional, the cgroup provides a lot of useful resource counters and statistics. The control groups are everywhere. Even though you don&amp;rsquo;t use it explicitly, it&amp;rsquo;s already become turned on by default in all modern GNU/Linux distributives and got integrated in sysytemd.</description>
+    </item>
+    
+    <item>
+      <title>7. Working set size</title>
+      <link>http://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</guid>
+      <description>7. How much memory my program uses or the tale of working set size #  Nowadays in the world of containers, autoscaling and on-demand clouds it&amp;rsquo;s becoming very important to understand the use of service resources both in a normal situation and under possible pressure. And if for CPU, disk size and network we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning.</description>
+    </item>
+    
+    <item>
+      <title>8. Direct IO (DIO)</title>
+      <link>http://biriukov.dev/docs/page-cache/8/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://biriukov.dev/docs/page-cache/8/</guid>
+      <description>8. Direct IO (DIO) #  8.1 Why it’s good #   Bypass page cache Async IO  8.2 Why it’s bad and io_uring alternative #  </description>
+    </item>
+    
+    <item>
+      <title>9. Advanced tools</title>
+      <link>http://biriukov.dev/docs/page-cache/9/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://biriukov.dev/docs/page-cache/9/</guid>
+      <description>9. Advanced Page Cache observability and troubleshooting toolss #  9.1 eBPF tools #  # bpftrace ./writeback.bt bpftrace ./writeback.bt Attaching 4 probes... Tracing writeback... Hit Ctrl-C to end. TIME DEVICE PAGES REASON ms 15:01:48 btrfs-1 7355 periodic 0.003 15:01:49 btrfs-1 7355 periodic 0.003 15:01:51 btrfs-1 7355 periodic 0.006 15:01:54 btrfs-1 7355 periodic 0.005 15:01:54 btrfs-1 7355 periodic 0.004 15:01:56 btrfs-1 7355 periodic 0.005 Page Cache Top
+https://github.com/iovisor/bcc
+19:49:52 Buffers MB: 0 / Cached MB: 610 / Sort: HITS / Order: descending PID UID CMD HITS MISSES DIRTIES READ_HIT% WRITE_HIT% 66229 vagrant vmtouch 44745 44032 0 50.</description>
+    </item>
+    
+  </channel>
+</rss>

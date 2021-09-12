@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="More about mmap() file access #  Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve services reliability, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
+mmap() overview #  Memory mapping is one of the most interesting features of the Linux systems.">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="5. More about `mmap()`" />
+<meta property="og:description" content="More about mmap() file access #  Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve services reliability, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
+mmap() overview #  Memory mapping is one of the most interesting features of the Linux systems." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/" /><meta property="article:section" content="docs" />
+
+
+
+<title>5. More about `mmap()` | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.37df9d7d83a3b5856e896fbac5ba878a7c4b406318dcb7c7e225a427ca7c537a.js" integrity="sha256-N9&#43;dfYOjtYVuiW&#43;6xbqHinxLQGMY3LfH4iWkJ8p8U3o=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li class="book-section-flat" >
+          
+  
+  
+
+  
+    <span>Linux Page Cache series</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/0-intro/" class="">0. Intro</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/" class="">1. Prepare environment</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/" class="">2. Essential theory</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/" class="">3. Basic file operations</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" class="">4. Eviction and page reclaim</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/" class=" active">5. More about `mmap()`</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/" class="">6. Cgroup v2</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class="">7. Working set size</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="/posts/" >
+        Blog
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/" target="_blank" rel="noopener">
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/" target="_blank" rel="noopener">
+        Github
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.donationalerts.com/r/brk0v" target="_blank" rel="noopener">
+        Donate {$,€,£}
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 50px;">
+    <p xmlns:cc="http://creativecommons.org/ns#">This content is licensed under <a
+            href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+            rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+                style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+                src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+                style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+                src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+                style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+                src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>5. More about `mmap()`</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#more-about-mmap-file-access">More about <code>mmap()</code> file access</a>
+      <ul>
+        <li><a href="#mmap-overview"><code>mmap()</code> overview</a></li>
+        <li><a href="#what-is-a-page-fault">What is a page fault?</a></li>
+        <li><a href="#subtle-madv_dont_need-mmap-feature">Subtle <code>MADV_DONT_NEED</code> <code>mmap()</code> feature</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h1 id="more-about-mmap-file-access">
+  More about <code>mmap()</code> file access
+  <a class="anchor" href="#more-about-mmap-file-access">#</a>
+</h1>
+<p>Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve services reliability, I want to delve a bit deeper into <code>mmap()</code>  syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with <code>mmap()</code>.</p>
+<h2 id="mmap-overview">
+  <code>mmap()</code> overview
+  <a class="anchor" href="#mmap-overview">#</a>
+</h2>
+<p>Memory mapping is one of the most interesting features of the Linux systems. One of its features is the ability for software developers to transparently work with files whose size exceeds the actual physical memory of the system. In the image below, you can see what the <a href="https://en.wikipedia.org/wiki/Virtual_memory">Virtual Memory</a> of a process looks like. Each process has it&rsquo;s own region where <code>mmap()</code> maps files.</p>
+<p><img src="../images/mmap.png" alt="AMD x86_64 process virtual memory" /></p>
+<p>What I&rsquo;m not touching here is whether to use <code>mmap()</code> or file read syscalls like <code>read()</code> and <code>write()</code> in your software. What is better, faster or safer to use, is beyond the scope of this post. But you definitely need to understand how to get the <code>mmap()</code> stats, because almost every Page Cache user-space tool has it.</p>
+<p>Let’s write one more script with <code>mmap()</code>. It prints a PID of the process, maps a file and sleeps. Sleep time should give us time to play with the process.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#f92672">import</span> mmap
+<span style="color:#f92672">import</span> os
+<span style="color:#f92672">from</span> time <span style="color:#f92672">import</span> sleep
+
+print(<span style="color:#e6db74">&#34;pid:&#34;</span>, os<span style="color:#f92672">.</span>getpid())
+
+<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;rb&#34;</span>) <span style="color:#66d9ef">as</span> f:
+    <span style="color:#66d9ef">with</span> mmap<span style="color:#f92672">.</span>mmap(f<span style="color:#f92672">.</span>fileno(), <span style="color:#ae81ff">0</span>, prot<span style="color:#f92672">=</span>mmap<span style="color:#f92672">.</span>PROT_READ) <span style="color:#66d9ef">as</span> mm:f
+        sleep(<span style="color:#ae81ff">10000</span>)
+</code></pre></div><p>Run it in the one terminal window and in the another one run <code>pmap -x PID</code> with the PID of the script.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">pmap -x <span style="color:#ae81ff">369029</span> | less
+</code></pre></div><p>, where <code>369029</code> is my PID.</p>
+<p>The output of <code>pmap</code> show us all contiguous virtual memory areas (VMA or <a href="https://elixir.bootlin.com/linux/v5.14.1/source/include/linux/mm_types.h#L311"><code>struct vm_area_struct</code></a>) of the process. We can determine virtual addresses of the mmaped file. In my case:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">Address           Kbytes     RSS   Dirty Mode  Mapping
+...
+00007f705cc12000  <span style="color:#ae81ff">131072</span>       <span style="color:#ae81ff">0</span>       <span style="color:#ae81ff">0</span> r--s- file1.db
+</code></pre></div><p>We can see that we have 0 dirty pages for the file (it only shows the dirty pages of this process). The <code>RSS</code> column equals to 0, which tells us how much memory in KiB our process has already referenced. This 0, by the way, doesn&rsquo;t mean that there is no pages of the file in Page Cache. It means that our process didn&rsquo;t access any pages yet. What is interesting about <code>mmap()</code> is how it transparently loads data on accessing and writing.</p>
+<blockquote class="book-hint info">
+  <p><strong>NOTE</strong></p>
+<p><code>pmap</code> can display even more detailed output with <code>-XX</code>. Without <code>-XX</code> it uses <code>/proc/pid/maps</code>, but for the extended mode it shows stats from <code>/proc/pid/smaps</code>. More info can be found in <code>man 5 proc</code> and <a href="https://www.kernel.org/doc/Documentation/filesystems/proc.rst">kernel documentation filesystems/proc.rst</a>.</p>
+
+</blockquote>
+
+<p>And if you&rsquo;re wondering how we can track all these hidden reads and writes, the next section will answer these questions.</p>
+<h2 id="what-is-a-page-fault">
+  What is a page fault?
+  <a class="anchor" href="#what-is-a-page-fault">#</a>
+</h2>
+<p>Before we start talking about file tools, we need to understand the concept of the page faults. Generally speaking the page fault is a CPU mechanism to communicate with the Linux Kernel and its memory subsystem. The page fault is a building block of the Virtual Memory concept and <a href="https://en.wikipedia.org/wiki/Demand_paging">demand paging</a>. Briefly speaking, kernel usually doesn&rsquo;t allocate physical memory immediately after a memory request was done by <code>mmap()</code> or <code>malloc()</code>. Instead kernel creates some records it the process&rsquo;s <a href="https://en.wikipedia.org/wiki/Page_table">page table structure</a> and uses it as a storage for memory promises. In additional, the page table contains extra info for each page, such as memory permissions and page flags (we&rsquo;ve already seen some of them: LRUs flags, dirty flag, etc).</p>
+<p>From the examples in chapter 2, you can see that in order to read mmaped file at any position, the code doesn&rsquo;t need to perform<code> any seeks (</code>man 2 lseek`), unlike with file operations. We can just start reading from or writing to any point of the mapped area. For this reason, when an application wants to access a page the page fault can occur if the target page has not been loaded to Page Cache or there is no connections between the page in the Page Cache and process' page table.</p>
+<p>There are 2 useful for us types of page faults: <strong>minor</strong> and <strong>major</strong>. A minor basically means that there will be no disk access in order to fulfill a process&rsquo;s memory access. And on the other hand a major page fault means that there will be a disk IO operation.</p>
+<p>For example, if we load a half of a file with <code>dd</code> in Page Cache and afterward access this first half from a program with <code>mmap()</code>, we will trigger a minor page fault. Kernel doesn&rsquo;t need to go to disks because this page was already loaded to Page Cache. Kernel only needs to reference this already loaded page with the page table entry of the process. But if the process tries to read within the same mmaped area the second half of the file, the kernel will have to go to the disk to load the page and the system will generate a major page fault.</p>
+<p>If you want get more information about demand paging, Linux kernel and system internals, please watch <a href="https://www.youtube.com/watch?v=7aONIVSXiJ8">Introduction to Memory Management in Linux</a> video form Embedded Linux Conf.</p>
+<p>Let’s make an experiment and write a script with infinitive random read of a file:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#f92672">import</span> mmap
+<span style="color:#f92672">import</span> os
+<span style="color:#f92672">from</span> random <span style="color:#f92672">import</span> randint
+<span style="color:#f92672">from</span> time <span style="color:#f92672">import</span> sleep
+
+<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;r&#34;</span>) <span style="color:#66d9ef">as</span> f:
+    fd <span style="color:#f92672">=</span> f<span style="color:#f92672">.</span>fileno()
+    size <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>stat(fd)<span style="color:#f92672">.</span>st_size
+    <span style="color:#66d9ef">with</span> mmap<span style="color:#f92672">.</span>mmap(fd, <span style="color:#ae81ff">0</span>, prot<span style="color:#f92672">=</span>mmap<span style="color:#f92672">.</span>PROT_READ) <span style="color:#66d9ef">as</span> mm:
+        <span style="color:#66d9ef">try</span>:
+            <span style="color:#66d9ef">while</span> <span style="color:#66d9ef">True</span>:
+                pos <span style="color:#f92672">=</span> randint(<span style="color:#ae81ff">0</span>, size<span style="color:#f92672">-</span><span style="color:#ae81ff">4</span>)
+                print(mm[pos:pos<span style="color:#f92672">+</span><span style="color:#ae81ff">4</span>])
+                sleep(<span style="color:#ae81ff">0.05</span>)
+        <span style="color:#66d9ef">except</span> <span style="color:#a6e22e">KeyboardInterrupt</span>:
+            <span style="color:#66d9ef">pass</span>
+</code></pre></div><p>Now we need 3 terminal windows. In the first one:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sar -B <span style="color:#ae81ff">1</span>
+</code></pre></div><p>which shows the system memory statistics per second including page faults.</p>
+<p>And in the second one <code>perf trace</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo perf trace -F maj --no-syscalls
+</code></pre></div><p>which shows major page faults and corresponding file paths.</p>
+<p>Finally in the 3rd terminal window start the above python script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ python3 ./mmap_random_read.py
+</code></pre></div><p>The output should be something closer to the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sar -B <span style="color:#ae81ff">1</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">....                                  LOOK HERE
+                                      ⬇      ⬇
+05:45:55 PM  pgpgin/s pgpgout/s   fault/s  majflt/s  pgfree/s pgscank/s pgscand/s pgsteal/s    %vmeff  
+05:45:56 PM   8164.00      0.00     39.00      4.00      5.00      0.00      0.00      0.00      0.00  
+05:45:57 PM   2604.00      0.00     20.00      1.00      1.00      0.00      0.00      0.00      0.00  
+05:45:59 PM   5600.00      0.00     22.00      3.00      2.00      0.00      0.00      0.00      0.00
+...
+</code></pre></div><p>Take a look at <code>fault/s</code> and <code>majflt/s</code> fields. They show what I&rsquo;ve just explained.</p>
+<p>And from the <code>perf trace</code> we can get insides about the file where we have major page faults:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo perf trace -F maj --no-syscalls
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">...
+SCROLL ➡                                                                                     LOOK HERE
+                                                                                                 ⬇                                                                                       
+5278.737 <span style="color:#f92672">(</span> 0.000 ms<span style="color:#f92672">)</span>: python3/64915 majfault <span style="color:#f92672">[</span>__memmove_avx_unaligned_erms+0xab<span style="color:#f92672">]</span> <span style="color:#f92672">=</span>&gt; /var/tmp/file1.db@0x2aeffb6 <span style="color:#f92672">(</span>d.<span style="color:#f92672">)</span>  
+5329.946 <span style="color:#f92672">(</span> 0.000 ms<span style="color:#f92672">)</span>: python3/64915 majfault <span style="color:#f92672">[</span>__memmove_avx_unaligned_erms+0xab<span style="color:#f92672">]</span> <span style="color:#f92672">=</span>&gt; /var/tmp/file1.db@0x539b6d9 <span style="color:#f92672">(</span>d.<span style="color:#f92672">)</span>  
+5383.701 <span style="color:#f92672">(</span> 0.000 ms<span style="color:#f92672">)</span>: python3/64915 majfault <span style="color:#f92672">[</span>__memmove_avx_unaligned_erms+0xab<span style="color:#f92672">]</span> <span style="color:#f92672">=</span>&gt; /var/tmp/file1.db@0xb3dbc7 <span style="color:#f92672">(</span>d.<span style="color:#f92672">)</span>  
+5434.786 <span style="color:#f92672">(</span> 0.000 ms<span style="color:#f92672">)</span>: python3/64915 majfault <span style="color:#f92672">[</span>__memmove_avx_unaligned_erms+0xab<span style="color:#f92672">]</span> <span style="color:#f92672">=</span>&gt; /var/tmp/file1.db@0x18f7c4f <span style="color:#f92672">(</span>d.<span style="color:#f92672">)</span>  
+...
+</code></pre></div><p>The cgroup also has per cgroup stats regarding page faults:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ grep fault /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">...
+pgfault <span style="color:#ae81ff">53358</span>
+pgmajfault <span style="color:#ae81ff">13</span>
+...
+</code></pre></div><h2 id="subtle-madv_dont_need-mmap-feature">
+  Subtle <code>MADV_DONT_NEED</code> <code>mmap()</code> feature
+  <a class="anchor" href="#subtle-madv_dont_need-mmap-feature">#</a>
+</h2>
+<p>Now let&rsquo;s perform another experiment. Stop all scripts and drop all caches:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sync; echo <span style="color:#ae81ff">3</span> | sudo tee /proc/sys/vm/drop_caches
+</code></pre></div><p>Restart the script with the infinite read and start monitoring per memory area usage of the process:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">watch -n 0.1 <span style="color:#e6db74">&#34;grep &#39;file1&#39; /proc/</span>$pid<span style="color:#e6db74">/smaps -A 24&#34;</span>
+</code></pre></div><p>You can now see the mmaped area of the file and its info. The reference field should be growing.</p>
+<p>In the other window try to evict pages with <code>vmtouch</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">vmtouch -e /var/tmp/file1.db
+</code></pre></div><p>And notice that the stats from the <code>smaps</code> output don&rsquo;t drop entirely. At the moment when you run the <code>vmtouch -e</code> command the <code>smaps</code> should show you some decrease of memory usage. The question is what happens? Why when we explicitly asks the kernel to evict the file pages by setting the <code>FADVISE_DONT_NEED</code> flag, some of them are still present in Page Cache?</p>
+<p>The answer is a little confusing, but very important to understand. If Linux kerne doesn&rsquo;t have memory pressure issues, why should it drop pages from Page Cache which were already accessed. There is a high probability that the program will need them in the future. But if you as a software developer is sure that they don&rsquo;t need them anymore there is a <code>madvise()</code> and <code>MADV_DONT_NEED</code> flag for that. It informs kernel that it can remove these pages from the corresponding page table and the following <code>vmtouch -e</code> call will successfully be able to expel the file data from Page Cache.</p>
+<p>In case of the memory pressure situation, the kernel will start reclaiming memory from inactive LRU lists. Which means eventually it can drop these pages if they will be good candidates for reclaiming.</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+  <div>
+    <a class="flex align-center" href="https://github.com/brk0v/page-cache/edit/master/page-cache/content/docs/page-cache/5%20More%20about%20%60mmap%28%29%60%20file%20access.md" target="_blank" rel="noopener">
+      <img src="/svg/edit.svg" class="book-icon" alt="Edit" />
+      <span>Edit this page</span>
+    </a>
+  </div>
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#more-about-mmap-file-access">More about <code>mmap()</code> file access</a>
+      <ul>
+        <li><a href="#mmap-overview"><code>mmap()</code> overview</a></li>
+        <li><a href="#what-is-a-page-fault">What is a page fault?</a></li>
+        <li><a href="#subtle-madv_dont_need-mmap-feature">Subtle <code>MADV_DONT_NEED</code> <code>mmap()</code> feature</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

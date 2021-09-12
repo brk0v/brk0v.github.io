@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Page Cache and basic file operations #  Now it&rsquo;s time to roll up our sleeves and get started with some practical examples. By the end of this chapter you will know how to interact with Page Cache and which tools you can use.
+Utils needed for this section:
+ sync (man 1 sync) – a tool to flush all dirty pages to persistent storage; /proc/sys/vm/drop_caches (man 5 proc) – a kernel procfs file to trigger Page Cache clearance; vmtouch – a tool for getting Page Cache info about a particular file by its path.">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="3. Basic file operations" />
+<meta property="og:description" content="Page Cache and basic file operations #  Now it&rsquo;s time to roll up our sleeves and get started with some practical examples. By the end of this chapter you will know how to interact with Page Cache and which tools you can use.
+Utils needed for this section:
+ sync (man 1 sync) – a tool to flush all dirty pages to persistent storage; /proc/sys/vm/drop_caches (man 5 proc) – a kernel procfs file to trigger Page Cache clearance; vmtouch – a tool for getting Page Cache info about a particular file by its path." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/" /><meta property="article:section" content="docs" />
+
+
+
+<title>3. Basic file operations | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.37df9d7d83a3b5856e896fbac5ba878a7c4b406318dcb7c7e225a427ca7c537a.js" integrity="sha256-N9&#43;dfYOjtYVuiW&#43;6xbqHinxLQGMY3LfH4iWkJ8p8U3o=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li class="book-section-flat" >
+          
+  
+  
+
+  
+    <span>Linux Page Cache series</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/0-intro/" class="">0. Intro</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/" class="">1. Prepare environment</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/" class="">2. Essential theory</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/" class=" active">3. Basic file operations</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" class="">4. Eviction and page reclaim</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/" class="">5. More about `mmap()`</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/" class="">6. Cgroup v2</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="http://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class="">7. Working set size</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="/posts/" >
+        Blog
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/" target="_blank" rel="noopener">
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/" target="_blank" rel="noopener">
+        Github
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.donationalerts.com/r/brk0v" target="_blank" rel="noopener">
+        Donate {$,€,£}
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 50px;">
+    <p xmlns:cc="http://creativecommons.org/ns#">This content is licensed under <a
+            href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+            rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+                style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+                src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+                style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+                src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+                style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+                src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>3. Basic file operations</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#page-cache-and-basic-file-operations">Page Cache and basic file operations</a>
+      <ul>
+        <li><a href="#file-reads">File reads</a>
+          <ul>
+            <li><a href="#reading-files-with-read-syscall">Reading files with <code>read()</code> syscall</a></li>
+            <li><a href="#reading-files-with-mmap-syscall">Reading files with <code>mmap()</code> syscall</a></li>
+          </ul>
+        </li>
+        <li><a href="#file-writes">File writes</a>
+          <ul>
+            <li><a href="#writing-to-files-with-write-syscall">Writing to files with <code>write()</code> syscall</a></li>
+            <li><a href="#file-writes-with-mmap--syscall">File writes with <code>mmap()</code>  syscall</a></li>
+            <li><a href="#dirty-pages">Dirty pages</a></li>
+            <li><a href="#synchronize-file-changes-with-fsync-fdatasync-and-msync">Synchronize file changes with <code>fsync()</code>, <code>fdatasync()</code> and <code>msync()</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#checking-file-presence-in-page-cache-with-mincore">Checking file presence in Page Cache with <code>mincore()</code></a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h1 id="page-cache-and-basic-file-operations">
+  Page Cache and basic file operations
+  <a class="anchor" href="#page-cache-and-basic-file-operations">#</a>
+</h1>
+<p>Now it&rsquo;s time to roll up our sleeves and get started with some practical examples. By the end of this chapter you will know how to interact with Page Cache and which tools you can use.</p>
+<p>Utils needed for this section:</p>
+<ul>
+<li><code>sync</code> (<code>man 1 sync</code>) – a tool to flush all dirty pages to persistent storage;</li>
+<li><code>/proc/sys/vm/drop_caches</code> (<code>man 5 proc</code>) – a kernel <code>procfs</code> file to trigger Page Cache clearance;</li>
+<li><code>vmtouch</code> – a tool for getting Page Cache info about a particular file by its path.</li>
+</ul>
+<blockquote class="book-hint info">
+  <strong>NOTE</strong>
+For now we ignore how <code>vmtouch</code> works. I&rsquo;m showing how to write an alternative with almost all its features later.
+</blockquote>
+
+<h2 id="file-reads">
+  File reads
+  <a class="anchor" href="#file-reads">#</a>
+</h2>
+<h3 id="reading-files-with-read-syscall">
+  Reading files with <code>read()</code> syscall
+  <a class="anchor" href="#reading-files-with-read-syscall">#</a>
+</h3>
+<p>I start with a simple program that reads the first 2 bytes from our test file <code>/var/tmp/file1.db</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;br&#34;</span>) <span style="color:#66d9ef">as</span> f:  
+    print(f<span style="color:#f92672">.</span>read(<span style="color:#ae81ff">2</span>))
+</code></pre></div><p>Usually this kind of read requests are translated into the <code>read()</code> syscall. Let&rsquo;s run the script with <code>strace</code> to make sure that <code>f.read()</code> uses s<code>read()</code> syscall:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ strace -s0 python3 ./read_2_bytes.py
+</code></pre></div><p>The output should look something like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">...
+openat<span style="color:#f92672">(</span>AT_FDCWD, <span style="color:#e6db74">&#34;./file1.db&#34;</span>, O_RDONLY|O_CLOEXEC<span style="color:#f92672">)</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>
+...
+read<span style="color:#f92672">(</span>3, <span style="color:#e6db74">&#34;%B\353\276\0053\356\346Nfy2\354[&amp;\357\300\260%D6</span>$b<span style="color:#e6db74">?&#39;\31\237_fXD\234&#34;</span>..., 4096<span style="color:#f92672">)</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">4096</span>  
+...
+</code></pre></div><blockquote class="book-hint info">
+  <p><strong>NOTE</strong></p>
+<p>The <code>read()</code> syscall returned 4096 bytes (one page) even thought the script asked only for 2 bytes. It&rsquo;s an example of python optimizations and internal buffered IO. Although this is beyond the scope of this post, but in some cases it is important to keep this in mind.</p>
+
+</blockquote>
+
+<p>Now let’s check how much data kernel&rsquo;s cached. In order to get this info we use <code>vmtouch</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ vmtouch /var/tmp/file1.db
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">           Files: <span style="color:#ae81ff">1</span>       LOOK HERE
+     Directories: <span style="color:#ae81ff">0</span>          ⬇
+  Resident Pages: 20/32768  80K/128M  0.061%  
+         Elapsed: 0.001188 seconds
+</code></pre></div><p>From the output we can see that instead of 2B of data which python&rsquo;s asked, the kernel has cached 80KiB or 20 pages.</p>
+<p>By design kernel can&rsquo;t load anything less that 4KiB or one page into Page Cache, but what about other 19 pages? This is a good example of kernel&rsquo;s read ahead logic and its preference to perform sequential IO operations over random. The basic idea is to predict the subsequent reads and minimize the number of disk seeks. This behavior can be controlled by syscalls: <code>posix_fadvise()</code> (<code>man 2 posix_fadvise</code>) and <code>readahead()</code> (<code>man 2 readahead</code>).</p>
+<blockquote class="book-hint info">
+  <p><strong>NOTE</strong></p>
+<p>Usually, in a production environment, it doesn’t make a big difference for database management systems and storages to tune the default read-ahead parameters. If DBMS doesn&rsquo;t need data which were cached by the read-ahead, the kernel memory reclaim policy should eventually evict these pages from Page Cache. And usually, the sequential IO are not expensive for kernel and hardware. But disabling read-ahead at all might even lead to some performance degradations due to increased number of disk IO operations in the kernel queues, more context switches and more time for kernel memory management subsystem to recognize the working set. We will talk about memory reclaiming policy, memory pressure and cache writeback later in this series.</p>
+
+</blockquote>
+
+<p>Let’s now use <code>posix_fadvise()</code> to notify kernel that we are reading the file randomly and thus we don&rsquo;t want to have any read ahead features:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> os
+
+<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;br&#34;</span>) <span style="color:#66d9ef">as</span> f:  
+    fd <span style="color:#f92672">=</span> f<span style="color:#f92672">.</span>fileno()  
+    os<span style="color:#f92672">.</span>posix_fadvise(fd, <span style="color:#ae81ff">0</span>, os<span style="color:#f92672">.</span>fstat(fd)<span style="color:#f92672">.</span>st_size, os<span style="color:#f92672">.</span>POSIX_FADV_RANDOM)  
+    print(f<span style="color:#f92672">.</span>read(<span style="color:#ae81ff">2</span>))
+</code></pre></div><p>Before running the script we need to drop all caches:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ echo <span style="color:#ae81ff">3</span> | sudo tee /proc/sys/vm/drop_caches <span style="color:#f92672">&amp;&amp;</span> python3 ./read_2_random.py
+</code></pre></div><p>And now if you check the <code>vmtouch</code> output you can see that there is only one page as expected:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ vmtouch /var/tmp/file1.db
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">           Files: <span style="color:#ae81ff">1</span>     LOOK HERE
+     Directories: <span style="color:#ae81ff">0</span>        ⬇
+  Resident Pages: 1/32768  4K/128M  0.00305%
+         Elapsed: 0.001034 seconds
+</code></pre></div><h3 id="reading-files-with-mmap-syscall">
+  Reading files with <code>mmap()</code> syscall
+  <a class="anchor" href="#reading-files-with-mmap-syscall">#</a>
+</h3>
+<p>For reading data from files we can also use <code>mmap()</code> syscall (<code>man 2 mmap</code>). <code>mmap()</code> is a &ldquo;magic&rdquo; tool and can be used to solve a wide range of tasks. But for our tests we need only one its feature – an ability to map a file into a process' memory in order to access the file as a flat array. I&rsquo;m taking about <code>mmap()</code>  in more details with later. But at the moment, if you are not familiar with it, <code>mmap()</code> API should be clear from the following example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> mmap
+
+<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;r&#34;</span>) <span style="color:#66d9ef">as</span> f:
+    <span style="color:#66d9ef">with</span> mmap<span style="color:#f92672">.</span>mmap(f<span style="color:#f92672">.</span>fileno(), <span style="color:#ae81ff">0</span>, prot<span style="color:#f92672">=</span>mmap<span style="color:#f92672">.</span>PROT_READ) <span style="color:#66d9ef">as</span> mm:
+        print(mm[:<span style="color:#ae81ff">2</span>])
+</code></pre></div><p>The above code do the same as we&rsquo;ve just done with <code>read()</code> syscall. It reads the first 2 bytes of the file.</p>
+<p>Also for test purposes, we need to flush all caches before the script should be executed:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ echo <span style="color:#ae81ff">3</span> | sudo tee /proc/sys/vm/drop_caches <span style="color:#f92672">&amp;&amp;</span> python3 ./read_2_mmap.py
+</code></pre></div><p>And checking the Page Cache content:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ vmtouch /var/tmp/file1.db
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">           Files: 1.       LOOK HERE
+     Directories: <span style="color:#ae81ff">0</span>           ⬇
+  Resident Pages: 1024/32768  4M/128M  3.12%
+         Elapsed: 0.000627 seconds
+</code></pre></div><p>As you can see <code>mmap()</code> has performed even more aggressive readahead.</p>
+<p>Let&rsquo;s change the readahead with <code>madvise()</code> syscall like we did with <code>fadvise()</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> mmap
+
+<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;r&#34;</span>) <span style="color:#66d9ef">as</span> f:
+    <span style="color:#66d9ef">with</span> mmap<span style="color:#f92672">.</span>mmap(f<span style="color:#f92672">.</span>fileno(), <span style="color:#ae81ff">0</span>, prot<span style="color:#f92672">=</span>mmap<span style="color:#f92672">.</span>PROT_READ) <span style="color:#66d9ef">as</span> mm:
+        mm<span style="color:#f92672">.</span>madvise(mmap<span style="color:#f92672">.</span>MADV_RANDOM)
+        print(mm[:<span style="color:#ae81ff">2</span>])
+</code></pre></div><p>Run it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ echo <span style="color:#ae81ff">3</span> | sudo tee /proc/sys/vm/drop_caches <span style="color:#f92672">&amp;&amp;</span> python3 ./read_2_mmap_random.py
+</code></pre></div><p>and Page Cache content:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ vmtouch /var/tmp/file1.db
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">           Files: <span style="color:#ae81ff">1</span>     LOOK HERE
+     Directories: <span style="color:#ae81ff">0</span>        ⬇
+  Resident Pages: 1/32768  4K/128M  0.00305% 
+         Elapsed: 0.001077 seconds
+</code></pre></div><p>As you can see from the above output, with the <code>MADV_RANDOM</code> flag we managed to achieve the exactly one page read from disk and thus one page in Page Cache.</p>
+<h2 id="file-writes">
+  File writes
+  <a class="anchor" href="#file-writes">#</a>
+</h2>
+<p>Now let&rsquo;t play with writes.</p>
+<h3 id="writing-to-files-with-write-syscall">
+  Writing to files with <code>write()</code> syscall
+  <a class="anchor" href="#writing-to-files-with-write-syscall">#</a>
+</h3>
+<p>Let’s continue working with our experimental file and try update the first 2 bytes instead:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;br+&#34;</span>) <span style="color:#66d9ef">as</span> f:
+    print(f<span style="color:#f92672">.</span>write(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;ab&#34;</span>))
+</code></pre></div><blockquote class="book-hint warning">
+  <p><strong>NOTE</strong></p>
+<p>Be careful and don&rsquo;t open a file with <code>w</code> mode. It will rewrite your file with 2 byte. We need <code>r+</code> mode.</p>
+
+</blockquote>
+
+<p>Drop all caches and run the above script:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sync; echo <span style="color:#ae81ff">3</span> | sudo tee /proc/sys/vm/drop_caches <span style="color:#f92672">&amp;&amp;</span> python3 ./write_2_bytes.py
+</code></pre></div><p>Now let&rsquo;s check the content of the Page Cache.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ vmtouch /var/tmp/file1.db
+           Files: <span style="color:#ae81ff">1</span>     LOOK HERE
+     Directories: <span style="color:#ae81ff">0</span>        ⬇
+  Resident Pages: 1/32768  4K/128M  0.00305%
+         Elapsed: 0.000674 seconds
+</code></pre></div><p>As you can see we have 1 page cached after only 2B write. It&rsquo;s an important observation because <strong>if your writes are smaller than a page size, you will have 4KiB reads before your writes</strong> in order to populate Page Cache.</p>
+<p>Also we can check dirty pages by reading the current cgroup memory stat file.s</p>
+<p>Get a current terminal cgroup:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/self/cgroups
+0::/user.slice/user-1000.slice/session-4.scope
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ grep dirty /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat  
+file_dirty <span style="color:#ae81ff">4096</span>
+</code></pre></div><p>If you see 0, run the script one more time, you apparently get lucky and the dirty pages have already been written to disk.</p>
+<h3 id="file-writes-with-mmap--syscall">
+  File writes with <code>mmap()</code>  syscall
+  <a class="anchor" href="#file-writes-with-mmap--syscall">#</a>
+</h3>
+<p>Le&rsquo;t now replicate the write with <code>mmap()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> mmap
+
+<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;r+b&#34;</span>) <span style="color:#66d9ef">as</span> f:
+    <span style="color:#66d9ef">with</span> mmap<span style="color:#f92672">.</span>mmap(f<span style="color:#f92672">.</span>fileno(), <span style="color:#ae81ff">0</span>) <span style="color:#66d9ef">as</span> mm:
+        mm[:<span style="color:#ae81ff">2</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;ab&#34;</span>
+</code></pre></div><p>You can repeat the above commands with <code>vmtouch</code> and cgroup <code>grep</code> to get dirty pages, and should get the same output. The only one exception is the read ahead policy. By default <code>mmap()</code> loads much more data in Page Cache even for write requests.</p>
+<h3 id="dirty-pages">
+  Dirty pages
+  <a class="anchor" href="#dirty-pages">#</a>
+</h3>
+<p>As we saw earlier, a process generates dirty pages by writing to files through Page Cache.</p>
+<p>Linux provides several options to get the amount of dirty pages. The first and the oldest one is to read <code>/proc/memstat</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/meminfo | grep Dirty
+Dirty:                 <span style="color:#ae81ff">4</span> kB
+</code></pre></div><p>Often the entire system information is hard to interpreter and use because we can&rsquo;t determine which process and which file has these dirty pages.</p>
+<p>That&rsquo;s why the best option in order to get dirty page info is to use cgroups:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat  | grep dirt
+file_dirty <span style="color:#ae81ff">4096</span>
+</code></pre></div><p>If your program uses <code>mmap()</code> to write to files, you have one more option to get dirty pages stats with a per process granularity. <code>procfs</code> has the <code>/proc/PID/smaps</code> where memory counters for the process are displayed broken down by virtual memory areas (VMA). With <code>mmap()</code> process has the VMA mapped to the file and corresponding info. We can get dirty pages by finding:</p>
+<ul>
+<li><code>Private_Dirty</code> – the amount of dirty data this process generated;</li>
+<li><code>Shared_Dirty</code> – and other processes. This metric will show data only for referenced pages. This means the process should access pages and keep it in it&rsquo;s page table (more details later).</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/578097/smaps | grep file1.db -A <span style="color:#ae81ff">12</span> | grep Dirty
+Shared_Dirty:          <span style="color:#ae81ff">0</span> kB
+Private_Dirty:       <span style="color:#ae81ff">736</span> kB
+</code></pre></div><p>But what if we want to get the dirty page stats for a file. To answer this question linux kernel provides <a href="https://www.kernel.org/doc/Documentation/vm/pagemap.txt">2 files</a> in <code>procfs</code>: <code>/proc/PID/pagemap</code> and <code>/proc/kpageflags</code>. I&rsquo;m showing how to write our own tool with them later in series, but for now we can use the debug tool from the linux kernel repo to get per file page info: <code>page-types</code> (<a href="https://github.com/torvalds/linux/blob/master/tools/vm/page-types.c%29">https://github.com/torvalds/linux/blob/master/tools/vm/page-types.c)</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo page-types -f /var/tmp/file1.db -b dirty
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">             flags      page-count       MB  symbolic-flags                     long-symbolic-flags
+0x0000000000000838             <span style="color:#ae81ff">267</span>        <span style="color:#ae81ff">1</span>  ___UDl_____M________________________________       uptodate,dirty,lru,mmap
+0x000000000000083c              <span style="color:#ae81ff">20</span>        <span style="color:#ae81ff">0</span>  __RUDl_____M________________________________       referenced,uptodate,dirty,lru,mmap
+             total             <span style="color:#ae81ff">287</span>        <span style="color:#ae81ff">1</span>
+</code></pre></div><p>I filtered all pages of our file <code>/var/tmp/file1.db</code> by the <code>dirty</code> flag. In the output you can see that the file has 287 dirty pages or 1 MiB of dirty data which will be written back to storage eventually.  <code>page-type</code> aggregates pages by flags, so you can see 2 sets in the output. Both have the dirty flag <code>D</code> and the difference between them is the presence of the referenced flag <code>R</code> (which I&rsquo;m briefly touching in the Page Cache eviction section later).</p>
+<h3 id="synchronize-file-changes-with-fsync-fdatasync-and-msync">
+  Synchronize file changes with <code>fsync()</code>, <code>fdatasync()</code> and <code>msync()</code>
+  <a class="anchor" href="#synchronize-file-changes-with-fsync-fdatasync-and-msync">#</a>
+</h3>
+<p>We already used <code>sync</code> (<code>man 1 sync</code>) to flush all dirty pages to disks before every test to get a fresh system without any interferences. But what if we want to write a database management system and we need to be sure that all writes will hit get to disks before a power outage or other hardware errors occur. For such cases linux provides several methods to force kernel to run page cleanup for the file in Page Cache:</p>
+<ul>
+<li><code>fsync()</code> – blocks until all dirty pages of the target file and its metadata are synced;</li>
+<li><code>fdatasync()</code> – the same as the above but excluding metadata;</li>
+<li><code>msync()</code> – the same as the <code>fsync()</code> but for memory mapped file;</li>
+<li>open a file with <code>O_SYNC</code>  or <code>O_DSYNC</code> flags to make all file writes synchronous by default and work as a corresponding <code>fsync()</code> and <code>fdatasync()</code> syscalls accordingly.</li>
+</ul>
+<blockquote class="book-hint info">
+  <p><strong>NOTE</strong></p>
+<p>You still need to care about write berries and understand how the underlying file system works. Usually a file append operation is safe and can&rsquo;t corrupt the previous written data. Other types of mutate operations may corrupt your files (for instance even with default journal settings in ext4). That&rsquo;s why all database management systems like MongoDB, PostgreSQL, Etcd, Dgraph, etc have a write ahead logs (WAL) which are append only. If you&rsquo;re curious more about this topic, this <a href="https://dgraph.io/blog/post/alice/">blog post from Dgraph</a> is a good starting point.</p>
+
+</blockquote>
+
+<p>And here is an example of the file sync:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> os
+
+<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;br+&#34;</span>) <span style="color:#66d9ef">as</span> f:
+    fd <span style="color:#f92672">=</span> f<span style="color:#f92672">.</span>fileno()
+    os<span style="color:#f92672">.</span>fsync(fd)
+</code></pre></div><h2 id="checking-file-presence-in-page-cache-with-mincore">
+  Checking file presence in Page Cache with <code>mincore()</code>
+  <a class="anchor" href="#checking-file-presence-in-page-cache-with-mincore">#</a>
+</h2>
+<p>Before we go any further, let’s figure out how <code>vmtouch</code> manages to show us how many pages of a target file Page Cache contains.</p>
+<p>The secret is a <code>mincore()</code> syscall (<code>man 2 mincore</code>). <code>mincore()</code> stands for &ldquo;memory in core&rdquo;. Its parameters are a starting virtual memory address, a length of the address space and a resulting vector. <code>mincore()</code> works with memory (not files), so as it can be used for checking if anonymous memory was swapped out.</p>
+<blockquote>
+<p><code>man 2 mincore</code></p>
+<p><code>mincore()</code>  returns  a vector that indicates whether pages of the calling process&rsquo;s virtual memory are resident in core (RAM), and so will not cause a disk access (pagefault) if referenced.  The kernel returns residency information about the pages starting at the address addr, and continuing for length bytes.</p>
+</blockquote>
+<p>So to replicate <code>vmtouch</code> we need to map a file into the virtual memory of the process, even thought we are not going to make neither reads nor writes. We just want to have it in the process' memory area (more about this later in <code>mmap()</code> section).</p>
+<p>Now we have all we need to write our own simple <code>vmtouch</code> in order to show cached pages by file path. I&rsquo;m using Go here, because unfortunately, Python doesn&rsquo;t have an easy way to call <code>mincore()</code> syscall:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+
+<span style="color:#f92672">import</span> (
+	<span style="color:#e6db74">&#34;fmt&#34;</span>
+	<span style="color:#e6db74">&#34;log&#34;</span>
+	<span style="color:#e6db74">&#34;os&#34;</span>
+	<span style="color:#e6db74">&#34;syscall&#34;</span>
+	<span style="color:#e6db74">&#34;unsafe&#34;</span>
+)
+
+<span style="color:#66d9ef">var</span> (
+	<span style="color:#a6e22e">pageSize</span> = int64(<span style="color:#a6e22e">syscall</span>.<span style="color:#a6e22e">Getpagesize</span>())
+	<span style="color:#a6e22e">mode</span>     = <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">FileMode</span>(<span style="color:#ae81ff">0600</span>)
+)
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#a6e22e">path</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>
+
+	<span style="color:#a6e22e">file</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">OpenFile</span>(<span style="color:#a6e22e">path</span>, <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">O_RDONLY</span>|<span style="color:#a6e22e">syscall</span>.<span style="color:#a6e22e">O_NOFOLLOW</span>|<span style="color:#a6e22e">syscall</span>.<span style="color:#a6e22e">O_NOATIME</span>, <span style="color:#a6e22e">mode</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+	}
+	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">file</span>.<span style="color:#a6e22e">Close</span>()
+
+	<span style="color:#a6e22e">stat</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Lstat</span>(<span style="color:#a6e22e">path</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+	}
+	<span style="color:#a6e22e">size</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stat</span>.<span style="color:#a6e22e">Size</span>()
+	<span style="color:#a6e22e">pages</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">size</span> <span style="color:#f92672">/</span> <span style="color:#a6e22e">pageSize</span>
+
+	<span style="color:#a6e22e">mm</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">syscall</span>.<span style="color:#a6e22e">Mmap</span>(int(<span style="color:#a6e22e">file</span>.<span style="color:#a6e22e">Fd</span>()), <span style="color:#ae81ff">0</span>, int(<span style="color:#a6e22e">size</span>), <span style="color:#a6e22e">syscall</span>.<span style="color:#a6e22e">PROT_READ</span>, <span style="color:#a6e22e">syscall</span>.<span style="color:#a6e22e">MAP_SHARED</span>)
+	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">syscall</span>.<span style="color:#a6e22e">Munmap</span>(<span style="color:#a6e22e">mm</span>)
+
+	<span style="color:#a6e22e">mmPtr</span> <span style="color:#f92672">:=</span> uintptr(<span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">mm</span>[<span style="color:#ae81ff">0</span>]))
+	<span style="color:#a6e22e">cached</span> <span style="color:#f92672">:=</span> make([]<span style="color:#66d9ef">byte</span>, <span style="color:#a6e22e">pages</span>)
+
+	<span style="color:#a6e22e">sizePtr</span> <span style="color:#f92672">:=</span> uintptr(<span style="color:#a6e22e">size</span>)
+	<span style="color:#a6e22e">cachedPtr</span> <span style="color:#f92672">:=</span> uintptr(<span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">cached</span>[<span style="color:#ae81ff">0</span>]))
+
+	<span style="color:#a6e22e">ret</span>, <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">syscall</span>.<span style="color:#a6e22e">Syscall</span>(<span style="color:#a6e22e">syscall</span>.<span style="color:#a6e22e">SYS_MINCORE</span>, <span style="color:#a6e22e">mmPtr</span>, <span style="color:#a6e22e">sizePtr</span>, <span style="color:#a6e22e">cachedPtr</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">ret</span> <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> {
+		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;syscall SYS_MINCORE failed: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+	}
+
+	<span style="color:#a6e22e">n</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">p</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">cached</span> {
+		<span style="color:#75715e">// the least significant bit of each byte will be set if the corresponding page 
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// is currently resident in memory, and be clear otherwise.
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">p</span><span style="color:#f92672">%</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> {
+			<span style="color:#a6e22e">n</span><span style="color:#f92672">++</span>
+		}
+	}
+
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Resident Pages: %d/%d  %d/%d\n&#34;</span>, <span style="color:#a6e22e">n</span>, <span style="color:#a6e22e">pages</span>, <span style="color:#a6e22e">n</span><span style="color:#f92672">*</span>int(<span style="color:#a6e22e">pageSize</span>), <span style="color:#a6e22e">size</span>)
+}
+</code></pre></div><p>And if we run it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ go run ./main.go
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">Resident Pages: 1024/32768  4194304/134217728
+</code></pre></div><p>And comparing it with <code>vmtouch</code> output:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ vmtouch /var/tmp/file1.db
+           Files: <span style="color:#ae81ff">1</span>         LOOK HERE
+     Directories: <span style="color:#ae81ff">0</span>            ⬇
+  Resident Pages: 1024/32768  4M/128M  3.12%
+         Elapsed: 0.000804 seconds
+</code></pre></div></article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+  <div>
+    <a class="flex align-center" href="https://github.com/brk0v/page-cache/edit/master/page-cache/content/docs/page-cache/3%20Page%20Cache%20and%20basic%20file%20operations.md" target="_blank" rel="noopener">
+      <img src="/svg/edit.svg" class="book-icon" alt="Edit" />
+      <span>Edit this page</span>
+    </a>
+  </div>
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#page-cache-and-basic-file-operations">Page Cache and basic file operations</a>
+      <ul>
+        <li><a href="#file-reads">File reads</a>
+          <ul>
+            <li><a href="#reading-files-with-read-syscall">Reading files with <code>read()</code> syscall</a></li>
+            <li><a href="#reading-files-with-mmap-syscall">Reading files with <code>mmap()</code> syscall</a></li>
+          </ul>
+        </li>
+        <li><a href="#file-writes">File writes</a>
+          <ul>
+            <li><a href="#writing-to-files-with-write-syscall">Writing to files with <code>write()</code> syscall</a></li>
+            <li><a href="#file-writes-with-mmap--syscall">File writes with <code>mmap()</code>  syscall</a></li>
+            <li><a href="#dirty-pages">Dirty pages</a></li>
+            <li><a href="#synchronize-file-changes-with-fsync-fdatasync-and-msync">Synchronize file changes with <code>fsync()</code>, <code>fdatasync()</code> and <code>msync()</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#checking-file-presence-in-page-cache-with-mincore">Checking file presence in Page Cache with <code>mincore()</code></a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,22 +1,24 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-	<meta name="generator" content="Hugo 0.88.0" />
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="">
-<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="Main page" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="http://biriukov.dev/" />
+<meta name="description" content="Prepare environment for experiments #  Before I start, I want to be on the same page with the reader, so any example or any code snippet can be executed, compiled and checked. Therefore we need a modern GNU/Linux installation whrer we can play with code and kernel.
+If you are using Windows or Mac OS, I would suggest installing Vagrant with Virtual Box. For GNU/Linux distro I&rsquo;d like to use Arch Linux.">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="1. Prepare environment" />
+<meta property="og:description" content="Prepare environment for experiments #  Before I start, I want to be on the same page with the reader, so any example or any code snippet can be executed, compiled and checked. Therefore we need a modern GNU/Linux installation whrer we can play with code and kernel.
+If you are using Windows or Mac OS, I would suggest installing Vagrant with Virtual Box. For GNU/Linux distro I&rsquo;d like to use Arch Linux." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/" /><meta property="article:section" content="docs" />
 
-<title>Main page | Viacheslav Biriukov</title>
+
+
+<title>1. Prepare environment | Viacheslav Biriukov</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
   <script defer src="/en.search.min.37df9d7d83a3b5856e896fbac5ba878a7c4b406318dcb7c7e225a427ca7c537a.js" integrity="sha256-N9&#43;dfYOjtYVuiW&#43;6xbqHinxLQGMY3LfH4iWkJ8p8U3o=" crossorigin="anonymous"></script>
-<link rel="alternate" type="application/rss+xml" href="http://biriukov.dev/index.xml" title="Viacheslav Biriukov" />
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -94,7 +96,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="http://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/" class="">1. Prepare environment</a>
+    <a href="http://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/" class=" active">1. Prepare environment</a>
   
 
         </li>
@@ -259,7 +261,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong>Main page</strong>
+  <strong>1. Prepare environment</strong>
 
   <label for="toc-control">
     
@@ -273,7 +275,46 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"></article>
+  <article class="markdown"><h1 id="prepare-environment-for-experiments">
+  Prepare environment for experiments
+  <a class="anchor" href="#prepare-environment-for-experiments">#</a>
+</h1>
+<p>Before I start, I want to be on the same page with the reader, so any example or any code snippet can be executed, compiled and checked. Therefore we need a modern GNU/Linux installation whrer we can play with code and kernel.</p>
+<p>If you are using Windows or Mac OS, I would suggest installing <a href="https://www.vagrantup.com">Vagrant</a> with <a href="https://www.virtualbox.org/">Virtual Box</a>. For GNU/Linux distro I&rsquo;d like to use <a href="https://archlinux.org/">Arch Linux</a>. Arch is a good example of a modern actual version of the GNU/Linux system (<a href="https://i.redd.it/qxsttm8sg5k11.png">BTW, I use Arch Linux</a>). It aslways support the latest kernels, systemd and cgroups v2.</p>
+<p>If you&rsquo;re already on Linux you know what to do 😉.</p>
+<blockquote class="book-hint info">
+  <p><strong>Can I use docker?</strong></p>
+<p>Unfortunately, no. We need a system where we can go nuts and play around with cgroup limits, debug programs with low level tools and run code as a root user without any limits.</p>
+
+</blockquote>
+
+<p>So below, I&rsquo;m showing all you need to install on Arch.</p>
+<h2 id="arch-linux-provisioning">
+  Arch Linux provisioning
+  <a class="anchor" href="#arch-linux-provisioning">#</a>
+</h2>
+<p>When you get your Arch running, please update it and install the following packages:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ pacman -Sy git, base-devel, go
+</code></pre></div><p>We need to insall <code>yay</code> (<a href="https://github.com/Jguer/yay">https://github.com/Jguer/yay</a>) in order to be able to setup software from community-driven repositories:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cd ~
+$ git clone https://aur.archlinux.org/yay.git
+$ cd yay
+$ makepkg -si
+</code></pre></div><p>Install <code>vmtouch</code> tool from <code>aur</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ yay -Sy vmtouch 
+</code></pre></div><p>We will need <code>page-type</code> tool from the kernel repo, so the easiest way to install it, is to download the linux kernel release and make it manually:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ mkdir kernel
+$ cd kernel
+$ wget https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/snapshot/linux-5.14.tar.gz
+$ tar -xzf linux-5.14.tar.gz
+$ cd linux-5.14/tools/vm
+$ make
+$ sudo make install
+</code></pre></div><p>Now we are almost ready. We need to generate a test data file, which will be used in our experiments with Page Cache:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ dd <span style="color:#66d9ef">if</span><span style="color:#f92672">=</span>/dev/random of<span style="color:#f92672">=</span>/var/tmp/file1.db count<span style="color:#f92672">=</span><span style="color:#ae81ff">128</span> bs<span style="color:#f92672">=</span>1M  
+</code></pre></div><p>And thhe final step is dropping all linux caches in order to get a clean box:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sync; echo <span style="color:#ae81ff">3</span> | sudo tee /proc/sys/vm/drop_caches
+</code></pre></div></article>
  
       
 
@@ -285,7 +326,7 @@ https://github.com/alex-shpak/hugo-book
 
 
   <div>
-    <a class="flex align-center" href="https://github.com/brk0v/page-cache/edit/master/page-cache/content/_index.md" target="_blank" rel="noopener">
+    <a class="flex align-center" href="https://github.com/brk0v/page-cache/edit/master/page-cache/content/docs/page-cache/1%20Prepare%20environment%20for%20experiments.md" target="_blank" rel="noopener">
       <img src="/svg/edit.svg" class="book-icon" alt="Edit" />
       <span>Edit this page</span>
     </a>
@@ -304,6 +345,10 @@ https://github.com/alex-shpak/hugo-book
       </footer>
 
       
+  
+  <div class="book-comments">
+
+</div>
   
  
 

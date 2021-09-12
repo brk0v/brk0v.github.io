@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-	<meta name="generator" content="Hugo 0.88.0" />
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="">
-<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="Main page" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="http://biriukov.dev/" />
+<meta name="description" content="8. Direct IO (DIO) #  8.1 Why it’s good #   Bypass page cache Async IO  8.2 Why it’s bad and io_uring alternative #  ">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="8. Direct IO (DIO)" />
+<meta property="og:description" content="8. Direct IO (DIO) #  8.1 Why it’s good #   Bypass page cache Async IO  8.2 Why it’s bad and io_uring alternative #  " />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://biriukov.dev/docs/page-cache/8/" /><meta property="article:section" content="docs" />
 
-<title>Main page | Viacheslav Biriukov</title>
+
+
+<title>8. Direct IO (DIO) | Viacheslav Biriukov</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
   <script defer src="/en.search.min.37df9d7d83a3b5856e896fbac5ba878a7c4b406318dcb7c7e225a427ca7c537a.js" integrity="sha256-N9&#43;dfYOjtYVuiW&#43;6xbqHinxLQGMY3LfH4iWkJ8p8U3o=" crossorigin="anonymous"></script>
-<link rel="alternate" type="application/rss+xml" href="http://biriukov.dev/index.xml" title="Viacheslav Biriukov" />
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -259,21 +259,57 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong>Main page</strong>
+  <strong>8. Direct IO (DIO)</strong>
 
   <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
     
   </label>
 </div>
 
 
   
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#8-direct-io-dio">8. Direct IO (DIO)</a>
+      <ul>
+        <li><a href="#81-why-its-good">8.1 Why it’s good</a></li>
+        <li><a href="#82-why-its-bad-and-io_uring-alternative">8.2 Why it’s bad and <code>io_uring</code> alternative</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
  
       </header>
 
       
       
-  <article class="markdown"></article>
+  <article class="markdown"><h1 id="8-direct-io-dio">
+  8. Direct IO (DIO)
+  <a class="anchor" href="#8-direct-io-dio">#</a>
+</h1>
+<h2 id="81-why-its-good">
+  8.1 Why it’s good
+  <a class="anchor" href="#81-why-its-good">#</a>
+</h2>
+<ul>
+<li>Bypass page cache</li>
+<li>Async IO</li>
+</ul>
+<h2 id="82-why-its-bad-and-io_uring-alternative">
+  8.2 Why it’s bad and <code>io_uring</code> alternative
+  <a class="anchor" href="#82-why-its-bad-and-io_uring-alternative">#</a>
+</h2>
+</article>
  
       
 
@@ -285,7 +321,7 @@ https://github.com/alex-shpak/hugo-book
 
 
   <div>
-    <a class="flex align-center" href="https://github.com/brk0v/page-cache/edit/master/page-cache/content/_index.md" target="_blank" rel="noopener">
+    <a class="flex align-center" href="https://github.com/brk0v/page-cache/edit/master/page-cache/content/docs/page-cache/8.md" target="_blank" rel="noopener">
       <img src="/svg/edit.svg" class="book-icon" alt="Edit" />
       <span>Edit this page</span>
     </a>
@@ -305,11 +341,35 @@ https://github.com/alex-shpak/hugo-book
 
       
   
+  <div class="book-comments">
+
+</div>
+  
  
 
       <label for="menu-control" class="hidden book-menu-overlay"></label>
     </div>
 
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#8-direct-io-dio">8. Direct IO (DIO)</a>
+      <ul>
+        <li><a href="#81-why-its-good">8.1 Why it’s good</a></li>
+        <li><a href="#82-why-its-bad-and-io_uring-alternative">8.2 Why it’s bad and <code>io_uring</code> alternative</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
     
   </main>
 
