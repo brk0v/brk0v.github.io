@@ -80,7 +80,7 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</guid>
-      <description>How much memory my program uses or the tale of working set size #  Currently, in the world of containers, autoscaling and on-demand clouds, it&amp;rsquo;s very important to understand the service resources usage both in a norman regular situation and under pressure near the software limits. And, if for CPU, disk size and network capacity we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning.</description>
+      <description>How much memory my program uses or the tale of working set size #  Currently, in the world of containers, auto-scaling and on-demand clouds, it&amp;rsquo;s very important to understand the resource needs of services both in norman regular situations and under pressure near the software limits. But every time someone touches on the topic of memory usage, it becomes almost immediately unclear what and how to measure. RAM is valuable and often expensive type of hardware.</description>
     </item>
     
     <item>

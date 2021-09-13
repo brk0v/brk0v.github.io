@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="How much memory my program uses or the tale of working set size #  Currently, in the world of containers, autoscaling and on-demand clouds, it&rsquo;s very important to understand the service resources usage both in a norman regular situation and under pressure near the software limits. And, if for CPU, disk size and network capacity we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning.">
+<meta name="description" content="How much memory my program uses or the tale of working set size #  Currently, in the world of containers, auto-scaling and on-demand clouds, it&rsquo;s very important to understand the resource needs of services both in norman regular situations and under pressure near the software limits. But every time someone touches on the topic of memory usage, it becomes almost immediately unclear what and how to measure. RAM is valuable and often expensive type of hardware.">
 <meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="7. Unique set and working set" />
-<meta property="og:description" content="How much memory my program uses or the tale of working set size #  Currently, in the world of containers, autoscaling and on-demand clouds, it&rsquo;s very important to understand the service resources usage both in a norman regular situation and under pressure near the software limits. And, if for CPU, disk size and network capacity we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning." />
+<meta property="og:description" content="How much memory my program uses or the tale of working set size #  Currently, in the world of containers, auto-scaling and on-demand clouds, it&rsquo;s very important to understand the resource needs of services both in norman regular situations and under pressure near the software limits. But every time someone touches on the topic of memory usage, it becomes almost immediately unclear what and how to measure. RAM is valuable and often expensive type of hardware." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" /><meta property="article:section" content="docs" />
 
@@ -16,7 +16,7 @@
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.6907311f0328b69e7b317a6148e3ad31f59b502749271384ef2652758a4316d2.js" integrity="sha256-aQcxHwMotp57MXphSOOtMfWbUCdJJxOE7yZSdYpDFtI=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.538f2dba26a61b65c36d16a70aea264d37bd0403a9fbecea8392ecd462a9076d.js" integrity="sha256-U48tuiamG2XDbRanCuomTTe9BAOp&#43;&#43;zqg5Ls1GKpB20=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -302,9 +302,9 @@ https://github.com/alex-shpak/hugo-book
   <ul>
     <li><a href="#how-much-memory-my-program-uses-or-the-tale-of-working-set-size">How much memory my program uses or the tale of working set size</a>
       <ul>
-        <li><a href="#71-its-all-about-who-counts-or-the-story-of-unique-set-size">7.1 It&rsquo;s all about who counts or the story of unique set size</a></li>
-        <li><a href="#72-idle-pages-and-working-set-size">7.2 Idle pages and working set size</a></li>
-        <li><a href="#73-calculating-memory-limits-with-pressure-stall-information-psi">7.3 Calculating memory limits with Pressure Stall Information (PSI)</a></li>
+        <li><a href="#its-all-about-who-counts-or-the-story-of-unique-set-size">It&rsquo;s all about who counts or the story of unique set size</a></li>
+        <li><a href="#idle-pages-and-working-set-size">Idle pages and working set size</a></li>
+        <li><a href="#calculating-memory-limits-with-pressure-stall-information-psi">Calculating memory limits with Pressure Stall Information (PSI)</a></li>
         <li><a href="#74--and-what-about-writeback">7.4 &hellip; and what about writeback?</a></li>
       </ul>
     </li>
@@ -324,47 +324,48 @@ https://github.com/alex-shpak/hugo-book
   How much memory my program uses or the tale of working set size
   <a class="anchor" href="#how-much-memory-my-program-uses-or-the-tale-of-working-set-size">#</a>
 </h1>
-<p>Currently, in the world of containers, autoscaling and on-demand clouds, it&rsquo;s very important to understand the service resources usage both in a norman regular situation and under pressure near the software limits. And, if for CPU, disk size and network capacity we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning. The main issue is Page Cache and the ways programs work with disks IO. I this chapter I&rsquo;m demonstrating some approaches you can use to determine your starting numbers for memory (and thus Page Cache) limits and begin you journey from the decent starting point.</p>
-<h2 id="71-its-all-about-who-counts-or-the-story-of-unique-set-size">
-  7.1 It&rsquo;s all about who counts or the story of unique set size
-  <a class="anchor" href="#71-its-all-about-who-counts-or-the-story-of-unique-set-size">#</a>
+<p>Currently, in the world of containers, auto-scaling and on-demand clouds, it&rsquo;s very important to understand the resource needs of services both in norman regular situations and under pressure near the software limits. But every time someone touches on the topic of memory usage, it becomes almost immediately unclear what and how to measure. RAM is valuable and often expensive type of hardware. In some cases, its latency is even more important than disk latency. Therefore, Linux kernel tries as hard as it can to optimize memory utilization, for instance by sharing the same pages among processes. In addition, Linux Kernel has its Page Cache in order to improve storage IO speed by storing a subset of the disk data in memory. Page Cache not only by its nature performs implicit memory sharing, which usually confuses users, but also actively asynchronously works with the storage in the background. Thus, Page Cache brings even more complexity to the table of memory usage estimation.</p>
+<p>I this chapter, I&rsquo;m demonstrating some approaches that you can use to determine your initial values for the memory (and thus Page Cache) limits and start you journey from a decent starting point.</p>
+<h2 id="its-all-about-who-counts-or-the-story-of-unique-set-size">
+  It&rsquo;s all about who counts or the story of unique set size
+  <a class="anchor" href="#its-all-about-who-counts-or-the-story-of-unique-set-size">#</a>
 </h2>
-<p>The 2 most frequent questions that I&rsquo;ve heard about memory and Linux are:</p>
+<p>The 2 most common questions I&rsquo;ve heard about memory and Linux are:</p>
 <ul>
 <li>Where is all my free memory?</li>
 <li>How much memory does you/my/their application/service/database use?</li>
 </ul>
-<p>The answer for the first question should be already obvious fo the reader (whispering &ldquo;Page Cache&rdquo;). But the second one is much more trickier. Usually people think that the <code>RSS</code> column from  <code>top</code> or <code>ps</code>  outputs is a good reference point to evaluate memory utilization and sorting by this field can help to find the biggest memory consumer. Although this statement may be correct for some cases,  usually in real life situations can lead to misunderstanding of Page Cache importance and its impact on service performance and reliability.</p>
-<p>Let&rsquo;s take a well know <code>top</code> (<code>man 1 top</code>) tool as an example in order to investigate its memory consumption. It&rsquo;s written in C and it does nothing but prints process' stats in a loop (<a href="https://github.com/mmalecki/procps/blob/master/top.c%29">https://github.com/mmalecki/procps/blob/master/top.c)</a>. <code>top</code> doesn&rsquo;t heavily work with diskы and thus Page Cache, it doesn&rsquo;t touch network, it&rsquo;s only purpose to read data from <code>procfs</code> and show it to the user in a nice format. So it should be easy to understand its working set.</p>
-<p>Start the <code>top</code> process in a dedicated cgroup in a new terminal window:</p>
-<pre tabindex="0"><code>$ systemd-run --user -P -t -G --wait top
-</code></pre><p>And in the another one let&rsquo;s start our study. Begin with collecting metrics from <code>ps</code>:</p>
-<pre tabindex="0"><code>$ ps axu | grep top
+<p>The answer for the first question should be already obvious fo the reader (whispering &ldquo;Page Cache&rdquo;). But the second one is much more trickier. Usually people think that the <code>RSS</code> column from the <code>top</code> or <code>ps</code>  output is a good starting point to evaluate the memory utilization. Although this statement may be correct in some cases, it can usually lead to misunderstanding of Page Cache importance and its impact on the service performance and reliability.</p>
+<p>Let&rsquo;s take a well-known <code>top</code> (<code>man 1 top</code>) <a href="https://github.com/mmalecki/procps/blob/master/top.c">tool</a> as an example in order to investigate its memory consumption. It&rsquo;s written in C and it does nothing but prints process' stats in the loop. <code>top</code> doesn&rsquo;t heavily work with disks and thus Page Cache, it doesn&rsquo;t touch network, its only purpose is to read data from <code>procfs</code> and to show it to the user in a nice format. So it should be easy to understand its working set, shouldn&rsquo;t it?</p>
+<p>Let&rsquo;s start the <code>top</code> process in a new cgroup:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ systemd-run --user -P -t -G --wait top
+</code></pre></div><p>And in the another terminal let&rsquo;s start our learning. Begin with the <code>ps</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ps axu | grep top
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 ...
-vagrant   611963  0.1  0.2  10836  4132 pts/4    Ss+  11:55   0:00 /usr/bin/top
+vagrant   <span style="color:#ae81ff">611963</span>  0.1  0.2  <span style="color:#ae81ff">10836</span>  <span style="color:#ae81ff">4132</span> pts/4    Ss+  11:55   0:00 /usr/bin/top
 ...                                  ⬆
                                   LOOK HERE
-</code></pre><p>As you can see from the above output the <code>top</code> process uses ~4MiB of memory according to the <code>ps</code> output.</p>
-<p>Now let&rsquo;s get more detailed stats from <code>procfs</code> and its <code>/proc/pid/smaps_rollup</code> file which is basically a sum off all memory areas from <code>/rpoc/pid/smaps</code> (<a href="https://www.kernel.org/doc/Documentation/filesystems/proc.rst%29">https://www.kernel.org/doc/Documentation/filesystems/proc.rst)</a>. Fo my pid:</p>
-<pre tabindex="0"><code> cat /proc/628011/smaps_rollup
-</code></pre><pre tabindex="0"><code>55df25e91000-7ffdef5f7000 ---p 00000000 00:00 0                          [rollup]
-Rss:                3956 kB  ⓵
-Pss:                1180 kB  ⓶
-Pss_Anon:            668 kB
-Pss_File:            512 kB 
-Pss_Shmem:             0 kB
-Shared_Clean:       3048 kB  ⓷
-Shared_Dirty:          0 kB  ⓸
-Private_Clean:       240 kB
-Private_Dirty:       668 kB
-Referenced:         3956 kB  ⓹
-Anonymous:           668 kB  ⓺
+</code></pre></div><p>As you can see from the above the <code>top</code> process uses ~4MiB of memory according to the <code>ps</code> output.</p>
+<p>Now let&rsquo;s get more details from the <code>procfs</code> and its <a href="https://www.kernel.org/doc/Documentation/filesystems/proc.rst"><code>/proc/pid/smaps_rollup</code> file</a>, which is basically a sum of all memory areas from the <code>/proc/pid/smaps</code>. Fo my pid:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/628011/smaps_rollup
+55df25e91000-7ffdef5f7000 ---p <span style="color:#ae81ff">00000000</span> 00:00 <span style="color:#ae81ff">0</span>                          <span style="color:#f92672">[</span>rollup<span style="color:#f92672">]</span>
+Rss:                <span style="color:#ae81ff">3956</span> kB  ⓵
+Pss:                <span style="color:#ae81ff">1180</span> kB  ⓶
+Pss_Anon:            <span style="color:#ae81ff">668</span> kB
+Pss_File:            <span style="color:#ae81ff">512</span> kB 
+Pss_Shmem:             <span style="color:#ae81ff">0</span> kB
+Shared_Clean:       <span style="color:#ae81ff">3048</span> kB  ⓷
+Shared_Dirty:          <span style="color:#ae81ff">0</span> kB  ⓸
+Private_Clean:       <span style="color:#ae81ff">240</span> kB
+Private_Dirty:       <span style="color:#ae81ff">668</span> kB
+Referenced:         <span style="color:#ae81ff">3956</span> kB  ⓹
+Anonymous:           <span style="color:#ae81ff">668</span> kB  ⓺
 ...
-</code></pre><p>Where we mostly care about the following rows:</p>
+</code></pre></div><p>Where we mostly care about the following rows:</p>
 <ul>
-<li>⓵ A well know <code>RSS</code> metric and what we&rsquo;ve seen in the <code>ps</code> output.</li>
-<li>⓶ <code>PSS</code> stands for the process' proportional share memory. It&rsquo;s an artificial memory metric and should give you some insights about memory sharing:</li>
+<li>⓵ – A well know <code>RSS</code> metric and what we&rsquo;ve seen in the <code>ps</code> output.</li>
+<li>⓶ – <code>PSS</code> stands for the process' proportional share memory. It&rsquo;s an artificial memory metric and it should give you some insights about memory sharing:</li>
 </ul>
 <blockquote>
 <p>The &ldquo;proportional set size&rdquo; (<code>PSS</code>) of a process is the count of pages it has
@@ -373,218 +374,119 @@ So if a process has 1000 pages all to itself, and 1000 shared with one other
 process, its PSS will be 1500.</p>
 </blockquote>
 <ul>
-<li>⓷ <code>Shared_Clean</code> this is an interesting part, as we say our process should not in theory use any Page Cache but it does. And as you can see it&rsquo;s the predominant part of memory usage. And if you open per area file <code>/proc/pid/smaps</code> you can find that the reason is shared libs. All of them are opened with <code>mmap()</code> and resident in Page Cache.</li>
-<li>⓸ <code>Shared_Dirty</code> if our process writes to files with <code>mmap()</code>, this files will show the amount of unsaved Page Cache memory.</li>
-<li>⓹ <code>Referenced</code> indicates the amount of memory the process&rsquo;s marked as referenced or
-accessed. We touched this metric in <code>mmap()</code> section. And if there is no memory pressure should be close to RSS.</li>
-<li>⓺ <code>Anonymous</code> shows the amount of memory that does not belong to any file.  Even
-a mapping associated with a file may contain anonymous pages: when <code>MAP_PRIVATE</code>
-and a page is modified, the file page is replaced by a private anonymous copy.</li>
+<li>⓷ <code>Shared_Clean</code> – is an interesting metric. As we assumed earlier, our process should not use any Page Cache in theory, but it does use. And as you can see, it&rsquo;s the predominant part of the memory usage. If you open a per area file <code>/proc/pid/smaps</code>, you can figure out, that the reason is shared libs. All of them were opened with <code>mmap()</code> and are resident in Page Cache.</li>
+<li>⓸ <code>Shared_Dirty</code> – If our process writes to files with <code>mmap()</code>, this line will show the amount of unsaved dirty Page Cache memory.</li>
+<li>⓹ <code>Referenced</code> - indicates the amount of memory which the process has marked as referenced or
+accessed so far. We touched this metric in <code>mmap()</code> section. And if there is no memory pressure, it should be close to RSS.</li>
+<li>⓺ <code>Anonymous</code> – shows the amount of memory that does not belong to any files.</li>
 </ul>
-<p>From the above we can see that despite the fact that <code>top</code>&rsquo;s RSS is 4MiB, the vast majority of it&rsquo;s RSS is hidden in Page Cache. And in theory if these pages become inactive for a while, kernel can evict from memory.</p>
+<p>From the above, we can see that, despite the fact that <code>top</code>&rsquo;s RSS is 4MiB, the vast majority of its RSS is hidden in Page Cache. And in theory, if these pages become inactive for a while, kernel can evict them from the memory.</p>
 <p>Let&rsquo;s take a look at the cgroup stats as well:</p>
-<pre tabindex="0"><code>$ cat /proc/628011/cgroup
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/628011/cgroup
 0::/user.slice/user-1000.slice/user@1000.service/app.slice/run-u2.service
-</code></pre><pre tabindex="0"><code>$ cat /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u2.service/memory.stat
-anon 770048
-file 0
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u2.service/memory.stat
+anon <span style="color:#ae81ff">770048</span>
+file <span style="color:#ae81ff">0</span>
 ...
-file_mapped 0
-file_dirty 0
-file_writeback 0
+file_mapped <span style="color:#ae81ff">0</span>
+file_dirty <span style="color:#ae81ff">0</span>
+file_writeback <span style="color:#ae81ff">0</span>
 ...
-inactive_anon 765952
-active_anon 4096
-inactive_file 0
-active_file 0
+inactive_anon <span style="color:#ae81ff">765952</span>
+active_anon <span style="color:#ae81ff">4096</span>
+inactive_file <span style="color:#ae81ff">0</span>
+active_file <span style="color:#ae81ff">0</span>
 ...
-</code></pre><p>We can <strong>not</strong> see any file memory in the cgroup. That is one another great example of the cgroup memory charging feature. Someone else has already accounted these files into its cgroup.</p>
-<p>And to finish and recheck ourselves let&rsquo;s use the <code>page-type</code> tool:</p>
-<pre tabindex="0"><code>$ sudo ./page-types --pid 628011 --raw
+</code></pre></div><p>We can <strong>not</strong> see any file memory in the cgroup. That is another great example of the cgroup memory charging feature. Some other cgroup already accounted these files.</p>
+<p>And to finish and recheck ourselves, let&rsquo;s use the <code>page-type</code> tool:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo ./page-types --pid <span style="color:#ae81ff">628011</span> --raw
              flags      page-count       MB  symbolic-flags                     long-symbolic-flags
-0x2000010100000800               1        0  ___________M_______________r_______f_____F__       mmap,reserved,softdirty,file
-0xa000010800000868              39        0  ___U_lA____M__________________P____f_____F_1       uptodate,lru,active,mmap,private,softdirty,file,mmap_exclusive
-0xa00001080000086c              21        0  __RU_lA____M__________________P____f_____F_1       referenced,uptodate,lru,active,mmap,private,softdirty,file,mmap_exclusive
-0x200001080000086c             830        3  __RU_lA____M__________________P____f_____F__       referenced,uptodate,lru,active,mmap,private,softdirty,file
-0x8000010000005828             187        0  ___U_l_____Ma_b____________________f_______1       uptodate,lru,mmap,anonymous,swapbacked,softdirty,mmap_exclusive
-0x800001000000586c               1        0  __RU_lA____Ma_b____________________f_______1       referenced,uptodate,lru,active,mmap,anonymous,swapbacked,softdirty,mmap_exclusive
-             total            1079        4
-</code></pre><p>We can see that we does use file <code>mmap()</code> areas and thus Page Cache.</p>
-<p>Now let&rsquo;s get uniq memory size for our <code>top</code> process. We can use <code>page-types</code> with <code>-N</code> flag and some shell magic:</p>
-<pre tabindex="0"><code>$ sudo ../vm/page-types --pid 628011 --raw -M -l -N | awk '{print $2}' | grep -E '^1$' | wc -l
-248
-</code></pre><p>The above means that <code>248 pages = 992 KiB</code> is our unique set size (USS) for the <code>top</code>.</p>
-<p>Or we can use out knowledge about <code>/proc/pid/pagemap</code>, <code>/proc/kpagecount</code> and <code>/proc/pid/maps</code> and write our own tool to get a unique set size.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
-
-<span style="color:#f92672">import</span> (
-	<span style="color:#e6db74">&#34;bufio&#34;</span>
-	<span style="color:#e6db74">&#34;encoding/binary&#34;</span>
-	<span style="color:#e6db74">&#34;fmt&#34;</span>
-	<span style="color:#e6db74">&#34;log&#34;</span>
-	<span style="color:#e6db74">&#34;os&#34;</span>
-	<span style="color:#e6db74">&#34;strconv&#34;</span>
-	<span style="color:#e6db74">&#34;strings&#34;</span>
-	<span style="color:#e6db74">&#34;syscall&#34;</span>
-)
-
-<span style="color:#66d9ef">const</span> (
-	<span style="color:#a6e22e">PAGEMAP_LENGTH</span> = int64(<span style="color:#ae81ff">8</span>)
-	<span style="color:#a6e22e">PFN_MASK</span>       = <span style="color:#ae81ff">0x7FFFFFFFFFFFFF</span>
-	<span style="color:#a6e22e">PAGEMAP_BATCH</span>  = <span style="color:#ae81ff">64</span> <span style="color:#f92672">&lt;&lt;</span> <span style="color:#ae81ff">10</span>
-)
-
-<span style="color:#66d9ef">var</span> (
-	<span style="color:#a6e22e">pageSize</span> = int64(<span style="color:#a6e22e">syscall</span>.<span style="color:#a6e22e">Getpagesize</span>())
-	<span style="color:#a6e22e">mode</span>     = <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">FileMode</span>(<span style="color:#ae81ff">0600</span>)
-)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-	<span style="color:#a6e22e">pid</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Args</span>[<span style="color:#ae81ff">1</span>]
-
-	<span style="color:#a6e22e">pagemap</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">OpenFile</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;/proc/%s/pagemap&#34;</span>, <span style="color:#a6e22e">pid</span>), <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">O_RDONLY</span>, <span style="color:#a6e22e">mode</span>)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-	}
-
-	<span style="color:#a6e22e">kpagecount</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">OpenFile</span>(<span style="color:#e6db74">&#34;/proc/kpagecount&#34;</span>, <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">O_RDONLY</span>, <span style="color:#a6e22e">mode</span>)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-	}
-
-	<span style="color:#a6e22e">maps</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Open</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;/proc/%s/maps&#34;</span>, <span style="color:#a6e22e">pid</span>))
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-	}
-
-	<span style="color:#a6e22e">pages</span> <span style="color:#f92672">:=</span> make(<span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">int64</span>]<span style="color:#66d9ef">int64</span>)
-
-	<span style="color:#a6e22e">scanner</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">bufio</span>.<span style="color:#a6e22e">NewScanner</span>(<span style="color:#a6e22e">maps</span>)
-	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">scanner</span>.<span style="color:#a6e22e">Scan</span>() {
-		<span style="color:#a6e22e">line</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">scanner</span>.<span style="color:#a6e22e">Text</span>()
-		<span style="color:#a6e22e">info</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Fields</span>(<span style="color:#a6e22e">line</span>)
-		<span style="color:#75715e">// skip vsyscall memory
-</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">info</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">6</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">info</span>[<span style="color:#ae81ff">5</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;[vsyscall]&#34;</span> {
-			<span style="color:#66d9ef">continue</span>
-		}
-		<span style="color:#a6e22e">s</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Split</span>(<span style="color:#a6e22e">info</span>[<span style="color:#ae81ff">0</span>], <span style="color:#e6db74">&#34;-&#34;</span>)
-		<span style="color:#a6e22e">startHex</span>, <span style="color:#a6e22e">endHex</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>[<span style="color:#ae81ff">0</span>], <span style="color:#a6e22e">s</span>[<span style="color:#ae81ff">1</span>]
-		<span style="color:#a6e22e">start</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strconv</span>.<span style="color:#a6e22e">ParseInt</span>(<span style="color:#a6e22e">startHex</span>, <span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">64</span>)
-		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-		}
-		<span style="color:#a6e22e">end</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strconv</span>.<span style="color:#a6e22e">ParseInt</span>(<span style="color:#a6e22e">endHex</span>, <span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">64</span>)
-		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-		}
-		<span style="color:#a6e22e">pages</span>[<span style="color:#a6e22e">start</span><span style="color:#f92672">/</span><span style="color:#a6e22e">pageSize</span>] = <span style="color:#a6e22e">end</span> <span style="color:#f92672">/</span> <span style="color:#a6e22e">pageSize</span>
-	}
-
-	<span style="color:#a6e22e">uss</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>
-	<span style="color:#a6e22e">already</span> <span style="color:#f92672">:=</span> make(<span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">int64</span>]<span style="color:#66d9ef">struct</span>{}) <span style="color:#75715e">// don&#39;t count same addresses twice
-</span><span style="color:#75715e"></span>
-	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">start</span>, <span style="color:#a6e22e">end</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">pages</span> {
-		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">start</span>; <span style="color:#a6e22e">i</span> <span style="color:#f92672">&lt;=</span> <span style="color:#a6e22e">end</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
-			<span style="color:#a6e22e">offset</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">PAGEMAP_LENGTH</span>
-			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">already</span>[<span style="color:#a6e22e">offset</span>]; <span style="color:#a6e22e">ok</span> {
-				<span style="color:#66d9ef">continue</span>
-			}
-
-			<span style="color:#a6e22e">buf</span> <span style="color:#f92672">:=</span> make([]<span style="color:#66d9ef">byte</span>, int(<span style="color:#a6e22e">PAGEMAP_LENGTH</span>))
-			<span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pagemap</span>.<span style="color:#a6e22e">ReadAt</span>(<span style="color:#a6e22e">buf</span>, <span style="color:#a6e22e">offset</span>)
-			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-				<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-			}
-
-			<span style="color:#a6e22e">pfn</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">binary</span>.<span style="color:#a6e22e">LittleEndian</span>.<span style="color:#a6e22e">Uint64</span>(<span style="color:#a6e22e">buf</span>) <span style="color:#f92672">&amp;</span> <span style="color:#a6e22e">PFN_MASK</span>
-			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">pfn</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
-				<span style="color:#66d9ef">continue</span>
-			}
-
-			<span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">kpagecount</span>.<span style="color:#a6e22e">ReadAt</span>(<span style="color:#a6e22e">buf</span>, int64(<span style="color:#a6e22e">pfn</span>)<span style="color:#f92672">*</span><span style="color:#a6e22e">PAGEMAP_LENGTH</span>)
-			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-				<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-			}
-			<span style="color:#a6e22e">count</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">binary</span>.<span style="color:#a6e22e">LittleEndian</span>.<span style="color:#a6e22e">Uint64</span>(<span style="color:#a6e22e">buf</span>)
-			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">count</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> {
-				<span style="color:#a6e22e">uss</span><span style="color:#f92672">++</span>
-			}
-			<span style="color:#a6e22e">already</span>[<span style="color:#a6e22e">offset</span>] = <span style="color:#66d9ef">struct</span>{}{}
-		}
-	}
-	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">uss</span>)
-}
-</code></pre></div><p>And if we can it, we should get the same output as  <code>page-type</code> gave us:</p>
-<pre tabindex="0"><code>$ sudo go run ./main.go 628011
-</code></pre><pre tabindex="0"><code>248
-</code></pre><p>Now when we understand how it can be hard to estimate the memory usage and the importance of Page Cache for a tool which is not suppose to do any disk activities, we are ready to make a big leap forward and start thinking about active disk consumers.</p>
-<h2 id="72-idle-pages-and-working-set-size">
-  7.2 Idle pages and working set size
-  <a class="anchor" href="#72-idle-pages-and-working-set-size">#</a>
+0x2000010100000800               <span style="color:#ae81ff">1</span>        <span style="color:#ae81ff">0</span>  ___________M_______________r_______f_____F__       mmap,reserved,softdirty,file
+0xa000010800000868              <span style="color:#ae81ff">39</span>        <span style="color:#ae81ff">0</span>  ___U_lA____M__________________P____f_____F_1       uptodate,lru,active,mmap,private,softdirty,file,mmap_exclusive
+0xa00001080000086c              <span style="color:#ae81ff">21</span>        <span style="color:#ae81ff">0</span>  __RU_lA____M__________________P____f_____F_1       referenced,uptodate,lru,active,mmap,private,softdirty,file,mmap_exclusive
+0x200001080000086c             <span style="color:#ae81ff">830</span>        <span style="color:#ae81ff">3</span>  __RU_lA____M__________________P____f_____F__       referenced,uptodate,lru,active,mmap,private,softdirty,file
+0x8000010000005828             <span style="color:#ae81ff">187</span>        <span style="color:#ae81ff">0</span>  ___U_l_____Ma_b____________________f_______1       uptodate,lru,mmap,anonymous,swapbacked,softdirty,mmap_exclusive
+0x800001000000586c               <span style="color:#ae81ff">1</span>        <span style="color:#ae81ff">0</span>  __RU_lA____Ma_b____________________f_______1       referenced,uptodate,lru,active,mmap,anonymous,swapbacked,softdirty,mmap_exclusive
+             total            <span style="color:#ae81ff">1079</span>        <span style="color:#ae81ff">4</span>
+</code></pre></div><p>We can see that <code>top</code> memory has file <code>mmap()</code> areas and thus uses Page Cache.</p>
+<p>Now let&rsquo;s get unique memory size for our <code>top</code> process. We can use <code>page-types</code> with <code>-N</code> flag and some shell magic:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo ../vm/page-types --pid <span style="color:#ae81ff">628011</span> --raw -M -l -N | awk <span style="color:#e6db74">&#39;{print $2}&#39;</span> | grep -E <span style="color:#e6db74">&#39;^1$&#39;</span> | wc -l
+<span style="color:#ae81ff">248</span>
+</code></pre></div><p>The above means that <code>248 pages</code> or <code>992 KiB</code> is unique set size (USS) of the <code>top</code> process.</p>
+<p>Or we can use our knowledge about <code>/proc/pid/pagemap</code>, <code>/proc/kpagecount</code> and <code>/proc/pid/maps</code> and write our own tool to get a unique set size. The tool can be found in the <a href="https://github.com/brk0v/sre-page-cache-article/tree/main/uss">github repo</a>.</p>
+<p>And if we run it, we should get the same output as <code>page-type</code> gave us:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo go run ./main.go <span style="color:#ae81ff">628011</span>
+<span style="color:#ae81ff">248</span>
+</code></pre></div><p>Now when we understand how it can be hard to estimate the memory usage and the importance of Page Cache in such calculations, we are ready to make a big leap forward and start thinking about software with more active disk activities.</p>
+<h2 id="idle-pages-and-working-set-size">
+  Idle pages and working set size
+  <a class="anchor" href="#idle-pages-and-working-set-size">#</a>
 </h2>
-<p>Readers who have gotten this far may be curious about one more kernel file: <code>/sys/kernel/mm/page_idle</code>.</p>
-<p>You can use it to estimate the workin set size of a process. The idea is to mark some pages with the special idle flag and after some time check the difference making assumptions about the working data set size.</p>
-<p>You can find great reference tools in Brendan Gregg&rsquo;s repository: <a href="https://github.com/c/wss">https://github.com/c/wss</a>. And the example for our <code>top</code> process:</p>
-<pre tabindex="0"><code>$ sudo ./wss-v1 628011 60 
-Watching PID 628011 page references during 60.00 seconds...
-Est(s)     Ref(MB) 
+<p>Readers who have gotten this far may be curious about one more kernel file: <a href="https://www.kernel.org/doc/Documentation/vm/idle_page_tracking.txt"><code>/sys/kernel/mm/page_idle</code></a>.</p>
+<p>You can use it to estimate the working set size of a process. The main idea is to mark some pages with the special idle flag and after some time check the difference making assumptions about the working data set size.</p>
+<p>You can find great reference tools in Brendan Gregg&rsquo;s <a href="https://github.com/c/wss">repository</a>.</p>
+<p>Let&rsquo;s run it for out <code>top</code> process:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo ./wss-v1 <span style="color:#ae81ff">628011</span> <span style="color:#ae81ff">60</span> 
+Watching PID <span style="color:#ae81ff">628011</span> page references during 60.00 seconds...
+Est<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span>     Ref<span style="color:#f92672">(</span>MB<span style="color:#f92672">)</span> 
 60.117        2.00
-</code></pre><p>As we can see that from 4 MiB of RSS data the process uses only 2 MiB during a 60 second interval.</p>
-<p>For more information you can also read this LWN article: <a href="https://lwn.net/Articles/642202/">https://lwn.net/Articles/642202/</a></p>
+</code></pre></div><p>The above means, that from the 4MiB of RSS data, the process uses only 2 MiB during the 60 second interval.</p>
+<p>For more information you can also read this <a href="https://lwn.net/Articles/642202/">LWN article</a>.</p>
 <p>The drawbacks of this method are the following:</p>
 <ul>
 <li>it can be slow for a process with a huge memory footprint;</li>
-<li>all measurements happen in user space and consumes CPU;</li>
-<li>it completely detached from  possible writeback pressure you process can generate during writes.</li>
+<li>all measurements happen in the user space and thus consumes additional CPU;</li>
+<li>it completely detached from the possible writeback pressure you process can generate.</li>
 </ul>
-<p>Although it could be a good starting limit for your containers, I am moving forward to show you a better approach which uses cgroup stats and pressure stall information (PSI) to tune limits.</p>
-<h2 id="73-calculating-memory-limits-with-pressure-stall-information-psi">
-  7.3 Calculating memory limits with Pressure Stall Information (PSI)
-  <a class="anchor" href="#73-calculating-memory-limits-with-pressure-stall-information-psi">#</a>
+<p>Although it could be a good starting limit for your containers, I am moving forward to show you a better approach, which uses cgroup stats and pressure stall information (PSI).</p>
+<h2 id="calculating-memory-limits-with-pressure-stall-information-psi">
+  Calculating memory limits with Pressure Stall Information (PSI)
+  <a class="anchor" href="#calculating-memory-limits-with-pressure-stall-information-psi">#</a>
 </h2>
-<p>As you can see during the whole article that I&rsquo;m emphasizing that it&rsquo;s very important to run all services in cgroups with correctly configured limits. This usually leads to better service performance and to more correct system resources utilization. But what is still  unclear is where to start. Which number to choose? Is it good to use <code>memory.current</code> from a cgroup to start with? Or use the uniq set size? Or estimate the working set size with idle page flags?  Though all these ways can be useful in some situation, for general case they probably would not be a good choice.</p>
-<p>One more note about  <code>memory.current</code> before I go to the Pressure Stall Information (PSI) approach. If cgroup doesn&rsquo;t have a memory limit and system has a lot of free memory the <code>memory.current</code> just shows all memory your application touched. It includes logs records, unneeded libs after start, etc. Using it a memory limit would be wasteful for the system and not recommended.</p>
-<p>The modern approach to address this hard question is using PSI in order to understand how a cgroup reacts to a new memory allocations and Page Cache evictions. <code>senapi</code> is a simple automated script that collects PSI info and adjusts the <code>memory.high</code> accordantly: <a href="https://github.com/facebookincubator/senpai/blob/main/senpai.py">https://github.com/facebookincubator/senpai/blob/main/senpai.py</a></p>
-<p>Let&rsquo;s test it with my test MongoDB installation. I have:</p>
+<p>As you can see throughout the series, I emphasize that it&rsquo;s very important to run all services in their own cgroups with carefully configured limits. This usually leads to better service performance and a more uniform and correct use of system resources.</p>
+<p>But what is still unclear is where to start. Which value to choose? Is it good to use the <code>memory.current</code> value? Or use the unique set size? Or estimate the working set size with the idle page flag? Though all these ways may be useful in some situation, for a general case I would suggest using the following PSI approach.</p>
+<p>One more note about the <code>memory.current</code> before I continue with the PSI. If a cgroup doesn&rsquo;t have a memory limit and the system has a lot of free memory for the process, the <code>memory.current</code> will simply show all the memory that your application will has touched up to that point. It can include logs records, unneeded libs, etc. Using the <code>memory.current</code> number as a memory limit would be wasteful for the system and don&rsquo;t help you in the capacity planning.</p>
+<p>The modern approach to address this hard question is to use PSI in order to understand how a cgroup reacts to new memory allocations and Page Cache evictions. <a href="https://github.com/facebookincubator/senpai/blob/main/senpai.py"><code>senapi</code></a> is a simple automated script, that collects and parse the PSI info, and adjusts the <code>memory.high</code>:</p>
+<p>Let&rsquo;s experiment with my test MongoDB installation. I have 2.6GiB of data:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo du -hs /var/lib/mongodb/
-2.4G	/var/lib/mongodb/
-</code></pre></div><p>Now I need to generate some read queries. In <code>mongosh</code> I run an infinity while loop and read a random record every half 500 ms:</p>
+2.4G    /var/lib/mongodb/
+</code></pre></div><p>Now I need to generate some random read queries. In <code>mongosh</code> I can run an infinite while loop and read a random record every 500 ms:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">while</span> (<span style="color:#66d9ef">true</span>) {
-	<span style="color:#a6e22e">printjson</span>(<span style="color:#a6e22e">db</span>.<span style="color:#a6e22e">collection</span>.<span style="color:#a6e22e">aggregate</span>([{ <span style="color:#a6e22e">$sample</span><span style="color:#f92672">:</span> { <span style="color:#a6e22e">size</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span> } }])); 
-	<span style="color:#a6e22e">sleep</span>(<span style="color:#ae81ff">500</span>); 
+    <span style="color:#a6e22e">printjson</span>(<span style="color:#a6e22e">db</span>.<span style="color:#a6e22e">collection</span>.<span style="color:#a6e22e">aggregate</span>([{ <span style="color:#a6e22e">$sample</span><span style="color:#f92672">:</span> { <span style="color:#a6e22e">size</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span> } }])); 
+    <span style="color:#a6e22e">sleep</span>(<span style="color:#ae81ff">500</span>); 
 }
 </code></pre></div><p>In the second terminal window I start the <code>senpai</code> with the mongodb service cgroup:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo python senpai.py /sys/fs/cgroup/system.slice/mongodb.service
-</code></pre></div><pre tabindex="0"><code>2021-09-05 16:39:25 Configuration:
-2021-09-05 16:39:25   cgpath = /sys/fs/cgroup/system.slice/mongodb.service
-2021-09-05 16:39:25   min_size = 104857600
-2021-09-05 16:39:25   max_size = 107374182400
-2021-09-05 16:39:25   interval = 6
-2021-09-05 16:39:25   pressure = 10000
-2021-09-05 16:39:25   max_probe = 0.01
-2021-09-05 16:39:25   max_backoff = 1.0
-2021-09-05 16:39:25   coeff_probe = 10
-2021-09-05 16:39:25   coeff_backoff = 20
+2021-09-05 16:39:25 Configuration:
+2021-09-05 16:39:25   cgpath <span style="color:#f92672">=</span> /sys/fs/cgroup/system.slice/mongodb.service
+2021-09-05 16:39:25   min_size <span style="color:#f92672">=</span> <span style="color:#ae81ff">104857600</span>
+2021-09-05 16:39:25   max_size <span style="color:#f92672">=</span> <span style="color:#ae81ff">107374182400</span>
+2021-09-05 16:39:25   interval <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>
+2021-09-05 16:39:25   pressure <span style="color:#f92672">=</span> <span style="color:#ae81ff">10000</span>
+2021-09-05 16:39:25   max_probe <span style="color:#f92672">=</span> 0.01
+2021-09-05 16:39:25   max_backoff <span style="color:#f92672">=</span> 1.0
+2021-09-05 16:39:25   coeff_probe <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>
+2021-09-05 16:39:25   coeff_backoff <span style="color:#f92672">=</span> <span style="color:#ae81ff">20</span>
 2021-09-05 16:39:26 Resetting limit to memory.current.
 ...
-2021-09-05 16:38:15 limit=503.90M pressure=0.030000 time_to_probe= 1 total=1999415 delta=601 integral=3366
-2021-09-05 16:38:16 limit=503.90M pressure=0.030000 time_to_probe= 0 total=1999498 delta=83 integral=3449
+2021-09-05 16:38:15 limit<span style="color:#f92672">=</span>503.90M pressure<span style="color:#f92672">=</span>0.030000 time_to_probe<span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span> total<span style="color:#f92672">=</span><span style="color:#ae81ff">1999415</span> delta<span style="color:#f92672">=</span><span style="color:#ae81ff">601</span> integral<span style="color:#f92672">=</span><span style="color:#ae81ff">3366</span>
+2021-09-05 16:38:16 limit<span style="color:#f92672">=</span>503.90M pressure<span style="color:#f92672">=</span>0.030000 time_to_probe<span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span> total<span style="color:#f92672">=</span><span style="color:#ae81ff">1999498</span> delta<span style="color:#f92672">=</span><span style="color:#ae81ff">83</span> integral<span style="color:#f92672">=</span><span style="color:#ae81ff">3449</span>
 2021-09-05 16:38:16   adjust: -0.000840646891233154
-2021-09-05 16:38:17 limit=503.48M pressure=0.020000 time_to_probe= 5 total=2000010 delta=512 integral=512
-2021-09-05 16:38:18 limit=503.48M pressure=0.020000 time_to_probe= 4 total=2001688 delta=1678 integral=2190
-2021-09-05 16:38:19 limit=503.48M pressure=0.020000 time_to_probe= 3 total=2004119 delta=2431 integral=4621
-2021-09-05 16:38:20 limit=503.48M pressure=0.020000 time_to_probe= 2 total=2006238 delta=2119 integral=6740
-2021-09-05 16:38:21 limit=503.48M pressure=0.010000 time_to_probe= 1 total=2006238 delta=0 integral=6740
-2021-09-05 16:38:22 limit=503.48M pressure=0.010000 time_to_probe= 0 total=2006405 delta=167 integral=6907
+2021-09-05 16:38:17 limit<span style="color:#f92672">=</span>503.48M pressure<span style="color:#f92672">=</span>0.020000 time_to_probe<span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span> total<span style="color:#f92672">=</span><span style="color:#ae81ff">2000010</span> delta<span style="color:#f92672">=</span><span style="color:#ae81ff">512</span> integral<span style="color:#f92672">=</span><span style="color:#ae81ff">512</span>
+2021-09-05 16:38:18 limit<span style="color:#f92672">=</span>503.48M pressure<span style="color:#f92672">=</span>0.020000 time_to_probe<span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span> total<span style="color:#f92672">=</span><span style="color:#ae81ff">2001688</span> delta<span style="color:#f92672">=</span><span style="color:#ae81ff">1678</span> integral<span style="color:#f92672">=</span><span style="color:#ae81ff">2190</span>
+2021-09-05 16:38:19 limit<span style="color:#f92672">=</span>503.48M pressure<span style="color:#f92672">=</span>0.020000 time_to_probe<span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span> total<span style="color:#f92672">=</span><span style="color:#ae81ff">2004119</span> delta<span style="color:#f92672">=</span><span style="color:#ae81ff">2431</span> integral<span style="color:#f92672">=</span><span style="color:#ae81ff">4621</span>
+2021-09-05 16:38:20 limit<span style="color:#f92672">=</span>503.48M pressure<span style="color:#f92672">=</span>0.020000 time_to_probe<span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span> total<span style="color:#f92672">=</span><span style="color:#ae81ff">2006238</span> delta<span style="color:#f92672">=</span><span style="color:#ae81ff">2119</span> integral<span style="color:#f92672">=</span><span style="color:#ae81ff">6740</span>
+2021-09-05 16:38:21 limit<span style="color:#f92672">=</span>503.48M pressure<span style="color:#f92672">=</span>0.010000 time_to_probe<span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span> total<span style="color:#f92672">=</span><span style="color:#ae81ff">2006238</span> delta<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> integral<span style="color:#f92672">=</span><span style="color:#ae81ff">6740</span>
+2021-09-05 16:38:22 limit<span style="color:#f92672">=</span>503.48M pressure<span style="color:#f92672">=</span>0.010000 time_to_probe<span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span> total<span style="color:#f92672">=</span><span style="color:#ae81ff">2006405</span> delta<span style="color:#f92672">=</span><span style="color:#ae81ff">167</span> integral<span style="color:#f92672">=</span><span style="color:#ae81ff">6907</span>
 2021-09-05 16:38:22   adjust: -0.00020961438729431614
-</code></pre><p>As you can see from the above output according to the PSI to support my reading working pattern without memory problems the 503.48M should be enough.</p>
-<p>This is obvious a preview of a feature and for real production services you probably should think about  <code>io.pressure</code> as well and should configure IO controller in order to protect your system from writeback issues.</p>
+</code></pre></div><p>As you can see, according to the PSI, 503.48M of memory should be enough to support my reading work load without any problems.</p>
+<p>This is obvious a preview of the PSI feature and for real production services you probably should think about <code>io.pressure</code> as well.</p>
 <h2 id="74--and-what-about-writeback">
   7.4 &hellip; and what about writeback?
   <a class="anchor" href="#74--and-what-about-writeback">#</a>
 </h2>
-<p>It&rsquo;s frankly speaking a harder question to answer. As I&rsquo;m writing this article I don&rsquo;t know a good tool to estimate and predict writeback and IO usage. However the rule of thumb it to start with <code>io.latency</code> and then try to use <code>io.cost</code> if needed.</p>
-<p>There is also an interesting project which tries to benchmark your system and configure it for the best hardware utilization without penalties for services. It&rsquo;s definitely worth to check out: <a href="https://github.com/facebookexperimental/resctl-demo">https://github.com/facebookexperimental/resctl-demo</a></p>
+<p>To be honest, this question is more difficult to answer. As I write this article, I do not know of a good tool for evaluating and predicting writeback and IO usage. However the rule of thumb is to start with <code>io.latency</code> and then try to use <code>io.cost</code> if needed.</p>
+<p>There is also an interesting new project <a href="https://github.com/facebookexperimental/resctl-demo">resctl-demo</a> which can help in proper limits identification.</p>
 
 
 
@@ -638,9 +540,9 @@ Est(s)     Ref(MB)
   <ul>
     <li><a href="#how-much-memory-my-program-uses-or-the-tale-of-working-set-size">How much memory my program uses or the tale of working set size</a>
       <ul>
-        <li><a href="#71-its-all-about-who-counts-or-the-story-of-unique-set-size">7.1 It&rsquo;s all about who counts or the story of unique set size</a></li>
-        <li><a href="#72-idle-pages-and-working-set-size">7.2 Idle pages and working set size</a></li>
-        <li><a href="#73-calculating-memory-limits-with-pressure-stall-information-psi">7.3 Calculating memory limits with Pressure Stall Information (PSI)</a></li>
+        <li><a href="#its-all-about-who-counts-or-the-story-of-unique-set-size">It&rsquo;s all about who counts or the story of unique set size</a></li>
+        <li><a href="#idle-pages-and-working-set-size">Idle pages and working set size</a></li>
+        <li><a href="#calculating-memory-limits-with-pressure-stall-information-psi">Calculating memory limits with Pressure Stall Information (PSI)</a></li>
         <li><a href="#74--and-what-about-writeback">7.4 &hellip; and what about writeback?</a></li>
       </ul>
     </li>
