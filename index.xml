@@ -89,8 +89,8 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</guid>
-      <description>8. Direct IO (DIO) #  To be done.
-8.1 Why it’s good #   Allows bypass Page Cache Async IO  8.2 Why it’s bad and io_uring alternative #  Read next chapter →  </description>
+      <description>Direct IO (DIO) #  To be done.
+Why it’s good #   Allows bypass Page Cache Async IO  Why it’s bad and io_uring alternative #  Read next chapter →  </description>
     </item>
     
     <item>
@@ -99,8 +99,8 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</guid>
-      <description>9. Advanced Page Cache observability and troubleshooting tools #  Let&amp;rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
-9.1 eBPF tools #  First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
+      <description>Advanced Page Cache observability and troubleshooting tools #  Let&amp;rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
+eBPF tools #  First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
 Let&amp;rsquo;s take a look at some tools which come with.
 Writeback monitor #  $ sudo bpftrace .</description>
     </item>

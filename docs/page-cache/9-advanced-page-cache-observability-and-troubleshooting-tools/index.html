@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="9. Advanced Page Cache observability and troubleshooting tools #  Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
-9.1 eBPF tools #  First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
+<meta name="description" content="Advanced Page Cache observability and troubleshooting tools #  Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
+eBPF tools #  First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
 Let&rsquo;s take a look at some tools which come with.
 Writeback monitor #  $ sudo bpftrace .">
 <meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="9. Advanced tools" />
-<meta property="og:description" content="9. Advanced Page Cache observability and troubleshooting tools #  Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
-9.1 eBPF tools #  First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
+<meta property="og:description" content="Advanced Page Cache observability and troubleshooting tools #  Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
+eBPF tools #  First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
 Let&rsquo;s take a look at some tools which come with.
 Writeback monitor #  $ sudo bpftrace ." />
 <meta property="og:type" content="article" />
@@ -22,7 +22,7 @@ Writeback monitor #  $ sudo bpftrace ." />
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.249adf995b732e7d4f1a9c613ee0ff24f1c69b9ffc150cfb7b039ec5352c336f.js" integrity="sha256-JJrfmVtzLn1PGpxhPuD/JPHGm5/8FQz7ewOexTUsM28=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.23e163f906f996fc0fe79b871e3f821b8f290098e043656c181929be0079ed20.js" integrity="sha256-I&#43;Fj&#43;Qb5lvwP55uHHj&#43;CG48pAJjgQ2VsGBkpvgB57SA=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -306,9 +306,9 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#9-advanced-page-cache-observability-and-troubleshooting-tools">9. Advanced Page Cache observability and troubleshooting tools</a>
+    <li><a href="#advanced-page-cache-observability-and-troubleshooting-tools">Advanced Page Cache observability and troubleshooting tools</a>
       <ul>
-        <li><a href="#91-ebpf-tools">9.1 eBPF tools</a>
+        <li><a href="#ebpf-tools">eBPF tools</a>
           <ul>
             <li><a href="#writeback-monitor">Writeback monitor</a></li>
             <li><a href="#page-cache-top">Page Cache Top</a></li>
@@ -316,7 +316,7 @@ https://github.com/alex-shpak/hugo-book
             <li><a href="#bpftrace-and-kfunc-trace"><code>bpftrace</code> and <code>kfunc</code> trace</a></li>
           </ul>
         </li>
-        <li><a href="#92--perf-tool">9.2  Perf tool</a></li>
+        <li><a href="#perf-tool">Perf tool</a></li>
       </ul>
     </li>
   </ul>
@@ -331,14 +331,14 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"><h1 id="9-advanced-page-cache-observability-and-troubleshooting-tools">
-  9. Advanced Page Cache observability and troubleshooting tools
-  <a class="anchor" href="#9-advanced-page-cache-observability-and-troubleshooting-tools">#</a>
+  <article class="markdown"><h1 id="advanced-page-cache-observability-and-troubleshooting-tools">
+  Advanced Page Cache observability and troubleshooting tools
+  <a class="anchor" href="#advanced-page-cache-observability-and-troubleshooting-tools">#</a>
 </h1>
 <p>Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.</p>
-<h2 id="91-ebpf-tools">
-  9.1 eBPF tools
-  <a class="anchor" href="#91-ebpf-tools">#</a>
+<h2 id="ebpf-tools">
+  eBPF tools
+  <a class="anchor" href="#ebpf-tools">#</a>
 </h2>
 <p>First of all we can use <code>eBPF</code> tools. The [<code>bcc</code>]https://github.com/iovisor/bcc and <a href="https://github.com/iovisor/bpftrace"><code>bpftrace</code></a> are your friends when you want to get some internal kernel information.</p>
 <p>Let&rsquo;s take a look at some tools which come with.</p>
@@ -395,9 +395,9 @@ PID      UID      CMD              HITS     MISSES   DIRTIES  READ_HIT%  WRITE_H
 </h3>
 <p>Other than that, <code>eBPF</code> and <code>bpftrace</code> have recently got a new great feature named <a href="https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md#15-kfunckretfunc-kernel-functions-tracing"><code>kfunc</code></a>.Thus, using it, you can trace some kernel functions without kernel debugging information installed.</p>
 <p>It&rsquo;s still close to experimental functionality, but it looks really promising.</p>
-<h2 id="92--perf-tool">
-  9.2  Perf tool
-  <a class="anchor" href="#92--perf-tool">#</a>
+<h2 id="perf-tool">
+  Perf tool
+  <a class="anchor" href="#perf-tool">#</a>
 </h2>
 <p>But if you want to go deeper, I have something for you. <code>perf</code> allows to setup dynamic tracing kernel probes almost at any kernel functions. The only issue is the kernel debug information should be installed. Unfortunately, not all distros provide it and sometimes you will need to recompile the kernel manually with some additional flags.</p>
 <p>But when you got the debug info, you can perform really crazy investigations. For example, if we want to track the major page faults, we can find the kernel function which is in charge (<a href="https://elixir.bootlin.com/linux/latest/source">https://elixir.bootlin.com/linux/latest/source</a> and its search for help) and setup a probe:</p>
@@ -448,9 +448,9 @@ PID      UID      CMD              HITS     MISSES   DIRTIES  READ_HIT%  WRITE_H
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#9-advanced-page-cache-observability-and-troubleshooting-tools">9. Advanced Page Cache observability and troubleshooting tools</a>
+    <li><a href="#advanced-page-cache-observability-and-troubleshooting-tools">Advanced Page Cache observability and troubleshooting tools</a>
       <ul>
-        <li><a href="#91-ebpf-tools">9.1 eBPF tools</a>
+        <li><a href="#ebpf-tools">eBPF tools</a>
           <ul>
             <li><a href="#writeback-monitor">Writeback monitor</a></li>
             <li><a href="#page-cache-top">Page Cache Top</a></li>
@@ -458,7 +458,7 @@ PID      UID      CMD              HITS     MISSES   DIRTIES  READ_HIT%  WRITE_H
             <li><a href="#bpftrace-and-kfunc-trace"><code>bpftrace</code> and <code>kfunc</code> trace</a></li>
           </ul>
         </li>
-        <li><a href="#92--perf-tool">9.2  Perf tool</a></li>
+        <li><a href="#perf-tool">Perf tool</a></li>
       </ul>
     </li>
   </ul>
