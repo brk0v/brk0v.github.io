@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="7. How much memory my program uses or the tale of working set size #  Nowadays in the world of containers, autoscaling and on-demand clouds it&rsquo;s becoming very important to understand the use of service resources both in a normal situation and under possible pressure. And if for CPU, disk size and network we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning.">
-<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="7. Working set size" />
-<meta property="og:description" content="7. How much memory my program uses or the tale of working set size #  Nowadays in the world of containers, autoscaling and on-demand clouds it&rsquo;s becoming very important to understand the use of service resources both in a normal situation and under possible pressure. And if for CPU, disk size and network we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning." />
+<meta name="description" content="How much memory my program uses or the tale of working set size #  Currently, in the world of containers, autoscaling and on-demand clouds, it&rsquo;s very important to understand the service resources usage both in a norman regular situation and under pressure near the software limits. And, if for CPU, disk size and network capacity we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning.">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="7. Unique set and working set" />
+<meta property="og:description" content="How much memory my program uses or the tale of working set size #  Currently, in the world of containers, autoscaling and on-demand clouds, it&rsquo;s very important to understand the service resources usage both in a norman regular situation and under pressure near the software limits. And, if for CPU, disk size and network capacity we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" /><meta property="article:section" content="docs" />
 
 
 
-<title>7. Working set size | Viacheslav Biriukov</title>
+<title>7. Unique set and working set | Viacheslav Biriukov</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.d98a42e853cdd6f62d9e27f3c5e2faf6855d23ca6767930519481d96c79a488a.js" integrity="sha256-2YpC6FPN1vYtnifzxeL69oVdI8pnZ5MFGUgdlseaSIo=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.6907311f0328b69e7b317a6148e3ad31f59b502749271384ef2652758a4316d2.js" integrity="sha256-aQcxHwMotp57MXphSOOtMfWbUCdJJxOE7yZSdYpDFtI=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -183,7 +183,33 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class=" active">7. Working set size</a>
+    <a href="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class=" active">7. Unique set and working set</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" class="">8. Direct IO</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/" class="">9. Advanced tools</a>
   
 
         </li>
@@ -258,7 +284,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong>7. Working set size</strong>
+  <strong>7. Unique set and working set</strong>
 
   <label for="toc-control">
     
@@ -274,7 +300,7 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size">7. How much memory my program uses or the tale of working set size</a>
+    <li><a href="#how-much-memory-my-program-uses-or-the-tale-of-working-set-size">How much memory my program uses or the tale of working set size</a>
       <ul>
         <li><a href="#71-its-all-about-who-counts-or-the-story-of-unique-set-size">7.1 It&rsquo;s all about who counts or the story of unique set size</a></li>
         <li><a href="#72-idle-pages-and-working-set-size">7.2 Idle pages and working set size</a></li>
@@ -294,11 +320,11 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"><h1 id="7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size">
-  7. How much memory my program uses or the tale of working set size
-  <a class="anchor" href="#7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size">#</a>
+  <article class="markdown"><h1 id="how-much-memory-my-program-uses-or-the-tale-of-working-set-size">
+  How much memory my program uses or the tale of working set size
+  <a class="anchor" href="#how-much-memory-my-program-uses-or-the-tale-of-working-set-size">#</a>
 </h1>
-<p>Nowadays in the world of containers, autoscaling and on-demand clouds it&rsquo;s becoming very important to understand the use of service resources both in a normal situation and under possible pressure. And if for CPU, disk size and network we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning. The main issue is Page Cache and the ways programs work with disks IO. I this chapter I&rsquo;m demonstrating some approaches you can use to determine your starting numbers for memory (and thus Page Cache) limits and begin you journey from the decent starting point.</p>
+<p>Currently, in the world of containers, autoscaling and on-demand clouds, it&rsquo;s very important to understand the service resources usage both in a norman regular situation and under pressure near the software limits. And, if for CPU, disk size and network capacity we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning. The main issue is Page Cache and the ways programs work with disks IO. I this chapter I&rsquo;m demonstrating some approaches you can use to determine your starting numbers for memory (and thus Page Cache) limits and begin you journey from the decent starting point.</p>
 <h2 id="71-its-all-about-who-counts-or-the-story-of-unique-set-size">
   7.1 It&rsquo;s all about who counts or the story of unique set size
   <a class="anchor" href="#71-its-all-about-who-counts-or-the-story-of-unique-set-size">#</a>
@@ -565,7 +591,7 @@ Est(s)     Ref(MB)
 
   
 
-<a  href="/"   class="book-btn right-button">
+<a  href="/docs/page-cache/8-direct-io-dio/"   class="book-btn right-button">
   Read next chapter →
 </a>
 
@@ -610,7 +636,7 @@ Est(s)     Ref(MB)
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size">7. How much memory my program uses or the tale of working set size</a>
+    <li><a href="#how-much-memory-my-program-uses-or-the-tale-of-working-set-size">How much memory my program uses or the tale of working set size</a>
       <ul>
         <li><a href="#71-its-all-about-who-counts-or-the-story-of-unique-set-size">7.1 It&rsquo;s all about who counts or the story of unique set size</a></li>
         <li><a href="#72-idle-pages-and-working-set-size">7.2 Idle pages and working set size</a></li>

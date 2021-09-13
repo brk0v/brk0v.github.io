@@ -75,23 +75,32 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
     </item>
     
     <item>
-      <title>7. Working set size</title>
+      <title>7. Unique set and working set</title>
       <link>https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</guid>
-      <description>7. How much memory my program uses or the tale of working set size #  Nowadays in the world of containers, autoscaling and on-demand clouds it&amp;rsquo;s becoming very important to understand the use of service resources both in a normal situation and under possible pressure. And if for CPU, disk size and network we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning.</description>
+      <description>How much memory my program uses or the tale of working set size #  Currently, in the world of containers, autoscaling and on-demand clouds, it&amp;rsquo;s very important to understand the service resources usage both in a norman regular situation and under pressure near the software limits. And, if for CPU, disk size and network capacity we usually can measure and predict resources utilization of course with some reasonable errors and assumptions, when we start talking about memory it becomes not as obvious as it would be seen at the beginning.</description>
+    </item>
+    
+    <item>
+      <title>8. Direct IO</title>
+      <link>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</guid>
+      <description>8. Direct IO (DIO) (TBD) #  8.1 Why it’s good #   Allows Bypass page cache Async IO  8.2 Why it’s bad and io_uring alternative #  Read next chapter →  </description>
     </item>
     
     <item>
       <title>9. Advanced tools</title>
-      <link>https://biriukov.dev/docs/page-cache/9/</link>
+      <link>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://biriukov.dev/docs/page-cache/9/</guid>
-      <description>9. Advanced Page Cache observability and troubleshooting toolss #  9.1 eBPF tools #  # bpftrace ./writeback.bt bpftrace ./writeback.bt Attaching 4 probes... Tracing writeback... Hit Ctrl-C to end. TIME DEVICE PAGES REASON ms 15:01:48 btrfs-1 7355 periodic 0.003 15:01:49 btrfs-1 7355 periodic 0.003 15:01:51 btrfs-1 7355 periodic 0.006 15:01:54 btrfs-1 7355 periodic 0.005 15:01:54 btrfs-1 7355 periodic 0.004 15:01:56 btrfs-1 7355 periodic 0.005 Page Cache Top
-https://github.com/iovisor/bcc
-19:49:52 Buffers MB: 0 / Cached MB: 610 / Sort: HITS / Order: descending PID UID CMD HITS MISSES DIRTIES READ_HIT% WRITE_HIT% 66229 vagrant vmtouch 44745 44032 0 50.</description>
+      <guid>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</guid>
+      <description>9. Advanced Page Cache observability and troubleshooting tools (TBD) #  9.1 eBPF tools #  Writeback monitor
+$ sudo bpftrace ./writeback.bt Attaching 4 probes... Tracing writeback... Hit Ctrl-C to end. TIME DEVICE PAGES REASON ms 15:01:48 btrfs-1 7355 periodic 0.003 15:01:49 btrfs-1 7355 periodic 0.003 15:01:51 btrfs-1 7355 periodic 0.006 15:01:54 btrfs-1 7355 periodic 0.005 15:01:54 btrfs-1 7355 periodic 0.004 15:01:56 btrfs-1 7355 periodic 0.005 Page Cache Top
+https://github.com/iovisor/bcc</description>
     </item>
     
   </channel>

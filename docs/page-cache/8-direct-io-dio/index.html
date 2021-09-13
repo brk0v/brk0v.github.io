@@ -1,23 +1,22 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-	<meta name="generator" content="Hugo 0.88.0" />
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Hi! #  This is my home page, you probably want to check out my Linux Page Cache mini book or read some blog posts about system programming, Linux kernel, golang, python, etc.
-Linux Page Cache mini book #   0. Into 1. Prepare environment for experiments 2. Essential Page Cache theory 3. Page Cache and basic file operations 4. Page Cache eviction and page reclaim 5. More about mmap() file access 6.">
-<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://biriukov.dev/" />
+<meta name="description" content="8. Direct IO (DIO) (TBD) #  8.1 Why it’s good #   Allows Bypass page cache Async IO  8.2 Why it’s bad and io_uring alternative #  Read next chapter →  ">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="8. Direct IO" />
+<meta property="og:description" content="8. Direct IO (DIO) (TBD) #  8.1 Why it’s good #   Allows Bypass page cache Async IO  8.2 Why it’s bad and io_uring alternative #  Read next chapter →  " />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" /><meta property="article:section" content="docs" />
 
-<title> | Viacheslav Biriukov</title>
+
+
+<title>8. Direct IO | Viacheslav Biriukov</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
   <script defer src="/en.search.min.6907311f0328b69e7b317a6148e3ad31f59b502749271384ef2652758a4316d2.js" integrity="sha256-aQcxHwMotp57MXphSOOtMfWbUCdJJxOE7yZSdYpDFtI=" crossorigin="anonymous"></script>
-<link rel="alternate" type="application/rss+xml" href="https://biriukov.dev/index.xml" title="Viacheslav Biriukov" />
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -197,7 +196,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" class="">8. Direct IO</a>
+    <a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" class=" active">8. Direct IO</a>
   
 
         </li>
@@ -285,56 +284,65 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong></strong>
+  <strong>8. Direct IO</strong>
 
   <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
     
   </label>
 </div>
 
 
   
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#8-direct-io-dio-tbd">8. Direct IO (DIO) (TBD)</a>
+      <ul>
+        <li><a href="#81-why-its-good">8.1 Why it’s good</a></li>
+        <li><a href="#82-why-its-bad-and-io_uring-alternative">8.2 Why it’s bad and <code>io_uring</code> alternative</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
  
       </header>
 
       
       
-  <article class="markdown"><h1 id="hi">
-  Hi!
-  <a class="anchor" href="#hi">#</a>
+  <article class="markdown"><h1 id="8-direct-io-dio-tbd">
+  8. Direct IO (DIO) (TBD)
+  <a class="anchor" href="#8-direct-io-dio-tbd">#</a>
 </h1>
-<p>This is my home page, you probably want to check out my Linux Page Cache mini book or read some blog posts about system programming, Linux kernel, <code>golang</code>, <code>python</code>, etc.</p>
-<div class="book-columns flex flex-wrap">
-
-  <div class="flex-even markdown-inner">
-    <h2 id="linux-page-cache-mini-book">
-  Linux Page Cache mini book
-  <a class="anchor" href="#linux-page-cache-mini-book">#</a>
+<h2 id="81-why-its-good">
+  8.1 Why it’s good
+  <a class="anchor" href="#81-why-its-good">#</a>
 </h2>
 <ul>
-<li><a href="/docs/page-cache/0-intro/">0. Into</a></li>
-<li><a href="/docs/page-cache/1-prepare-environment-for-experiments/">1. Prepare environment for experiments</a></li>
-<li><a href="/docs/page-cache/2-essential-page-cache-theory/">2. Essential Page Cache theory</a></li>
-<li><a href="docs/page-cache/3-page-cache-and-basic-file-operations/">3. Page Cache and basic file operations</a></li>
-<li><a href="/docs/page-cache/4-page-cache-eviction-and-page-reclaim/">4. Page Cache eviction and page reclaim</a></li>
-<li><a href="/docs/page-cache/5-more-about-mmap-file-access/">5. More about mmap() file access</a></li>
-<li><a href="/docs/page-cache/6-cgroup-v2-and-page-cache/">6. Cgroup v2 and Page Cache</a></li>
-<li><a href="/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/">7. How much memory my program uses or the tale of working set size</a></li>
-<li><a href="/docs/page-cache/8-direct-io-dio/">8. Direct IO (DIO)</a></li>
-<li><a href="/docs/page-cache/9-9.-advanced-page-cache-observability-and-troubleshooting-tools/">9. 9. Advanced Page Cache observability and troubleshooting tools</a></li>
+<li>Allows Bypass page cache</li>
+<li>Async IO</li>
 </ul>
-
-  </div>
-
-  <div class="flex-even markdown-inner">
-    <h2 id="blog-posts">
-  Blog posts
-  <a class="anchor" href="#blog-posts">#</a>
+<h2 id="82-why-its-bad-and-io_uring-alternative">
+  8.2 Why it’s bad and <code>io_uring</code> alternative
+  <a class="anchor" href="#82-why-its-bad-and-io_uring-alternative">#</a>
 </h2>
-<p>Nothing here yet. 🥲
-  </div>
 
-</div>
+
+
+
+  
+
+<a  href="/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/"   class="book-btn right-button">
+  Read next chapter →
+</a>
 
 </article>
  
@@ -370,6 +378,26 @@ https://github.com/alex-shpak/hugo-book
       <label for="menu-control" class="hidden book-menu-overlay"></label>
     </div>
 
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#8-direct-io-dio-tbd">8. Direct IO (DIO) (TBD)</a>
+      <ul>
+        <li><a href="#81-why-its-good">8.1 Why it’s good</a></li>
+        <li><a href="#82-why-its-bad-and-io_uring-alternative">8.2 Why it’s bad and <code>io_uring</code> alternative</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
     
   </main>
 
