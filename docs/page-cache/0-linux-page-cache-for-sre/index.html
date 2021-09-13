@@ -3,17 +3,15 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="8. Direct IO (DIO) #  To be done.
-8.1 Why it’s good #   Allows bypass Page Cache Async IO  8.2 Why it’s bad and io_uring alternative #  Read next chapter →  ">
-<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="8. Direct IO" />
-<meta property="og:description" content="8. Direct IO (DIO) #  To be done.
-8.1 Why it’s good #   Allows bypass Page Cache Async IO  8.2 Why it’s bad and io_uring alternative #  Read next chapter →  " />
+<meta name="description" content="SRE deep dive into Linux Page Cache #  In this series I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine every day DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to:">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="0. Linux Page Cache for SRE" />
+<meta property="og:description" content="SRE deep dive into Linux Page Cache #  In this series I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine every day DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to:" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" /><meta property="article:section" content="docs" />
+<meta property="og:url" content="https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/" /><meta property="article:section" content="docs" />
 
 
 
-<title>8. Direct IO | Viacheslav Biriukov</title>
+<title>0. Linux Page Cache for SRE | Viacheslav Biriukov</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
@@ -94,7 +92,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/" class="">0. Linux Page Cache for SRE</a>
+    <a href="https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/" class=" active">0. Linux Page Cache for SRE</a>
   
 
         </li>
@@ -198,7 +196,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" class=" active">8. Direct IO</a>
+    <a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" class="">8. Direct IO</a>
   
 
         </li>
@@ -286,64 +284,48 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong>8. Direct IO</strong>
+  <strong>0. Linux Page Cache for SRE</strong>
 
   <label for="toc-control">
-    
-    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
     
   </label>
 </div>
 
 
   
-  <aside class="hidden clearfix">
-    
-  
-<nav id="TableOfContents">
-  <ul>
-    <li><a href="#8-direct-io-dio">8. Direct IO (DIO)</a>
-      <ul>
-        <li><a href="#81-why-its-good">8.1 Why it’s good</a></li>
-        <li><a href="#82-why-its-bad-and-io_uring-alternative">8.2 Why it’s bad and <code>io_uring</code> alternative</a></li>
-      </ul>
-    </li>
-  </ul>
-</nav>
-
-
-
-  </aside>
-  
  
       </header>
 
       
       
-  <article class="markdown"><h1 id="8-direct-io-dio">
-  8. Direct IO (DIO)
-  <a class="anchor" href="#8-direct-io-dio">#</a>
+  <article class="markdown"><h1 id="sre-deep-dive-into-linux-page-cache">
+  SRE deep dive into Linux Page Cache
+  <a class="anchor" href="#sre-deep-dive-into-linux-page-cache">#</a>
 </h1>
-<p>To be done.</p>
-<h2 id="81-why-its-good">
-  8.1 Why it’s good
-  <a class="anchor" href="#81-why-its-good">#</a>
-</h2>
+<p>In this series I would like to talk about <strong>Linux Page Cache</strong>. I believe that the following knowledge of the theory and tools is <strong>essential and crucial for every SRE</strong>. This understanding can help both in usual and routine every day DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to:</p>
 <ul>
-<li>Allows bypass Page Cache</li>
-<li>Async IO</li>
+<li>more <strong>preciser capacity planing</strong> and <strong>container limit calculations</strong>;</li>
+<li>better <strong>debugging and investigation skills</strong> for memory and disk intensive applications such as <strong>database management system</strong> and file sharing <strong>storages</strong>;</li>
+<li>building <strong>safe and predictable runtimes</strong> for memory and/or IO bound ad-hoc task (for instance: backups and restore scripts, <code>rsync</code> one-liners, etc).</li>
 </ul>
-<h2 id="82-why-its-bad-and-io_uring-alternative">
-  8.2 Why it’s bad and <code>io_uring</code> alternative
-  <a class="anchor" href="#82-why-its-bad-and-io_uring-alternative">#</a>
-</h2>
+<p>I’ll display what <strong>utils</strong> you should keep in mind when you&rsquo;re dealing with Page Cache related task and problems, how to use them properly <strong>to understand the real memory usage</strong> and how to <strong>reveal issues</strong> with them. I will try to give you some examples of using these tools that are close to real life situations. Here are some of these tools I&rsquo;m talking about below: <code>vmtouch</code>, <code>perf</code>, <code>cgtouch</code>, <code>strace</code> , <code>sar</code> and <code>page-type</code>.</p>
+<p>Also as the title says “deep dive”,  <strong>the internals of these utils</strong> will be shown with an emphasize on the Page Cache stats, events, syscalls and kernel interfaces. Here are some examples of what I’m touching in the following post:</p>
+<ul>
+<li><code>procfs</code> files: <code>/proc/PID/smaps</code>, <code>/proc/pid/pagemap</code>, <code>/proc/kpageflags</code>, <code>/proc/kpagecgroup</code> and  <code>sysfs</code> file: <code>/sys/kernel/mm/page_idle</code>;</li>
+<li>system calls: <code>mincore()</code>, <code>mmap()</code>, <code>fsync()</code>, <code>msync()</code>, <code>posix_fadvise()</code>, <code>madvise()</code> and others;</li>
+<li>different open and advise flags <code>O_SYNC</code>, <code>FADV_DONTNEED</code>, <code>POSIX_FADV_RANDOM</code>, <code>MADV_DONTNEED</code>, etc.</li>
+</ul>
+<p>I’ll try to be as verbose as possible with simple (almost all the way) code examples in Python, Go and a tiny bit of C.</p>
+<p>And finally, any conversations about modern GNU/Linux systems can’t be fully conducted without touching the <strong><code>cgroup</code></strong> (<code>v2</code> in our case) and the <strong><code>systemd</code></strong> topics. I’ll show you <strong>how to leverage them</strong> to get the most of the systems and build reliable, well observed, controlled services and sleep well at night while on-call.</p>
+<p>The reader should find themselves confident if they have middle GNU\Linux knowledge and basic programming skills.</p>
+<p>All code examples larger than 5 lines can be found on guthub: <a href="https://github.com/brk0v/sre-page-cache-article">https://github.com/brk0v/sre-page-cache-article</a>.</p>
 
 
 
 
   
 
-<a  href="/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/"   class="book-btn right-button">
+<a  href="/docs/page-cache/1-prepare-environment-for-experiments/"   class="book-btn right-button">
   Read next chapter →
 </a>
 
@@ -381,26 +363,6 @@ https://github.com/alex-shpak/hugo-book
       <label for="menu-control" class="hidden book-menu-overlay"></label>
     </div>
 
-    
-    <aside class="book-toc">
-      <div class="book-toc-content">
-        
-  
-<nav id="TableOfContents">
-  <ul>
-    <li><a href="#8-direct-io-dio">8. Direct IO (DIO)</a>
-      <ul>
-        <li><a href="#81-why-its-good">8.1 Why it’s good</a></li>
-        <li><a href="#82-why-its-bad-and-io_uring-alternative">8.2 Why it’s bad and <code>io_uring</code> alternative</a></li>
-      </ul>
-    </li>
-  </ul>
-</nav>
-
-
- 
-      </div>
-    </aside>
     
   </main>
 

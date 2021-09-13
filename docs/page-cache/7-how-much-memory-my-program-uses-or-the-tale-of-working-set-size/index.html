@@ -16,7 +16,7 @@
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.538f2dba26a61b65c36d16a70aea264d37bd0403a9fbecea8392ecd462a9076d.js" integrity="sha256-U48tuiamG2XDbRanCuomTTe9BAOp&#43;&#43;zqg5Ls1GKpB20=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.249adf995b732e7d4f1a9c613ee0ff24f1c69b9ffc150cfb7b039ec5352c336f.js" integrity="sha256-JJrfmVtzLn1PGpxhPuD/JPHGm5/8FQz7ewOexTUsM28=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -92,7 +92,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://biriukov.dev/docs/page-cache/0-intro/" class="">0. Intro</a>
+    <a href="https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/" class="">0. Linux Page Cache for SRE</a>
   
 
         </li>
@@ -305,7 +305,7 @@ https://github.com/alex-shpak/hugo-book
         <li><a href="#its-all-about-who-counts-or-the-story-of-unique-set-size">It&rsquo;s all about who counts or the story of unique set size</a></li>
         <li><a href="#idle-pages-and-working-set-size">Idle pages and working set size</a></li>
         <li><a href="#calculating-memory-limits-with-pressure-stall-information-psi">Calculating memory limits with Pressure Stall Information (PSI)</a></li>
-        <li><a href="#74--and-what-about-writeback">7.4 &hellip; and what about writeback?</a></li>
+        <li><a href="#-and-what-about-writeback">&hellip; and what about writeback?</a></li>
       </ul>
     </li>
   </ul>
@@ -481,9 +481,9 @@ Est<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span>    
 2021-09-05 16:38:22   adjust: -0.00020961438729431614
 </code></pre></div><p>As you can see, according to the PSI, 503.48M of memory should be enough to support my reading work load without any problems.</p>
 <p>This is obvious a preview of the PSI feature and for real production services you probably should think about <code>io.pressure</code> as well.</p>
-<h2 id="74--and-what-about-writeback">
-  7.4 &hellip; and what about writeback?
-  <a class="anchor" href="#74--and-what-about-writeback">#</a>
+<h2 id="-and-what-about-writeback">
+  &hellip; and what about writeback?
+  <a class="anchor" href="#-and-what-about-writeback">#</a>
 </h2>
 <p>To be honest, this question is more difficult to answer. As I write this article, I do not know of a good tool for evaluating and predicting writeback and IO usage. However the rule of thumb is to start with <code>io.latency</code> and then try to use <code>io.cost</code> if needed.</p>
 <p>There is also an interesting new project <a href="https://github.com/facebookexperimental/resctl-demo">resctl-demo</a> which can help in proper limits identification.</p>
@@ -543,7 +543,7 @@ Est<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span>    
         <li><a href="#its-all-about-who-counts-or-the-story-of-unique-set-size">It&rsquo;s all about who counts or the story of unique set size</a></li>
         <li><a href="#idle-pages-and-working-set-size">Idle pages and working set size</a></li>
         <li><a href="#calculating-memory-limits-with-pressure-stall-information-psi">Calculating memory limits with Pressure Stall Information (PSI)</a></li>
-        <li><a href="#74--and-what-about-writeback">7.4 &hellip; and what about writeback?</a></li>
+        <li><a href="#-and-what-about-writeback">&hellip; and what about writeback?</a></li>
       </ul>
     </li>
   </ul>

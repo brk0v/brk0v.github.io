@@ -7,12 +7,12 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language><atom:link href="https://biriukov.dev/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>0. Intro</title>
-      <link>https://biriukov.dev/docs/page-cache/0-intro/</link>
+      <title>0. Linux Page Cache for SRE</title>
+      <link>https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://biriukov.dev/docs/page-cache/0-intro/</guid>
-      <description>SRE deep dive into Linux Page Cache: theory, real life examples and tools #  In this post I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE, and can help both in usual and routine every day DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to:</description>
+      <guid>https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/</guid>
+      <description>SRE deep dive into Linux Page Cache #  In this series I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine every day DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to:</description>
     </item>
     
     <item>
@@ -89,7 +89,8 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</guid>
-      <description>8. Direct IO (DIO) (TBD) #  8.1 Why it’s good #   Allows Bypass page cache Async IO  8.2 Why it’s bad and io_uring alternative #  Read next chapter →  </description>
+      <description>8. Direct IO (DIO) #  To be done.
+8.1 Why it’s good #   Allows bypass Page Cache Async IO  8.2 Why it’s bad and io_uring alternative #  Read next chapter →  </description>
     </item>
     
     <item>
@@ -98,9 +99,10 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</guid>
-      <description>9. Advanced Page Cache observability and troubleshooting tools (TBD) #  9.1 eBPF tools #  Writeback monitor
-$ sudo bpftrace ./writeback.bt Attaching 4 probes... Tracing writeback... Hit Ctrl-C to end. TIME DEVICE PAGES REASON ms 15:01:48 btrfs-1 7355 periodic 0.003 15:01:49 btrfs-1 7355 periodic 0.003 15:01:51 btrfs-1 7355 periodic 0.006 15:01:54 btrfs-1 7355 periodic 0.005 15:01:54 btrfs-1 7355 periodic 0.004 15:01:56 btrfs-1 7355 periodic 0.005 Page Cache Top
-https://github.com/iovisor/bcc</description>
+      <description>9. Advanced Page Cache observability and troubleshooting tools #  Let&amp;rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
+9.1 eBPF tools #  First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
+Let&amp;rsquo;s take a look at some tools which come with.
+Writeback monitor #  $ sudo bpftrace .</description>
     </item>
     
   </channel>

@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="9. Advanced Page Cache observability and troubleshooting tools (TBD) #  9.1 eBPF tools #  Writeback monitor
-$ sudo bpftrace ./writeback.bt Attaching 4 probes... Tracing writeback... Hit Ctrl-C to end. TIME DEVICE PAGES REASON ms 15:01:48 btrfs-1 7355 periodic 0.003 15:01:49 btrfs-1 7355 periodic 0.003 15:01:51 btrfs-1 7355 periodic 0.006 15:01:54 btrfs-1 7355 periodic 0.005 15:01:54 btrfs-1 7355 periodic 0.004 15:01:56 btrfs-1 7355 periodic 0.005 Page Cache Top
-https://github.com/iovisor/bcc">
+<meta name="description" content="9. Advanced Page Cache observability and troubleshooting tools #  Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
+9.1 eBPF tools #  First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
+Let&rsquo;s take a look at some tools which come with.
+Writeback monitor #  $ sudo bpftrace .">
 <meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="9. Advanced tools" />
-<meta property="og:description" content="9. Advanced Page Cache observability and troubleshooting tools (TBD) #  9.1 eBPF tools #  Writeback monitor
-$ sudo bpftrace ./writeback.bt Attaching 4 probes... Tracing writeback... Hit Ctrl-C to end. TIME DEVICE PAGES REASON ms 15:01:48 btrfs-1 7355 periodic 0.003 15:01:49 btrfs-1 7355 periodic 0.003 15:01:51 btrfs-1 7355 periodic 0.006 15:01:54 btrfs-1 7355 periodic 0.005 15:01:54 btrfs-1 7355 periodic 0.004 15:01:56 btrfs-1 7355 periodic 0.005 Page Cache Top
-https://github.com/iovisor/bcc" />
+<meta property="og:description" content="9. Advanced Page Cache observability and troubleshooting tools #  Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
+9.1 eBPF tools #  First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
+Let&rsquo;s take a look at some tools which come with.
+Writeback monitor #  $ sudo bpftrace ." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/" /><meta property="article:section" content="docs" />
 
@@ -20,7 +22,7 @@ https://github.com/iovisor/bcc" />
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.538f2dba26a61b65c36d16a70aea264d37bd0403a9fbecea8392ecd462a9076d.js" integrity="sha256-U48tuiamG2XDbRanCuomTTe9BAOp&#43;&#43;zqg5Ls1GKpB20=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.249adf995b732e7d4f1a9c613ee0ff24f1c69b9ffc150cfb7b039ec5352c336f.js" integrity="sha256-JJrfmVtzLn1PGpxhPuD/JPHGm5/8FQz7ewOexTUsM28=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -96,7 +98,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://biriukov.dev/docs/page-cache/0-intro/" class="">0. Intro</a>
+    <a href="https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/" class="">0. Linux Page Cache for SRE</a>
   
 
         </li>
@@ -304,9 +306,16 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#9-advanced-page-cache-observability-and-troubleshooting-tools-tbd">9. Advanced Page Cache observability and troubleshooting tools (TBD)</a>
+    <li><a href="#9-advanced-page-cache-observability-and-troubleshooting-tools">9. Advanced Page Cache observability and troubleshooting tools</a>
       <ul>
-        <li><a href="#91-ebpf-tools">9.1 eBPF tools</a></li>
+        <li><a href="#91-ebpf-tools">9.1 eBPF tools</a>
+          <ul>
+            <li><a href="#writeback-monitor">Writeback monitor</a></li>
+            <li><a href="#page-cache-top">Page Cache Top</a></li>
+            <li><a href="#cache-stat">Cache stat</a></li>
+            <li><a href="#bpftrace-and-kfunc-trace"><code>bpftrace</code> and <code>kfunc</code> trace</a></li>
+          </ul>
+        </li>
         <li><a href="#92--perf-tool">9.2  Perf tool</a></li>
       </ul>
     </li>
@@ -322,15 +331,21 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"><h1 id="9-advanced-page-cache-observability-and-troubleshooting-tools-tbd">
-  9. Advanced Page Cache observability and troubleshooting tools (TBD)
-  <a class="anchor" href="#9-advanced-page-cache-observability-and-troubleshooting-tools-tbd">#</a>
+  <article class="markdown"><h1 id="9-advanced-page-cache-observability-and-troubleshooting-tools">
+  9. Advanced Page Cache observability and troubleshooting tools
+  <a class="anchor" href="#9-advanced-page-cache-observability-and-troubleshooting-tools">#</a>
 </h1>
+<p>Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.</p>
 <h2 id="91-ebpf-tools">
   9.1 eBPF tools
   <a class="anchor" href="#91-ebpf-tools">#</a>
 </h2>
-<p>Writeback monitor</p>
+<p>First of all we can use <code>eBPF</code> tools. The [<code>bcc</code>]https://github.com/iovisor/bcc and <a href="https://github.com/iovisor/bpftrace"><code>bpftrace</code></a> are your friends when you want to get some internal kernel information.</p>
+<p>Let&rsquo;s take a look at some tools which come with.</p>
+<h3 id="writeback-monitor">
+  Writeback monitor
+  <a class="anchor" href="#writeback-monitor">#</a>
+</h3>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo bpftrace ./writeback.bt
 
 Attaching <span style="color:#ae81ff">4</span> probes...
@@ -342,8 +357,10 @@ TIME      DEVICE   PAGES    REASON           ms
 15:01:54  btrfs-1  <span style="color:#ae81ff">7355</span>     periodic         0.005
 15:01:54  btrfs-1  <span style="color:#ae81ff">7355</span>     periodic         0.004
 15:01:56  btrfs-1  <span style="color:#ae81ff">7355</span>     periodic         0.005
-</code></pre></div><p>Page Cache Top</p>
-<p><a href="https://github.com/iovisor/bcc">https://github.com/iovisor/bcc</a></p>
+</code></pre></div><h3 id="page-cache-top">
+  Page Cache Top
+  <a class="anchor" href="#page-cache-top">#</a>
+</h3>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">19:49:52 Buffers MB: <span style="color:#ae81ff">0</span> / Cached MB: <span style="color:#ae81ff">610</span> / Sort: HITS / Order: descending  
 PID      UID      CMD              HITS     MISSES   DIRTIES  READ_HIT%  WRITE_HIT%  
    <span style="color:#ae81ff">66229</span> vagrant  vmtouch             <span style="color:#ae81ff">44745</span>    <span style="color:#ae81ff">44032</span>        <span style="color:#ae81ff">0</span>      50.4%      49.6%  
@@ -351,7 +368,10 @@ PID      UID      CMD              HITS     MISSES   DIRTIES  READ_HIT%  WRITE_H
    <span style="color:#ae81ff">66227</span> root     cachetop               <span style="color:#ae81ff">17</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>     100.0%       0.0%  
      <span style="color:#ae81ff">222</span> dbus     dbus-daemon            <span style="color:#ae81ff">16</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>     100.0%       0.0%  
      <span style="color:#ae81ff">317</span> vagrant  tmux: server            <span style="color:#ae81ff">4</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>     100.0%       0.0%
-</code></pre></div><p>Cache stat</p>
+</code></pre></div><h3 id="cache-stat">
+  Cache stat
+  <a class="anchor" href="#cache-stat">#</a>
+</h3>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#f92672">[</span>vagrant@archlinux tools<span style="color:#f92672">]</span>$ sudo ./cachestat  
     HITS   MISSES  DIRTIES HITRATIO   BUFFERS_MB  CACHED_MB  
       <span style="color:#ae81ff">10</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
@@ -369,16 +389,24 @@ PID      UID      CMD              HITS     MISSES   DIRTIES  READ_HIT%  WRITE_H
        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>    0.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
       <span style="color:#ae81ff">17</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>    0.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>
-</code></pre></div><h2 id="92--perf-tool">
+</code></pre></div><h3 id="bpftrace-and-kfunc-trace">
+  <code>bpftrace</code> and <code>kfunc</code> trace
+  <a class="anchor" href="#bpftrace-and-kfunc-trace">#</a>
+</h3>
+<p>Other than that, <code>eBPF</code> and <code>bpftrace</code> have recently got a new great feature named <a href="https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md#15-kfunckretfunc-kernel-functions-tracing"><code>kfunc</code></a>.Thus, using it, you can trace some kernel functions without kernel debugging information installed.</p>
+<p>It&rsquo;s still close to experimental functionality, but it looks really promising.</p>
+<h2 id="92--perf-tool">
   9.2  Perf tool
   <a class="anchor" href="#92--perf-tool">#</a>
 </h2>
-<p>Need Kernel debug info</p>
+<p>But if you want to go deeper, I have something for you. <code>perf</code> allows to setup dynamic tracing kernel probes almost at any kernel functions. The only issue is the kernel debug information should be installed. Unfortunately, not all distros provide it and sometimes you will need to recompile the kernel manually with some additional flags.</p>
+<p>But when you got the debug info, you can perform really crazy investigations. For example, if we want to track the major page faults, we can find the kernel function which is in charge (<a href="https://elixir.bootlin.com/linux/latest/source">https://elixir.bootlin.com/linux/latest/source</a> and its search for help) and setup a probe:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">perf probe -f <span style="color:#e6db74">&#34;do_read_fault vma-&gt;vm_file-&gt;f_inode-&gt;i_ino&#34;</span>
-
-perf record -e probe:do_read_fault -ag -- sleep <span style="color:#ae81ff">10</span>
-
-perf script | grep i_ino | cut -d <span style="color:#e6db74">&#39; &#39;</span> -f 1,8| sed <span style="color:#e6db74">&#39;s#i_ino=##g&#39;</span> | sort | uniq -c | sort -rn
+</code></pre></div><p>where <code>do_read_fault</code> is our kernel function and <code>vma-&gt;vm_file-&gt;f_inode-&gt;i_ino</code> is an inode number of the file where the major page fault occurs.</p>
+<p>Now you can start recoding events:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">perf record -e probe:do_read_fault -ag -- sleep <span style="color:#ae81ff">10</span>
+</code></pre></div><p>And after 10 seconds, we can grep out the inodes with <code>perf script</code> and bash magic:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">perf script | grep i_ino | cut -d <span style="color:#e6db74">&#39; &#39;</span> -f 1,8| sed <span style="color:#e6db74">&#39;s#i_ino=##g&#39;</span> | sort | uniq -c | sort -rn
 </code></pre></div></article>
  
       
@@ -420,9 +448,16 @@ perf script | grep i_ino | cut -d <span style="color:#e6db74">&#39; &#39;</span>
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#9-advanced-page-cache-observability-and-troubleshooting-tools-tbd">9. Advanced Page Cache observability and troubleshooting tools (TBD)</a>
+    <li><a href="#9-advanced-page-cache-observability-and-troubleshooting-tools">9. Advanced Page Cache observability and troubleshooting tools</a>
       <ul>
-        <li><a href="#91-ebpf-tools">9.1 eBPF tools</a></li>
+        <li><a href="#91-ebpf-tools">9.1 eBPF tools</a>
+          <ul>
+            <li><a href="#writeback-monitor">Writeback monitor</a></li>
+            <li><a href="#page-cache-top">Page Cache Top</a></li>
+            <li><a href="#cache-stat">Cache stat</a></li>
+            <li><a href="#bpftrace-and-kfunc-trace"><code>bpftrace</code> and <code>kfunc</code> trace</a></li>
+          </ul>
+        </li>
         <li><a href="#92--perf-tool">9.2  Perf tool</a></li>
       </ul>
     </li>

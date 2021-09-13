@@ -3,24 +3,7 @@
     margin-bottom: 20px;
 }
 
-* {
-    margin: 0;
-  }
-  
-  body {
-    font-family: "Roboto", sans-serif;
-  }
-  
-  p {
-    margin: 24px 0;
-    line-height: 2;
-  }
-  
-  .wrapper {
-    padding: 32px;
-  }
-  
-  .cookie-container {
+.cookie-container {
     position: fixed;
     bottom: -100%;
     left: 0;
@@ -29,19 +12,18 @@
     color: #f5f6fa;
     padding: 0 32px;
     box-shadow: 0 -2px 16px rgba(47, 54, 64, 0.39);
-  
     transition: 400ms;
-  }
-  
-  .cookie-container.active {
+}
+
+.cookie-container.active {
     bottom: 0;
-  }
-  
-  .cookie-container a {
+}
+
+.cookie-container a {
     color: #f5f6fa;
-  }
-  
-  .cookie-btn {
+}
+
+.cookie-btn {
     background: #e84118;
     border: 0;
     color: #f5f6fa;
@@ -50,4 +32,4 @@
     margin-bottom: 16px;
     border-radius: 8px;
     cursor: pointer;
-  }
+}
