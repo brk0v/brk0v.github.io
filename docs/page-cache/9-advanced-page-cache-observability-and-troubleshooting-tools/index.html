@@ -22,7 +22,7 @@ Writeback monitor #  $ sudo bpftrace ." />
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.23e163f906f996fc0fe79b871e3f821b8f290098e043656c181929be0079ed20.js" integrity="sha256-I&#43;Fj&#43;Qb5lvwP55uHHj&#43;CG48pAJjgQ2VsGBkpvgB57SA=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.e4546d80b16dfeb882726da8284b025447ab0b9cfa6cc8128f98e024c8829bb4.js" integrity="sha256-5FRtgLFt/riCcm2oKEsCVEerC5z6bMgSj5jgJMiCm7Q=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -340,7 +340,7 @@ https://github.com/alex-shpak/hugo-book
   eBPF tools
   <a class="anchor" href="#ebpf-tools">#</a>
 </h2>
-<p>First of all we can use <code>eBPF</code> tools. The [<code>bcc</code>]https://github.com/iovisor/bcc and <a href="https://github.com/iovisor/bpftrace"><code>bpftrace</code></a> are your friends when you want to get some internal kernel information.</p>
+<p>First of all we can use <code>eBPF</code> tools. The [<code>bcc</code>]https://github.com/iovisor/bcc and <a href="https://github.com/iovisor/bpftrace" target="_blank" rel="noopener"><code>bpftrace</code></a> are your friends when you want to get some internal kernel information.</p>
 <p>Let&rsquo;s take a look at some tools which come with.</p>
 <h3 id="writeback-monitor">
   Writeback monitor
@@ -393,14 +393,14 @@ PID      UID      CMD              HITS     MISSES   DIRTIES  READ_HIT%  WRITE_H
   <code>bpftrace</code> and <code>kfunc</code> trace
   <a class="anchor" href="#bpftrace-and-kfunc-trace">#</a>
 </h3>
-<p>Other than that, <code>eBPF</code> and <code>bpftrace</code> have recently got a new great feature named <a href="https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md#15-kfunckretfunc-kernel-functions-tracing"><code>kfunc</code></a>.Thus, using it, you can trace some kernel functions without kernel debugging information installed.</p>
+<p>Other than that, <code>eBPF</code> and <code>bpftrace</code> have recently got a new great feature named <a href="https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md#15-kfunckretfunc-kernel-functions-tracing" target="_blank" rel="noopener"><code>kfunc</code></a>.Thus, using it, you can trace some kernel functions without kernel debugging information installed.</p>
 <p>It&rsquo;s still close to experimental functionality, but it looks really promising.</p>
 <h2 id="perf-tool">
   Perf tool
   <a class="anchor" href="#perf-tool">#</a>
 </h2>
 <p>But if you want to go deeper, I have something for you. <code>perf</code> allows to setup dynamic tracing kernel probes almost at any kernel functions. The only issue is the kernel debug information should be installed. Unfortunately, not all distros provide it and sometimes you will need to recompile the kernel manually with some additional flags.</p>
-<p>But when you got the debug info, you can perform really crazy investigations. For example, if we want to track the major page faults, we can find the kernel function which is in charge (<a href="https://elixir.bootlin.com/linux/latest/source">https://elixir.bootlin.com/linux/latest/source</a> and its search for help) and setup a probe:</p>
+<p>But when you got the debug info, you can perform really crazy investigations. For example, if we want to track the major page faults, we can find the kernel function which is in charge (<a href="https://elixir.bootlin.com/linux/latest/source" target="_blank" rel="noopener">https://elixir.bootlin.com/linux/latest/source</a> and its search for help) and setup a probe:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">perf probe -f <span style="color:#e6db74">&#34;do_read_fault vma-&gt;vm_file-&gt;f_inode-&gt;i_ino&#34;</span>
 </code></pre></div><p>where <code>do_read_fault</code> is our kernel function and <code>vma-&gt;vm_file-&gt;f_inode-&gt;i_ino</code> is an inode number of the file where the major page fault occurs.</p>
 <p>Now you can start recoding events:</p>

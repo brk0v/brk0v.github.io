@@ -22,8 +22,6 @@
   </url><url>
     <loc>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</loc>
   </url><url>
-    <loc>https://biriukov.dev/</loc>
-  </url><url>
     <loc>https://biriukov.dev/posts/</loc>
   </url><url>
     <loc>https://biriukov.dev/categories/</loc>
@@ -33,5 +31,7 @@
     <loc>https://biriukov.dev/docs/page-cache/</loc>
   </url><url>
     <loc>https://biriukov.dev/tags/</loc>
+  </url><url>
+    <loc>https://biriukov.dev/</loc>
   </url>
 </urlset>

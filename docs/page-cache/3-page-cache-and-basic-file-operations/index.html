@@ -20,7 +20,7 @@ Utils needed for this section:
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.23e163f906f996fc0fe79b871e3f821b8f290098e043656c181929be0079ed20.js" integrity="sha256-I&#43;Fj&#43;Qb5lvwP55uHHj&#43;CG48pAJjgQ2VsGBkpvgB57SA=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.e4546d80b16dfeb882726da8284b025447ab0b9cfa6cc8128f98e024c8829bb4.js" integrity="sha256-5FRtgLFt/riCcm2oKEsCVEerC5z6bMgSj5jgJMiCm7Q=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -506,7 +506,7 @@ file_dirty <span style="color:#ae81ff">4096</span>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/578097/smaps | grep file1.db -A <span style="color:#ae81ff">12</span> | grep Dirty
 Shared_Dirty:          <span style="color:#ae81ff">0</span> kB
 Private_Dirty:       <span style="color:#ae81ff">736</span> kB
-</code></pre></div><p>But what if we want to get the dirty page stats for a file. To answer this question linux kernel provides <a href="https://www.kernel.org/doc/Documentation/vm/pagemap.txt">2 files</a> in <code>procfs</code>: <code>/proc/PID/pagemap</code> and <code>/proc/kpageflags</code>. I&rsquo;m showing how to write our own tool with them later in series, but for now we can use the debug tool from the linux kernel repo to get per file page info: <code>page-types</code> (<a href="https://github.com/torvalds/linux/blob/master/tools/vm/page-types.c%29">https://github.com/torvalds/linux/blob/master/tools/vm/page-types.c)</a>.</p>
+</code></pre></div><p>But what if we want to get the dirty page stats for a file. To answer this question linux kernel provides <a href="https://www.kernel.org/doc/Documentation/vm/pagemap.txt" target="_blank" rel="noopener">2 files</a> in <code>procfs</code>: <code>/proc/PID/pagemap</code> and <code>/proc/kpageflags</code>. I&rsquo;m showing how to write our own tool with them later in series, but for now we can use the debug tool from the linux kernel repo to get per file page info: <code>page-types</code> (<a href="https://github.com/torvalds/linux/blob/master/tools/vm/page-types.c%29" target="_blank" rel="noopener">https://github.com/torvalds/linux/blob/master/tools/vm/page-types.c)</a>.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo page-types -f /var/tmp/file1.db -b dirty
 </code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">             flags      page-count       MB  symbolic-flags                     long-symbolic-flags
 0x0000000000000838             <span style="color:#ae81ff">267</span>        <span style="color:#ae81ff">1</span>  ___UDl_____M________________________________       uptodate,dirty,lru,mmap
@@ -526,7 +526,7 @@ Private_Dirty:       <span style="color:#ae81ff">736</span> kB
 </ul>
 <blockquote class="book-hint info">
   <p><strong>NOTE</strong></p>
-<p>You still need to care about write berries and understand how the underlying file system works. Usually a file append operation is safe and can&rsquo;t corrupt the previous written data. Other types of mutate operations may corrupt your files (for instance even with default journal settings in ext4). That&rsquo;s why all database management systems like MongoDB, PostgreSQL, Etcd, Dgraph, etc have a write ahead logs (WAL) which are append only. If you&rsquo;re curious more about this topic, this <a href="https://dgraph.io/blog/post/alice/">blog post from Dgraph</a> is a good starting point.</p>
+<p>You still need to care about write berries and understand how the underlying file system works. Usually a file append operation is safe and can&rsquo;t corrupt the previous written data. Other types of mutate operations may corrupt your files (for instance even with default journal settings in ext4). That&rsquo;s why all database management systems like MongoDB, PostgreSQL, Etcd, Dgraph, etc have a write ahead logs (WAL) which are append only. If you&rsquo;re curious more about this topic, this <a href="https://dgraph.io/blog/post/alice/" target="_blank" rel="noopener">blog post from Dgraph</a> is a good starting point.</p>
 
 </blockquote>
 

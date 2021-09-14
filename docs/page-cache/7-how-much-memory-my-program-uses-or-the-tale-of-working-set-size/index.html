@@ -16,7 +16,7 @@
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.23e163f906f996fc0fe79b871e3f821b8f290098e043656c181929be0079ed20.js" integrity="sha256-I&#43;Fj&#43;Qb5lvwP55uHHj&#43;CG48pAJjgQ2VsGBkpvgB57SA=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.e4546d80b16dfeb882726da8284b025447ab0b9cfa6cc8128f98e024c8829bb4.js" integrity="sha256-5FRtgLFt/riCcm2oKEsCVEerC5z6bMgSj5jgJMiCm7Q=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -336,7 +336,7 @@ https://github.com/alex-shpak/hugo-book
 <li>How much memory does you/my/their application/service/database use?</li>
 </ul>
 <p>The answer for the first question should be already obvious fo the reader (whispering &ldquo;Page Cache&rdquo;). But the second one is much more trickier. Usually people think that the <code>RSS</code> column from the <code>top</code> or <code>ps</code>  output is a good starting point to evaluate the memory utilization. Although this statement may be correct in some cases, it can usually lead to misunderstanding of Page Cache importance and its impact on the service performance and reliability.</p>
-<p>Let&rsquo;s take a well-known <code>top</code> (<code>man 1 top</code>) <a href="https://github.com/mmalecki/procps/blob/master/top.c">tool</a> as an example in order to investigate its memory consumption. It&rsquo;s written in C and it does nothing but prints process' stats in the loop. <code>top</code> doesn&rsquo;t heavily work with disks and thus Page Cache, it doesn&rsquo;t touch network, its only purpose is to read data from <code>procfs</code> and to show it to the user in a nice format. So it should be easy to understand its working set, shouldn&rsquo;t it?</p>
+<p>Let&rsquo;s take a well-known <code>top</code> (<code>man 1 top</code>) <a href="https://github.com/mmalecki/procps/blob/master/top.c" target="_blank" rel="noopener">tool</a> as an example in order to investigate its memory consumption. It&rsquo;s written in C and it does nothing but prints process' stats in the loop. <code>top</code> doesn&rsquo;t heavily work with disks and thus Page Cache, it doesn&rsquo;t touch network, its only purpose is to read data from <code>procfs</code> and to show it to the user in a nice format. So it should be easy to understand its working set, shouldn&rsquo;t it?</p>
 <p>Let&rsquo;s start the <code>top</code> process in a new cgroup:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ systemd-run --user -P -t -G --wait top
 </code></pre></div><p>And in the another terminal let&rsquo;s start our learning. Begin with the <code>ps</code>:</p>
@@ -347,7 +347,7 @@ vagrant   <span style="color:#ae81ff">611963</span>  0.1  0.2  <span style="colo
 ...                                  ⬆
                                   LOOK HERE
 </code></pre></div><p>As you can see from the above the <code>top</code> process uses ~4MiB of memory according to the <code>ps</code> output.</p>
-<p>Now let&rsquo;s get more details from the <code>procfs</code> and its <a href="https://www.kernel.org/doc/Documentation/filesystems/proc.rst"><code>/proc/pid/smaps_rollup</code> file</a>, which is basically a sum of all memory areas from the <code>/proc/pid/smaps</code>. Fo my pid:</p>
+<p>Now let&rsquo;s get more details from the <code>procfs</code> and its <a href="https://www.kernel.org/doc/Documentation/filesystems/proc.rst" target="_blank" rel="noopener"><code>/proc/pid/smaps_rollup</code> file</a>, which is basically a sum of all memory areas from the <code>/proc/pid/smaps</code>. Fo my pid:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/628011/smaps_rollup
 55df25e91000-7ffdef5f7000 ---p <span style="color:#ae81ff">00000000</span> 00:00 <span style="color:#ae81ff">0</span>                          <span style="color:#f92672">[</span>rollup<span style="color:#f92672">]</span>
 Rss:                <span style="color:#ae81ff">3956</span> kB  ⓵
@@ -413,7 +413,7 @@ active_file <span style="color:#ae81ff">0</span>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo ../vm/page-types --pid <span style="color:#ae81ff">628011</span> --raw -M -l -N | awk <span style="color:#e6db74">&#39;{print $2}&#39;</span> | grep -E <span style="color:#e6db74">&#39;^1$&#39;</span> | wc -l
 <span style="color:#ae81ff">248</span>
 </code></pre></div><p>The above means that <code>248 pages</code> or <code>992 KiB</code> is unique set size (USS) of the <code>top</code> process.</p>
-<p>Or we can use our knowledge about <code>/proc/pid/pagemap</code>, <code>/proc/kpagecount</code> and <code>/proc/pid/maps</code> and write our own tool to get a unique set size. The tool can be found in the <a href="https://github.com/brk0v/sre-page-cache-article/tree/main/uss">github repo</a>.</p>
+<p>Or we can use our knowledge about <code>/proc/pid/pagemap</code>, <code>/proc/kpagecount</code> and <code>/proc/pid/maps</code> and write our own tool to get a unique set size. The tool can be found in the <a href="https://github.com/brk0v/sre-page-cache-article/tree/main/uss" target="_blank" rel="noopener">github repo</a>.</p>
 <p>And if we run it, we should get the same output as <code>page-type</code> gave us:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo go run ./main.go <span style="color:#ae81ff">628011</span>
 <span style="color:#ae81ff">248</span>
@@ -422,16 +422,16 @@ active_file <span style="color:#ae81ff">0</span>
   Idle pages and working set size
   <a class="anchor" href="#idle-pages-and-working-set-size">#</a>
 </h2>
-<p>Readers who have gotten this far may be curious about one more kernel file: <a href="https://www.kernel.org/doc/Documentation/vm/idle_page_tracking.txt"><code>/sys/kernel/mm/page_idle</code></a>.</p>
+<p>Readers who have gotten this far may be curious about one more kernel file: <a href="https://www.kernel.org/doc/Documentation/vm/idle_page_tracking.txt" target="_blank" rel="noopener"><code>/sys/kernel/mm/page_idle</code></a>.</p>
 <p>You can use it to estimate the working set size of a process. The main idea is to mark some pages with the special idle flag and after some time check the difference making assumptions about the working data set size.</p>
-<p>You can find great reference tools in Brendan Gregg&rsquo;s <a href="https://github.com/c/wss">repository</a>.</p>
+<p>You can find great reference tools in Brendan Gregg&rsquo;s <a href="https://github.com/c/wss" target="_blank" rel="noopener">repository</a>.</p>
 <p>Let&rsquo;s run it for out <code>top</code> process:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo ./wss-v1 <span style="color:#ae81ff">628011</span> <span style="color:#ae81ff">60</span> 
 Watching PID <span style="color:#ae81ff">628011</span> page references during 60.00 seconds...
 Est<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span>     Ref<span style="color:#f92672">(</span>MB<span style="color:#f92672">)</span> 
 60.117        2.00
 </code></pre></div><p>The above means, that from the 4MiB of RSS data, the process uses only 2 MiB during the 60 second interval.</p>
-<p>For more information you can also read this <a href="https://lwn.net/Articles/642202/">LWN article</a>.</p>
+<p>For more information you can also read this <a href="https://lwn.net/Articles/642202/" target="_blank" rel="noopener">LWN article</a>.</p>
 <p>The drawbacks of this method are the following:</p>
 <ul>
 <li>it can be slow for a process with a huge memory footprint;</li>
@@ -446,7 +446,7 @@ Est<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span>    
 <p>As you can see throughout the series, I emphasize that it&rsquo;s very important to run all services in their own cgroups with carefully configured limits. This usually leads to better service performance and a more uniform and correct use of system resources.</p>
 <p>But what is still unclear is where to start. Which value to choose? Is it good to use the <code>memory.current</code> value? Or use the unique set size? Or estimate the working set size with the idle page flag? Though all these ways may be useful in some situation, for a general case I would suggest using the following PSI approach.</p>
 <p>One more note about the <code>memory.current</code> before I continue with the PSI. If a cgroup doesn&rsquo;t have a memory limit and the system has a lot of free memory for the process, the <code>memory.current</code> will simply show all the memory that your application will has touched up to that point. It can include logs records, unneeded libs, etc. Using the <code>memory.current</code> number as a memory limit would be wasteful for the system and don&rsquo;t help you in the capacity planning.</p>
-<p>The modern approach to address this hard question is to use PSI in order to understand how a cgroup reacts to new memory allocations and Page Cache evictions. <a href="https://github.com/facebookincubator/senpai/blob/main/senpai.py"><code>senapi</code></a> is a simple automated script, that collects and parse the PSI info, and adjusts the <code>memory.high</code>:</p>
+<p>The modern approach to address this hard question is to use PSI in order to understand how a cgroup reacts to new memory allocations and Page Cache evictions. <a href="https://github.com/facebookincubator/senpai/blob/main/senpai.py" target="_blank" rel="noopener"><code>senapi</code></a> is a simple automated script, that collects and parse the PSI info, and adjusts the <code>memory.high</code>:</p>
 <p>Let&rsquo;s experiment with my test MongoDB installation. I have 2.6GiB of data:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo du -hs /var/lib/mongodb/
 2.4G    /var/lib/mongodb/
@@ -486,7 +486,7 @@ Est<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span>    
   <a class="anchor" href="#-and-what-about-writeback">#</a>
 </h2>
 <p>To be honest, this question is more difficult to answer. As I write this article, I do not know of a good tool for evaluating and predicting writeback and IO usage. However the rule of thumb is to start with <code>io.latency</code> and then try to use <code>io.cost</code> if needed.</p>
-<p>There is also an interesting new project <a href="https://github.com/facebookexperimental/resctl-demo">resctl-demo</a> which can help in proper limits identification.</p>
+<p>There is also an interesting new project <a href="https://github.com/facebookexperimental/resctl-demo" target="_blank" rel="noopener">resctl-demo</a> which can help in proper limits identification.</p>
 
 
 

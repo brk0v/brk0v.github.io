@@ -89,8 +89,8 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</guid>
-      <description>Direct IO (DIO) #  To be done.
-Why it’s good #   Allows bypass Page Cache Async IO  Why it’s bad and io_uring alternative #  Read next chapter →  </description>
+      <description>Direct IO (DIO) (NOT READY) #  As usual, there is always an exception in any rule. And Page Cache is not different. So let&amp;rsquo;s talk about file reads and writes which can ignore Page Cache content.
+Why it’s good #  Some applications require low-level access to the storage subsystem and linux kernel gives such feature by providing O_DIRECT file open flag. This IO is called the Direct IO or DIO.</description>
     </item>
     
     <item>

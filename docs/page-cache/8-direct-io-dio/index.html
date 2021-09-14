@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Direct IO (DIO) #  To be done.
-Why it’s good #   Allows bypass Page Cache Async IO  Why it’s bad and io_uring alternative #  Read next chapter →  ">
+<meta name="description" content="Direct IO (DIO) (NOT READY) #  As usual, there is always an exception in any rule. And Page Cache is not different. So let&rsquo;s talk about file reads and writes which can ignore Page Cache content.
+Why it’s good #  Some applications require low-level access to the storage subsystem and linux kernel gives such feature by providing O_DIRECT file open flag. This IO is called the Direct IO or DIO.">
 <meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="8. Direct IO" />
-<meta property="og:description" content="Direct IO (DIO) #  To be done.
-Why it’s good #   Allows bypass Page Cache Async IO  Why it’s bad and io_uring alternative #  Read next chapter →  " />
+<meta property="og:description" content="Direct IO (DIO) (NOT READY) #  As usual, there is always an exception in any rule. And Page Cache is not different. So let&rsquo;s talk about file reads and writes which can ignore Page Cache content.
+Why it’s good #  Some applications require low-level access to the storage subsystem and linux kernel gives such feature by providing O_DIRECT file open flag. This IO is called the Direct IO or DIO." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" /><meta property="article:section" content="docs" />
 
@@ -18,7 +18,7 @@ Why it’s good #   Allows bypass Page Cache Async IO  Why it’s bad and io_uri
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.23e163f906f996fc0fe79b871e3f821b8f290098e043656c181929be0079ed20.js" integrity="sha256-I&#43;Fj&#43;Qb5lvwP55uHHj&#43;CG48pAJjgQ2VsGBkpvgB57SA=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.e4546d80b16dfeb882726da8284b025447ab0b9cfa6cc8128f98e024c8829bb4.js" integrity="sha256-5FRtgLFt/riCcm2oKEsCVEerC5z6bMgSj5jgJMiCm7Q=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -302,7 +302,7 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#direct-io-dio">Direct IO (DIO)</a>
+    <li><a href="#direct-io-dio-not-ready">Direct IO (DIO) (NOT READY)</a>
       <ul>
         <li><a href="#why-its-good">Why it’s good</a></li>
         <li><a href="#why-its-bad-and-io_uring-alternative">Why it’s bad and <code>io_uring</code> alternative</a></li>
@@ -320,23 +320,38 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"><h1 id="direct-io-dio">
-  Direct IO (DIO)
-  <a class="anchor" href="#direct-io-dio">#</a>
+  <article class="markdown"><h1 id="direct-io-dio-not-ready">
+  Direct IO (DIO) (NOT READY)
+  <a class="anchor" href="#direct-io-dio-not-ready">#</a>
 </h1>
-<p>To be done.</p>
+<p>As usual, there is always an exception in any rule. And Page Cache is not different. So let&rsquo;s talk about file reads and writes which can ignore Page Cache content.</p>
 <h2 id="why-its-good">
   Why it’s good
   <a class="anchor" href="#why-its-good">#</a>
 </h2>
+<p>Some applications require low-level access to the storage subsystem and linux kernel gives such feature by providing <code>O_DIRECT</code> file open flag. This IO is called the Direct IO or DIO. A program, which opens a file with this flag, bypasses the kernel Page Cache completely and directly communicates with the VFS and the underlying filesystem.</p>
+<p>The pros are:</p>
 <ul>
-<li>Allows bypass Page Cache</li>
-<li>Async IO</li>
+<li>Lower CPU usage and thus higher throughput you can get;</li>
+<li>Async IO works only with DIO (<code>io_submit</code>);</li>
+<li>Avoiding double buffering between Page Cache and user-space buffers.</li>
+<li>&hellip;</li>
 </ul>
 <h2 id="why-its-bad-and-io_uring-alternative">
   Why it’s bad and <code>io_uring</code> alternative
   <a class="anchor" href="#why-its-bad-and-io_uring-alternative">#</a>
 </h2>
+<ul>
+<li>need to align read and writes to the page or the block size;</li>
+<li>not all file systems are the same in implementing DIO;</li>
+<li>not cross platform;</li>
+<li>DIO and buffered IO can&rsquo;t be performed at the same time for the file.</li>
+<li>&hellip;</li>
+</ul>
+<blockquote class="book-hint warning">
+  Heads uu with DIO still need to run <code>fsync()</code> on a file!
+</blockquote>
+
 
 
 
@@ -388,7 +403,7 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#direct-io-dio">Direct IO (DIO)</a>
+    <li><a href="#direct-io-dio-not-ready">Direct IO (DIO) (NOT READY)</a>
       <ul>
         <li><a href="#why-its-good">Why it’s good</a></li>
         <li><a href="#why-its-bad-and-io_uring-alternative">Why it’s bad and <code>io_uring</code> alternative</a></li>
