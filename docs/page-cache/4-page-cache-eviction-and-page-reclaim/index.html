@@ -16,7 +16,7 @@
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.e4546d80b16dfeb882726da8284b025447ab0b9cfa6cc8128f98e024c8829bb4.js" integrity="sha256-5FRtgLFt/riCcm2oKEsCVEerC5z6bMgSj5jgJMiCm7Q=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.c8287f8f0ca9a415c1e303c389677f95494ea96e8dba39736814f2f049801d4a.js" integrity="sha256-yCh/jwyppBXB4wPDiWd/lUlOqW6NujlzaBTy8EmAHUo=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -305,7 +305,7 @@ https://github.com/alex-shpak/hugo-book
         <li><a href="#theory">Theory</a></li>
         <li><a href="#manual-pages-eviction-with-posix_fadv_dontneed">Manual pages eviction with <code>POSIX_FADV_DONTNEED</code></a></li>
         <li><a href="#make-your-memory-unevictable">Make your memory unevictable</a></li>
-        <li><a href="#swappiness-and-modern-kernels">Swappiness and modern kernels</a></li>
+        <li><a href="#page-cache-vmswappiness-and-modern-kernels">Page Cache, <code>vm.swappiness</code> and modern kernels</a></li>
         <li><a href="#understanding-memory-reclaim-process-with-procpidpagemap">Understanding memory reclaim process with <code>/proc/pid/pagemap</code></a>
           <ul>
             <li><a href="#page-types-kernel-page-tool"><code>page-types</code> kernel page tool</a></li>
@@ -449,11 +449,49 @@ flowchart LR
 </code></pre></div><p>And finally, to get the amount of unevictable memory, please, check the cgroup memory controller stats file for your cgroup:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ grep unevictable /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat
 unevictable <span style="color:#ae81ff">0</span>
-</code></pre></div><h2 id="swappiness-and-modern-kernels">
-  Swappiness and modern kernels
-  <a class="anchor" href="#swappiness-and-modern-kernels">#</a>
+</code></pre></div><h2 id="page-cache-vmswappiness-and-modern-kernels">
+  Page Cache, <code>vm.swappiness</code> and modern kernels
+  <a class="anchor" href="#page-cache-vmswappiness-and-modern-kernels">#</a>
 </h2>
-<p>TBD</p>
+<p>Now, when we have understanding of the basic reclaiming theory with 4 LRU lists (for anon and file memory) and evictable/unevictable types of memory, we can talk about the sources to refill the system free memory. Kernel constantly maintains lists of free pages for itself and user-space needs. If such lists get below the threshold, the linux kernel starts to scan LRU lists in order to find pages to reclaim. This allows kernel to keep memory in some equilibrium state.</p>
+<p>The Page Cache memory is usually evictable memory (with some rare <code>mlock()</code> exceptions). And thus, it maybe look obvious, that Page Cache should be the first and the only option for memory eviction and reclaiming. Since disks already have all that data, right? But fortunately or unfortunately, in real production situations, this is not always the best choice.</p>
+<p>If the system has swap (and <a href="https://chrisdown.name/2018/01/02/in-defence-of-swap.html" target="_blank" rel="noopener">it should have it with modern kernels</a>), the kernel has one more option. It can swap out the anonymous (not file-backed) pages. It may seem counterintuitive, but the reality is that sometimes user-space daemons can load tons of initialization code and never use it afterwards. Some programs, especially statically built, for example, could have a lot of functionality in their binaries that may be used only several times in some edge cases. In all such situations there is no much sense to keep them in valuable memory.</p>
+<p>So, in order to control which inactive LRU list to scan and how often, the kernel has the <code>sysctl</code> <code>vm.swappiness</code> knob.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo sysctl -a | grep swap
+vm.swappiness <span style="color:#f92672">=</span> <span style="color:#ae81ff">60</span>
+</code></pre></div><p>There are a lot of blog posts, stories and forum threads about this magic setting. On top of that, the legacy cgroup v1 memory subsystem has its own per cgroup <code>swappiness</code> knob. All this makes information about current <code>vm.swappiness</code> meaning hard to understand and figure out. But let me try.</p>
+<p>First of all, by default <code>vm.swappiness</code> is set 60, <a href="https://github.com/torvalds/linux/blob/a3fa7a101dcff93791d1b1bdb3affcad1410c8c1/mm/vmscan.c#L174-L177" target="_blank" rel="noopener">the min is 0 and the max is 200</a>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">/*
+ * From <span style="color:#ae81ff">0</span> .. 200.  Higher means more swappy.
+ */
+int vm_swappiness <span style="color:#f92672">=</span> 60;
+</code></pre></div><p>The 100 value means that the kernel considers anonymous and Page Cache pages equally in terms of reclamation.</p>
+<p>Secondly, the cgroup v2 memory controller doesn&rsquo;t have the <code>swappiness</code> <a href="https://elixir.bootlin.com/linux/v5.15-rc1/source/include/linux/swap.h#L706" target="_blank" rel="noopener">knob at all</a>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#ifdef CONFIG_MEMCG</span>
+static inline int mem_cgroup_swappiness<span style="color:#f92672">(</span>struct mem_cgroup *memcg<span style="color:#f92672">)</span>
+<span style="color:#f92672">{</span>
+	/* Cgroup2 doesn<span style="color:#960050;background-color:#1e0010">&#39;</span>t have per-cgroup swappiness */
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>cgroup_subsys_on_dfl<span style="color:#f92672">(</span>memory_cgrp_subsys<span style="color:#f92672">))</span>
+		<span style="color:#66d9ef">return</span> vm_swappiness;
+
+	/* root ? */
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>mem_cgroup_disabled<span style="color:#f92672">()</span> <span style="color:#f92672">||</span> mem_cgroup_is_root<span style="color:#f92672">(</span>memcg<span style="color:#f92672">))</span>
+		<span style="color:#66d9ef">return</span> vm_swappiness;
+
+	<span style="color:#66d9ef">return</span> memcg-&gt;swappiness;
+</code></pre></div><p>Instead, the kernel developers decided to significantly change the swappiness logic. You can check it if run <a href="https://github.com/torvalds/linux/blame/a3fa7a101dcff93791d1b1bdb3affcad1410c8c1/mm/vmscan.c#L2574" target="_blank" rel="noopener"><code>git blame</code> on <code>mm/vmscan.c</code> and search for the <code>get_scan_count()</code> function</a>.</p>
+<p>For example, at the time of writing, the anonymous memory will not be touched regardless of <code>vm.swappiness</code> if <a href="https://github.com/torvalds/linux/blob/a3fa7a101dcff93791d1b1bdb3affcad1410c8c1/mm/vmscan.c#L2623-L2630" target="_blank" rel="noopener">the inactive LRU Page Cache list has decent amount of pages</a>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">	/*
+	 * If there is enough inactive page cache, we <span style="color:#66d9ef">do</span> not reclaim
+	 * anything from the anonymous working right now.
+	 */
+	<span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>sc-&gt;cache_trim_mode<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+		scan_balance <span style="color:#f92672">=</span> SCAN_FILE;
+		goto out;
+	<span style="color:#f92672">}</span>
+</code></pre></div><p>The full logic of making decisions what and from which LRU to reclaim you can find in the <a href="https://github.com/torvalds/linux/blob/master/mm/vmscan.c" target="_blank" rel="noopener"><code>get_scan_count()</code>function in <code>mm/vmscan.c</code></a> and</p>
+<p>Also, please take a look at the <code>memory.swap.high</code> and the <code>memory.swap.max</code> cgroup v2 settings. You can also control them per cgroup if you want in order to correct <code>vm.swappiness</code>.</p>
+<p>Another interesting topic, which you should keep in mind when dealing with the swap and Page Cache, is the IO load during the swapping in/out processes. If you have IO pressure, you can easily hit your IO limits and, for example, degrade your Page Cache writeback performance.</p>
 <h2 id="understanding-memory-reclaim-process-with-procpidpagemap">
   Understanding memory reclaim process with <code>/proc/pid/pagemap</code>
   <a class="anchor" href="#understanding-memory-reclaim-process-with-procpidpagemap">#</a>
@@ -592,7 +630,7 @@ Access: Mon Aug <span style="color:#ae81ff">30</span> 13:15:47 <span style="colo
         <li><a href="#theory">Theory</a></li>
         <li><a href="#manual-pages-eviction-with-posix_fadv_dontneed">Manual pages eviction with <code>POSIX_FADV_DONTNEED</code></a></li>
         <li><a href="#make-your-memory-unevictable">Make your memory unevictable</a></li>
-        <li><a href="#swappiness-and-modern-kernels">Swappiness and modern kernels</a></li>
+        <li><a href="#page-cache-vmswappiness-and-modern-kernels">Page Cache, <code>vm.swappiness</code> and modern kernels</a></li>
         <li><a href="#understanding-memory-reclaim-process-with-procpidpagemap">Understanding memory reclaim process with <code>/proc/pid/pagemap</code></a>
           <ul>
             <li><a href="#page-types-kernel-page-tool"><code>page-types</code> kernel page tool</a></li>
