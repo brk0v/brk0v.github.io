@@ -12,7 +12,7 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/</guid>
-      <description>SRE deep dive into Linux Page Cache #  In this series I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine every day DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to:</description>
+      <description>SRE deep dive into Linux Page Cache #  In this post series I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to:</description>
     </item>
     
     <item>
@@ -21,8 +21,8 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/</guid>
-      <description>Prepare environment for experiments #  Before I start, I want to be on the same page with the reader, so any example or any code snippet can be executed, compiled and checked. Therefore we need a modern GNU/Linux installation whrer we can play with code and kernel.
-If you are using Windows or Mac OS, I would suggest installing Vagrant with Virtual Box. For GNU/Linux distro I&amp;rsquo;d like to use Arch Linux.</description>
+      <description>Prepare environment for experiments #  Before I start, I want to be on the same page with the reader, so any example or any code snippet can be executed, compiled and checked. Therefore we need a modern GNU/Linux installation where we can play with code and kernel.
+If you are using Windows or Mac OS, I would suggest installing Vagrant with Virtual Box. For the GNU/Linux distributive I&amp;rsquo;d like to use Arch Linux.</description>
     </item>
     
     <item>

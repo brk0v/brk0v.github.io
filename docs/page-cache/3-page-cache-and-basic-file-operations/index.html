@@ -20,7 +20,7 @@ Utils needed for this section:
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.8435e1648bd3c88097025f2efefea1568e6173321b12fdeecb5d5b47fc391957.js" integrity="sha256-hDXhZIvTyICXAl8u/v6hVo5hczIbEv3uy11bR/w5GVc=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.b76eb01f1ebe4ae7648cf6a307dfea14ad5ec2a33b2bd505ff04fd450d5dd244.js" integrity="sha256-t26wHx6&#43;SudkjPajB9/qFK1ewqM7K9UF/wT9RQ1d0kQ=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -470,7 +470,7 @@ read<span style="color:#f92672">(</span>3, <span style="color:#e6db74">&#34;%B\3
 </code></pre></div><p>As you can see we have 1 page cached after only 2B write. It&rsquo;s an important observation because <strong>if your writes are smaller than a page size, you will have 4KiB reads before your writes</strong> in order to populate Page Cache.</p>
 <p>Also we can check dirty pages by reading the current cgroup memory stat file.s</p>
 <p>Get a current terminal cgroup:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/self/cgroups
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/self/cgroup
 0::/user.slice/user-1000.slice/session-4.scope
 </code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ grep dirty /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat  
 file_dirty <span style="color:#ae81ff">4096</span>
@@ -495,7 +495,7 @@ file_dirty <span style="color:#ae81ff">4096</span>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/meminfo | grep Dirty
 Dirty:                 <span style="color:#ae81ff">4</span> kB
 </code></pre></div><p>Often the entire system information is hard to interpreter and use because we can&rsquo;t determine which process and which file has these dirty pages.</p>
-<p>That&rsquo;s why the best option in order to get dirty page info is to use cgroups:</p>
+<p>That&rsquo;s why the best option in order to get dirty page info is to use cgroup:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat  | grep dirt
 file_dirty <span style="color:#ae81ff">4096</span>
 </code></pre></div><p>If your program uses <code>mmap()</code> to write to files, you have one more option to get dirty pages stats with a per process granularity. <code>procfs</code> has the <code>/proc/PID/smaps</code> where memory counters for the process are displayed broken down by virtual memory areas (VMA). With <code>mmap()</code> process has the VMA mapped to the file and corresponding info. We can get dirty pages by finding:</p>

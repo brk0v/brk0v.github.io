@@ -16,7 +16,7 @@
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.8435e1648bd3c88097025f2efefea1568e6173321b12fdeecb5d5b47fc391957.js" integrity="sha256-hDXhZIvTyICXAl8u/v6hVo5hczIbEv3uy11bR/w5GVc=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.b76eb01f1ebe4ae7648cf6a307dfea14ad5ec2a33b2bd505ff04fd450d5dd244.js" integrity="sha256-t26wHx6&#43;SudkjPajB9/qFK1ewqM7K9UF/wT9RQ1d0kQ=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -472,7 +472,7 @@ cgroup inode    percent       pages        path
   Safe ad-hoc tasks
   <a class="anchor" href="#safe-ad-hoc-tasks">#</a>
 </h2>
-<p>Let&rsquo;s assume we need to run the <code>wget</code> command or manually install some packages by calling a configuration management system (e.g. <code>saltstack</code>). Both these tasks may be unpredictably disks IO heavy. In order to run them safely and not interact with any production load, we should not run them in the root cgroup or terminal cgroup without any limits. It would be very tedious and cumbersome to manually create a cgroup for your task and manually configure it for every ad-hoc task. But fortunately, we don&rsquo;t have to, as so all modern GNU/Linux distros come with the <code>systemd</code> out of the box and enabled by default cgroup v2. The <code>systemd-run</code> with a lot of other cool features from <code>systemd</code> make our life easer and save a lot of time.</p>
+<p>Let&rsquo;s assume we need to run the <code>wget</code> command or manually install some packages by calling a configuration management system (e.g. <code>saltstack</code>). Both these tasks may be unpredictably disks IO heavy. In order to run them safely and not interact with any production load, we should not run them in the root cgroup or terminal cgroup without any limits. It would be very tedious and cumbersome to manually create a cgroup for your task and manually configure it for every ad-hoc task. But fortunately, we don&rsquo;t have to, as so all modern GNU/Linux distributives come with the <code>systemd</code> out of the box and enabled by default cgroup v2. The <code>systemd-run</code> with a lot of other cool features from <code>systemd</code> make our life easer and save a lot of time.</p>
 <p>So, for example <code>wget</code> task can be run in the following manner:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">systemd-run --user -P -t -G --wait -p MemoryMax<span style="color:#f92672">=</span>12M wget http://ubuntu.ipacct.com/releases/21.04/ubuntu-21.04-live-server-amd64.iso
 Running as unit: run-u2.service                         ⬅  LOOK HERE
