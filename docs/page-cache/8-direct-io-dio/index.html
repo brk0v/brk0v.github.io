@@ -18,7 +18,7 @@ Why it’s good #  Some applications require low-level access to the storage sub
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.2a8973130420d3d504a78e3dd55922827d6834ef4ef05131a88cefe94f9dab3b.js" integrity="sha256-KolzEwQg09UEp4491Vkign1oNO9O8FExqIzv6U&#43;dqzs=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.af7407ece0408d598ef93269cfe9dca1a81ca661e8d39823962aa78fdb2e9317.js" integrity="sha256-r3QH7OBAjVmO&#43;TJpz&#43;ncoagcpmHo05gjliqnj9sukxc=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -249,6 +249,12 @@ https://github.com/alex-shpak/hugo-book
       </a>
   </li>
   
+  <li>
+    <a href="https://www.linkedin.com/in/biriukov/" target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
+        Linkedin
+      </a>
+  </li>
+  
 </ul>
 
 
@@ -333,8 +339,9 @@ https://github.com/alex-shpak/hugo-book
 <p>The pros are:</p>
 <ul>
 <li>Lower CPU usage and thus higher throughput you can get;</li>
-<li>Async IO works only with DIO (<code>io_submit</code>);</li>
-<li>Avoiding double buffering between Page Cache and user-space buffers.</li>
+<li>Linux Async IO (<code>man 7 aio</code>) works only with DIO (<code>io_submit</code>);</li>
+<li>zero-copy Avoiding double buffering () between Page Cache and user-space buffers;</li>
+<li>More control over the writeback.</li>
 <li>&hellip;</li>
 </ul>
 <h2 id="why-its-bad-and-io_uring-alternative">
@@ -342,17 +349,31 @@ https://github.com/alex-shpak/hugo-book
   <a class="anchor" href="#why-its-bad-and-io_uring-alternative">#</a>
 </h2>
 <ul>
-<li>need to align read and writes to the page or the block size;</li>
+<li>need to align read and writes to the block size;</li>
 <li>not all file systems are the same in implementing DIO;</li>
+<li>DIO without Linux AIO is slow and not useful at all;</li>
 <li>not cross platform;</li>
 <li>DIO and buffered IO can&rsquo;t be performed at the same time for the file.</li>
 <li>&hellip;</li>
 </ul>
+<p>DIO usually makes no sense without AIO, but AIO has a lot of <a href="https://lwn.net/Articles/671657/" target="_blank" rel="noopener">bad design decisions</a>:</p>
+<blockquote>
+<p>So I think this is ridiculously ugly.</p>
+<p>AIO is a horrible ad-hoc design, with the main excuse being &ldquo;other,
+less gifted people, made that design, and we are implementing it for
+compatibility because database people - who seldom have any shred of
+taste - actually use it&rdquo;.</p>
+<p>But AIO was always really really ugly.</p>
+<pre><code>                                                Linus Torvalds
+</code></pre>
+</blockquote>
 <blockquote class="book-hint warning">
   Heads-up! With DIO still need to run <code>fsync()</code> on a file!
 </blockquote>
 
-
+<p>Let&rsquo;s write an example with <code>golang</code> and <a href="https://github.com/Iceber/iouring-go" target="_blank" rel="noopener">iouring-go library</a>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">TODO</span>
+</code></pre></div>
 
 
 
