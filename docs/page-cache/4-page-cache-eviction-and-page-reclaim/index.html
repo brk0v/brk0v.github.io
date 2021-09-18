@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Page Cache eviction and page reclaim #  So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in cache and flushing cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache.">
+<meta name="description" content="Page Cache eviction and page reclaim #  So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in the cache and flushing the cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache.">
 <meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="4. Eviction and page reclaim" />
-<meta property="og:description" content="Page Cache eviction and page reclaim #  So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in cache and flushing cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache." />
+<meta property="og:description" content="Page Cache eviction and page reclaim #  So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in the cache and flushing the cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" /><meta property="article:section" content="docs" />
 
@@ -16,7 +16,7 @@
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.af7407ece0408d598ef93269cfe9dca1a81ca661e8d39823962aa78fdb2e9317.js" integrity="sha256-r3QH7OBAjVmO&#43;TJpz&#43;ncoagcpmHo05gjliqnj9sukxc=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.69af0f445d6cfacf8806dbad5eee70eb90b9fde37d0d4f2bc9fd31009630d087.js" integrity="sha256-aa8PRF1s&#43;s&#43;IBtutXu5w65C5/eN9DU8ryf0xAJYw0Ic=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -336,17 +336,18 @@ https://github.com/alex-shpak/hugo-book
   Page Cache eviction and page reclaim
   <a class="anchor" href="#page-cache-eviction-and-page-reclaim">#</a>
 </h1>
-<p>So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in cache and flushing cache content manually. But the most important part of any cache system is its <em>eviction policy</em> or regarding Linux Page Cache it&rsquo;s also the memory <em>page reclaim</em> policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache. The main approach to control and tune Page Cache is the cgroup subsystem. You can divide the server memory into a number of smaller caches (cgroups) and thus control and protect applications and services. In additional, the cgroup memory and IO controllers provide a lot of statistics that is useful for tuning your software and understanding the internals of the cache.</p>
+<p>So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in the cache and flushing the cache content manually. But the most important part of any cache system is its <em>eviction policy</em> or regarding Linux Page Cache it&rsquo;s also the memory <em>page reclaim</em> policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache.</p>
+<p>The main approach to control and tune Page Cache is the cgroup subsystem. You can divide the memory of the server into a number of smaller caches (cgroups) and thus control and protect applications and services. In addition, the cgroup memory and IO controllers provide a lot of statistics that is useful for tuning your software and understanding the internals of the cache.</p>
 <h2 id="theory">
   Theory
   <a class="anchor" href="#theory">#</a>
 </h2>
-<p>Linux Page Cache is closely tighten with Linux Memory Management, cgroup and virtual file system (VFS). So, in order to understand how the eviction works, we need to start with internals of memory reclaim policy. Its core building block is a <strong>per cgroup pair</strong> of <strong>active and inactive lists</strong>:</p>
+<p>Linux Page Cache is closely tighten with Linux Memory Management, cgroup and virtual file system (VFS). So, in order to understand how the eviction works, we need to start with some basic internals of memory reclaim policy. Its core building block is a <strong>per cgroup pair</strong> of <strong>active and inactive lists</strong>:</p>
 <ol>
-<li>a pair for anonymous memory (for instance, allocated with <code>malloc()</code> or not file backended <code>mmap()</code>);</li>
-<li>a pair for file memory (all file operations including <code>read()</code>, <code>write</code>, file<code>mmap()</code> accesses, etc).</li>
+<li>the first pair for anonymous memory (for instance, allocated with <code>malloc()</code> or not file backended <code>mmap()</code>);</li>
+<li>the second pair for Page Cache file memory (all file operations including <code>read()</code>, <code>write</code>, file<code>mmap()</code> accesses, etc).</li>
 </ol>
-<p>The former is exactly what we are interested in. This pair is what Page Cache uses for evection process. The least recently used algorithm <a href="https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_%28LRU%29" target="_blank" rel="noopener">LRU</a> is the core of each list. In turn, these 2 list form a <a href="https://en.wikipedia.org/wiki/Page_replacement_algorithm#Clock" target="_blank" rel="noopener">double clock</a> data structure. In general, Linux should choose pages that have not been used recently (inactive), based on the fact that the pages that have not been used recently will not be used frequently in a short period of time. This is the basic idea of ​​the LRU (Least Recently Used) algorithm. Both the active and the inactive lists adopt the form of FIFO (First In First Out) for their entries. New elements are added to the head of the linked list, and the elements in between gradually move toward the end. When memory reclamation is needed, the kernel always selects the page at the end of the inactive list for reclamation. The following figure shows the simplified concept of the idea:</p>
+<p>The former is exactly what we are interested in. This pair is what linux uses for Page Cache evection process. The least recently used algorithm <a href="https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_%28LRU%29" target="_blank" rel="noopener">LRU</a> is the core of each list. In turn, these 2 list form a <a href="https://en.wikipedia.org/wiki/Page_replacement_algorithm#Clock" target="_blank" rel="noopener">double clock</a> data structure. In general, Linux should choose pages that have not been used recently (inactive), based on the fact that the pages that have not been used recently will not be used frequently in a short period of time. This is the basic idea of ​​the LRU algorithm. Both the active and the inactive lists adopt the form of FIFO (First In First Out) for their entries. New elements are added to the head of the linked list, and the elements in between gradually move toward the end. When memory reclamation is needed, the kernel always selects the page at the end of the inactive list for releasing. The following figure shows the simplified concept of the idea:</p>
 <p><img src="../images/lru.png" alt="inactive active LRU page cache lists" /></p>
 <p>For example, the system starts with the following content of the lists. A user process has just read some data from disks. This action triggered the kernel to load data to the cache. It was the first time when the kernel had to access the file, hence it added a page <code>h</code> to the head of the inactive list of the process&rsquo;s cgroup:</p>
 <p><img src="../images/eviction-1.png" alt="Adding a page h to the head of the inactive LRU list" /></p>
@@ -359,9 +360,10 @@ https://github.com/alex-shpak/hugo-book
 <p>But a new file access to the <code>h</code>&rsquo;s position in the file returns <code>h</code> back to the head of the active LRU list.</p>
 <p><img src="../images/eviction-5.png" alt="" /></p>
 <p>The above figures show the simplified version of the algorithm.</p>
-<p>But it&rsquo;s worth mentioning, that the real process of pages promotion and demotion is much more complicated and sophisticated. First of all modern hardware has <strong>&quot;<a href="https://en.wikipedia.org/wiki/Non-uniform_memory_access" target="_blank" rel="noopener">NUMA</a> node&quot;-times more LRU lists</strong> (<code>man 8 numastat</code>).</p>
-<p>In addition, Linux Page Cache has <strong>special shadow entries, concept of refault and referenced flag logic</strong> for promotion, demotion and re-promotion pages.</p>
-<p><strong>Shadow entries</strong> help to mitigate <strong>the <a href="https://en.wikipedia.org/wiki/Thrashing_%28computer_science%29" target="_blank" rel="noopener">memory thrashing problem</a></strong>. This issue happens when the programs' working set size is close to or greater than the real memory size (may be cgroup limit or the system RAM limitation). In such situation the reading pattern may evict pages from the inactive list before the subsequent second read request has appeared. The full idea described in <a href="https://elixir.bootlin.com/linux/v5.14-rc7/source/mm/workingset.c" target="_blank" rel="noopener">mm/workingset.c</a> and it includes calculating <strong>refault distance</strong>. This distance is used to make a judgment whether to put the page from the shadow entries immediately to the active LRU list or not.</p>
+<p>But it&rsquo;s worth mentioning, that the real process of pages promotion and demotion is much more complicated and sophisticated.</p>
+<p>First of all, if a system has <a href="https://en.wikipedia.org/wiki/Non-uniform_memory_access" target="_blank" rel="noopener">NUMA</a> hardware nodes (<code>man 8 numastat</code>), <strong>it has twice more LRU lists</strong>. The reason is that the kernel tries to store memory information in the NUMA nodes in order to have fewer lock contentions.</p>
+<p>In addition, Linux Page Cache also has <strong>special shadow and referenced flag logic</strong> for promotion, demotion and re-promotion pages.</p>
+<p><strong>Shadow entries</strong> help to mitigate <strong>the <a href="https://en.wikipedia.org/wiki/Thrashing_%28computer_science%29" target="_blank" rel="noopener">memory thrashing problem</a></strong>. This issue happens when the programs' working set size is close to or greater than the real memory size (may be cgroup limit or the system RAM limitation). In such situation the reading pattern may evict pages from the inactive list before the subsequent second read request has appeared. The full idea described in the <a href="https://elixir.bootlin.com/linux/v5.14-rc7/source/mm/workingset.c" target="_blank" rel="noopener">mm/workingset.c</a> and includes calculating <strong>refault distance</strong>. This distance is used to make a judgment whether to put the page from the shadow entries immediately to the active LRU list or not.</p>
 <p>Another simplification that I made was about <a href="https://elixir.bootlin.com/linux/v5.14.3/source/include/linux/page-flags.h#L105" target="_blank" rel="noopener"><code>PG_referenced</code></a> page flag. In reality the page promotion and demotion use this flag as an addition input parameter in the decision algorithm. A more correct flow of the page promotion:</p>
 
 
@@ -440,63 +442,63 @@ flowchart LR
 <p>But what if you want to force the kernel to keep your file memory in Page Cache, no matter what. This is called making the file memory <strong>unevictable</strong> .</p>
 <blockquote class="book-hint info">
   <p><strong>EXAMPLE</strong></p>
-<p>Even with modern linux kernels and properly configured cgroup limits that should keep the working data set of processes in Page Cache, sometimes you have to force the kernel to give you a 100% guarantee that your files will not be evicted from memory. This could be due to issues with other processes on the system where you share IO. Or for instance, may be an outage of a network attached storage.</p>
+<p>Sometimes you have to force the kernel to give you a 100% guarantee that your files will not be evicted from the memory. You can want it even with modern linux kernels and properly configured cgroup limits, which should keep the working data set in Page Cache. For example, due to issues with other processes on the system where you share disk and network IO. Or, for instance, because of an outage of a network attached storage.</p>
 
 </blockquote>
 
-<p>Kernel provides a bunch of syscalls: <code>mlock()</code>, <code>mlock2()</code> and <code>mlockall()</code>. As with <code>mincore()</code> you need to map a file first.</p>
+<p>Kernel provides a bunch of syscalls for doing that: <code>mlock()</code>, <code>mlock2()</code> and <code>mlockall()</code>. As with the <code>mincore()</code>, you need to map the file first.</p>
 <p><code>mlock2()</code> is a preferable syscall for Page Cache routines, because it has the handy flag <code>MLOCK_ONFAULT</code>:</p>
 <blockquote>
 <p>Lock pages that are currently resident and mark the entire range so that the remaining nonresident pages are locked when they are populated by a page fault.</p>
 </blockquote>
-<p>And don&rsquo;t forget about <em>limits</em> (<code>man 5 limits.conf</code>). It is very likely that it will have to be increased:</p>
+<p>And don&rsquo;t forget about <em>limits</em> (<code>man 5 limits.conf</code>). It is very likely that yuo need to increased it:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ulimit -l
 <span style="color:#ae81ff">64</span>
-</code></pre></div><p>And finally, to get the amount of unevictable memory, please, check the cgroup memory controller stats file for your cgroup:</p>
+</code></pre></div><p>And finally, to get the amount of unevictable memory, please, check the cgroup memory controller stats for your cgroup:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ grep unevictable /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat
 unevictable <span style="color:#ae81ff">0</span>
 </code></pre></div><h2 id="page-cache-vmswappiness-and-modern-kernels">
   Page Cache, <code>vm.swappiness</code> and modern kernels
   <a class="anchor" href="#page-cache-vmswappiness-and-modern-kernels">#</a>
 </h2>
-<p>Now, when we have understanding of the basic reclaiming theory with 4 LRU lists (for anon and file memory) and evictable/unevictable types of memory, we can talk about the sources to refill the system free memory. Kernel constantly maintains lists of free pages for itself and user-space needs. If such lists get below the threshold, the linux kernel starts to scan LRU lists in order to find pages to reclaim. This allows kernel to keep memory in some equilibrium state.</p>
-<p>The Page Cache memory is usually evictable memory (with some rare <code>mlock()</code> exceptions). And thus, it maybe look obvious, that Page Cache should be the first and the only option for memory eviction and reclaiming. Since disks already have all that data, right? But fortunately or unfortunately, in real production situations, this is not always the best choice.</p>
+<p>Now, when we have understanding of the basic reclaiming theory with 4 LRU lists (for anon and file memory) and evictable/unevictable types of memory, we can talk about the sources to refill the system free memory. The kernel constantly maintains lists of free pages for itself and user-space needs. If such lists get below the threshold, the linux kernel starts to scan LRU lists in order to find pages to reclaim. This allows kernel to keep memory in some equilibrium state.</p>
+<p>The Page Cache memory is usually evictable memory (with some rare <code>mlock()</code> exceptions). And thus, it maybe look obvious, that Page Cache should be the first and the only option for the memory eviction and reclaiming. Since disks already have all that data, right? But fortunately or unfortunately, in real production situations, this is not always the best choice.</p>
 <p>If the system has swap (and <a href="https://chrisdown.name/2018/01/02/in-defence-of-swap.html" target="_blank" rel="noopener">it should have it with modern kernels</a>), the kernel has one more option. It can swap out the anonymous (not file-backed) pages. It may seem counterintuitive, but the reality is that sometimes user-space daemons can load tons of initialization code and never use it afterwards. Some programs, especially statically built, for example, could have a lot of functionality in their binaries that may be used only several times in some edge cases. In all such situations there is no much sense to keep them in valuable memory.</p>
-<p>So, in order to control which inactive LRU list to scan and how often, the kernel has the <code>sysctl</code> <code>vm.swappiness</code> knob.</p>
+<p>So, in order to control which inactive LRU list to prefer for scans, the kernel has the <code>sysctl</code> <code>vm.swappiness</code> knob.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo sysctl -a | grep swap
 vm.swappiness <span style="color:#f92672">=</span> <span style="color:#ae81ff">60</span>
-</code></pre></div><p>There are a lot of blog posts, stories and forum threads about this magic setting. On top of that, the legacy cgroup v1 memory subsystem has its own per cgroup <code>swappiness</code> knob. All this makes information about current <code>vm.swappiness</code> meaning hard to understand and figure out. But let me try.</p>
+</code></pre></div><p>There are a lot of blog posts, stories and forum threads about this magic setting. On top of that, the legacy cgroup v1 memory subsystem has its own per cgroup <code>swappiness</code> knob. All this makes information about the current <code>vm.swappiness</code> meaning hard to understand and change. But let me try to explain some recent changes and give you fresh links.</p>
 <p>First of all, by default <code>vm.swappiness</code> is set 60, <a href="https://github.com/torvalds/linux/blob/a3fa7a101dcff93791d1b1bdb3affcad1410c8c1/mm/vmscan.c#L174-L177" target="_blank" rel="noopener">the min is 0 and the max is 200</a>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">/*
- * From <span style="color:#ae81ff">0</span> .. 200.  Higher means more swappy.
- */
-int vm_swappiness <span style="color:#f92672">=</span> 60;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">/*
+</span><span style="color:#75715e"> * From 0 .. 200.  Higher means more swappy.
+</span><span style="color:#75715e"> */</span>
+<span style="color:#66d9ef">int</span> vm_swappiness <span style="color:#f92672">=</span> <span style="color:#ae81ff">60</span>;
 </code></pre></div><p>The 100 value means that the kernel considers anonymous and Page Cache pages equally in terms of reclamation.</p>
 <p>Secondly, the cgroup v2 memory controller doesn&rsquo;t have the <code>swappiness</code> <a href="https://elixir.bootlin.com/linux/v5.15-rc1/source/include/linux/swap.h#L706" target="_blank" rel="noopener">knob at all</a>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#ifdef CONFIG_MEMCG</span>
-static inline int mem_cgroup_swappiness<span style="color:#f92672">(</span>struct mem_cgroup *memcg<span style="color:#f92672">)</span>
-<span style="color:#f92672">{</span>
-	/* Cgroup2 doesn<span style="color:#960050;background-color:#1e0010">&#39;</span>t have per-cgroup swappiness */
-	<span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>cgroup_subsys_on_dfl<span style="color:#f92672">(</span>memory_cgrp_subsys<span style="color:#f92672">))</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">#ifdef CONFIG_MEMCG
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">mem_cgroup_swappiness</span>(<span style="color:#66d9ef">struct</span> mem_cgroup <span style="color:#f92672">*</span>memcg)
+{
+	<span style="color:#75715e">/* Cgroup2 doesn&#39;t have per-cgroup swappiness */</span>
+	<span style="color:#66d9ef">if</span> (cgroup_subsys_on_dfl(memory_cgrp_subsys))
 		<span style="color:#66d9ef">return</span> vm_swappiness;
 
-	/* root ? */
-	<span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>mem_cgroup_disabled<span style="color:#f92672">()</span> <span style="color:#f92672">||</span> mem_cgroup_is_root<span style="color:#f92672">(</span>memcg<span style="color:#f92672">))</span>
+	<span style="color:#75715e">/* root ? */</span>
+	<span style="color:#66d9ef">if</span> (mem_cgroup_disabled() <span style="color:#f92672">||</span> mem_cgroup_is_root(memcg))
 		<span style="color:#66d9ef">return</span> vm_swappiness;
 
-	<span style="color:#66d9ef">return</span> memcg-&gt;swappiness;
+	<span style="color:#66d9ef">return</span> memcg<span style="color:#f92672">-&gt;</span>swappiness;
 </code></pre></div><p>Instead, the kernel developers decided to significantly change the swappiness logic. You can check it if run <a href="https://github.com/torvalds/linux/blame/a3fa7a101dcff93791d1b1bdb3affcad1410c8c1/mm/vmscan.c#L2574" target="_blank" rel="noopener"><code>git blame</code> on <code>mm/vmscan.c</code> and search for the <code>get_scan_count()</code> function</a>.</p>
 <p>For example, at the time of writing, the anonymous memory will not be touched regardless of <code>vm.swappiness</code> if <a href="https://github.com/torvalds/linux/blob/a3fa7a101dcff93791d1b1bdb3affcad1410c8c1/mm/vmscan.c#L2623-L2630" target="_blank" rel="noopener">the inactive LRU Page Cache list has decent amount of pages</a>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">	/*
-	 * If there is enough inactive page cache, we <span style="color:#66d9ef">do</span> not reclaim
-	 * anything from the anonymous working right now.
-	 */
-	<span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>sc-&gt;cache_trim_mode<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">	<span style="color:#75715e">/*
+</span><span style="color:#75715e">	 * If there is enough inactive page cache, we do not reclaim
+</span><span style="color:#75715e">	 * anything from the anonymous working right now.
+</span><span style="color:#75715e">	 */</span>
+	<span style="color:#66d9ef">if</span> (sc<span style="color:#f92672">-&gt;</span>cache_trim_mode) {
 		scan_balance <span style="color:#f92672">=</span> SCAN_FILE;
-		goto out;
-	<span style="color:#f92672">}</span>
-</code></pre></div><p>The full logic of making decisions what and from which LRU to reclaim you can find in the <a href="https://github.com/torvalds/linux/blob/master/mm/vmscan.c" target="_blank" rel="noopener"><code>get_scan_count()</code>function in <code>mm/vmscan.c</code></a> and</p>
-<p>Also, please take a look at the <code>memory.swap.high</code> and the <code>memory.swap.max</code> cgroup v2 settings. You can also control them per cgroup if you want in order to correct <code>vm.swappiness</code>.</p>
+		<span style="color:#66d9ef">goto</span> out;
+	}
+</code></pre></div><p>The full logic, of making decisions what and from which LRU to reclaim, you can find in the <a href="https://github.com/torvalds/linux/blob/master/mm/vmscan.c" target="_blank" rel="noopener"><code>get_scan_count()</code>function in <code>mm/vmscan.c</code></a>.</p>
+<p>Also, please take a look at the <code>memory.swap.high</code> and the <code>memory.swap.max</code> cgroup v2 settings. You can control them if you want to correct the <code>vm.swappiness</code> logic for your cgroup and load pattern.</p>
 <p>Another interesting topic, which you should keep in mind when dealing with the swap and Page Cache, is the IO load during the swapping in/out processes. If you have IO pressure, you can easily hit your IO limits and, for example, degrade your Page Cache writeback performance.</p>
 <h2 id="understanding-memory-reclaim-process-with-procpidpagemap">
   Understanding memory reclaim process with <code>/proc/pid/pagemap</code>
@@ -504,7 +506,7 @@ static inline int mem_cgroup_swappiness<span style="color:#f92672">(</span>struc
 </h2>
 <p>Now it&rsquo;s time for a low level troubleshooting technics.</p>
 <p>There is a <code>/proc/PID/pagemap</code> file which contains the page table information of the pid. The <a href="https://en.wikipedia.org/wiki/Page_table" target="_blank" rel="noopener">page table</a>, basically speaking, is an internal kernel map between page frames (real physical memory pages stored in RAM) and virtual pages of the process. Each process in the linux system has it&rsquo;s own virtual memory address space which is completely independent form other processes and physical memory addresses.</p>
-<p>The full <code>/proc/PID/pagemap</code> and related file documentation, including data format and ways to read it can be found in <a href="https://www.kernel.org/doc/Documentation/vm/pagemap.txt" target="_blank" rel="noopener">the kernel documentation folder</a>. I strongly recommend that you read it before proceeding to the sections below.</p>
+<p>The full <code>/proc/PID/pagemap</code> and related file documentation, including data formats and ways to read it can be found in <a href="https://www.kernel.org/doc/Documentation/vm/pagemap.txt" target="_blank" rel="noopener">the kernel documentation folder</a>. I strongly recommend that you read it before proceeding to the sections below.</p>
 <h3 id="page-types-kernel-page-tool">
   <code>page-types</code> kernel page tool
   <a class="anchor" href="#page-types-kernel-page-tool">#</a>

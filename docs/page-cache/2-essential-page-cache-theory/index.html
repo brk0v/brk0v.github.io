@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Essential Page Cache theory #  First of all let’s start with a bunch of reasonable questions about Page Cache:
- What is the Linux Page Cache? What problems does it solve? Why do we call it &ldquo;Page&rdquo; Cache ?  In essence the Page Cache is a part of Virtual File System (VFS) which main purpose, as you can guess, is improving IO latency of read and write operation. A write-back cache algorithm is a core building block of the Page Cache.">
+ What is the Linux Page Cache? What problems does it solve? Why do we call it &ldquo;Page&rdquo; Cache ?  In essence the Page Cache is a part of Virtual File System (VFS) which main purpose, as you can guess, is improving IO latency of read and write operations. A write-back cache algorithm is a core building block of the Page Cache.">
 <meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="2. Essential theory" />
 <meta property="og:description" content="Essential Page Cache theory #  First of all let’s start with a bunch of reasonable questions about Page Cache:
- What is the Linux Page Cache? What problems does it solve? Why do we call it &ldquo;Page&rdquo; Cache ?  In essence the Page Cache is a part of Virtual File System (VFS) which main purpose, as you can guess, is improving IO latency of read and write operation. A write-back cache algorithm is a core building block of the Page Cache." />
+ What is the Linux Page Cache? What problems does it solve? Why do we call it &ldquo;Page&rdquo; Cache ?  In essence the Page Cache is a part of Virtual File System (VFS) which main purpose, as you can guess, is improving IO latency of read and write operations. A write-back cache algorithm is a core building block of the Page Cache." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/" /><meta property="article:section" content="docs" />
 
@@ -18,7 +18,7 @@
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.af7407ece0408d598ef93269cfe9dca1a81ca661e8d39823962aa78fdb2e9317.js" integrity="sha256-r3QH7OBAjVmO&#43;TJpz&#43;ncoagcpmHo05gjliqnj9sukxc=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.69af0f445d6cfacf8806dbad5eee70eb90b9fde37d0d4f2bc9fd31009630d087.js" integrity="sha256-aa8PRF1s&#43;s&#43;IBtutXu5w65C5/eN9DU8ryf0xAJYw0Ic=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -336,7 +336,7 @@ https://github.com/alex-shpak/hugo-book
 <li>What problems does it solve?</li>
 <li>Why do we call it &ldquo;Page&rdquo; Cache ?</li>
 </ul>
-<p>In essence the Page Cache is a part of Virtual File System (<a href="https://en.wikipedia.org/wiki/Virtual_file_system" target="_blank" rel="noopener">VFS</a>) which main purpose, as you can guess, is improving IO latency of read and write operation. A write-back cache algorithm is a core building block of the Page Cache.</p>
+<p>In essence the Page Cache is a part of Virtual File System (<a href="https://en.wikipedia.org/wiki/Virtual_file_system" target="_blank" rel="noopener">VFS</a>) which main purpose, as you can guess, is improving IO latency of read and write operations. A write-back cache algorithm is a core building block of the Page Cache.</p>
 <blockquote class="book-hint info">
   <p><strong>NOTE</strong></p>
 <p>If you&rsquo;re curios about write-back algorithm (and you should be), it&rsquo;s well described on <a href="https://en.wikipedia.org/wiki/Cache_%28computing%29#Writing_policies" target="_blank" rel="noopener">Wikipedia</a> and I encourage you to read it or at least look at the figure with a flow chart and its main operations.</p>
@@ -347,10 +347,10 @@ https://github.com/alex-shpak/hugo-book
 <p>The above leads to the important fact, that <strong>if your write is smaller than the page size, the kernel will read the entire page before your write can be finished</strong>.</p>
 <p>On the following figure you can see a bird&rsquo;s-eye view of the essential Page Cache operations. I broke them down to reads and writes.</p>
 <p><img src="../images/page-cache.png" alt="Linux Page Cache (pagecache) reads and writes" /></p>
-<p>As you can see all data reads and writes go thought Page Cache. Hoverer, there are some exceptions for <code>Direct IO</code> (<code>DIO</code>) and I&rsquo;m talking about it at the end of the series. For now we should ignore them.</p>
+<p>As you can see all data reads and writes go thought Page Cache. However, there are some exceptions for <code>Direct IO</code> (<code>DIO</code>) and I&rsquo;m talking about it at the end of the series. For now we should ignore them.</p>
 <blockquote class="book-hint info">
   <p><strong>NOTE</strong></p>
-<p>In the following chapters I&rsquo;m talking about <code>read()</code> , <code>write()</code> , <code>mmap()</code> and other syscalls. And I need to say, that some programing languages (for example Python) have file functions with the same names. Hoverer these functions don&rsquo;t map <em>exactly</em> to the corresponding system calls. Such functions usually perform buffering IO and try to optimize unbuffered. Please, keep this in mind.</p>
+<p>In the following chapters I&rsquo;m talking about <code>read()</code> , <code>write()</code> , <code>mmap()</code> and other syscalls. And I need to say, that some programing languages (for example Python) have file functions with the same names. However these functions don&rsquo;t map <em>exactly</em> to the corresponding system calls. Such functions usually perform buffered IO. Please, keep this in mind.</p>
 
 </blockquote>
 
@@ -358,7 +358,7 @@ https://github.com/alex-shpak/hugo-book
   Read requests
   <a class="anchor" href="#read-requests">#</a>
 </h2>
-<p>Generally speaking, reads are handle by kernel in the following way:</p>
+<p>Generally speaking, reads are handled by kernel in the following way:</p>
 <p>① – When a user-space application wants to read data from disks, it asks kernel for data using special system calls such as <code>read()</code>, <code>pread()</code>, <code>vread()</code>, <code>mmap()</code>, <code>sendfile</code>, etc.</p>
 <p>② – Linux kernel, in turn, checks whether the pages are present in Page Cache, and immediately returns them to the caller if so. As you can see kernel has made 0 disk operation in this case.</p>
 <p>③ – But if there is no such pages in Page Cache, kernel needs to load them from disks. In order to do that, it has to find a place in Page Cache for the requested pages. If there is no free memory (in the caller&rsquo;s cgroup or system), a memory reclaim process must be performed. Afterwards kernel schedules a read disk IO operation, stores the target pages in the memory and finally returns the requested data from Page Cache to the target process. Starting from this moment, any future requests to read this part of the file (no matter from which process or cgroup) will be handled by Page Cache without any disk IOP until these pages have not been evicted.</p>
@@ -367,8 +367,8 @@ https://github.com/alex-shpak/hugo-book
   <a class="anchor" href="#write-requests">#</a>
 </h2>
 <p>Let&rsquo;s repeat a step-by-step process for writes:</p>
-<p>(Ⅰ) – When a user-space program wants to write some data to disks, it also uses a bunch syscalls, for instance: <code>write()</code>, <code>pwrite()</code>, <code>writev()</code>, <code>mmap()</code>, etc. The one big difference from the reads is that writes are usually faster, because real disk IO operations are not performed immediately. Hoverer this is correct only if the system or a cgroup doesn&rsquo;t have memory pressure issues and there is enough free pages (we will talk about eviction process later). So usually kernel just updates pages in Page Cache. This makes the write pipeline asynchronous in nature. The caller doesn’t know when the actual page flush occurs, but it does know that the subsequent reads will return the latest data. Page Cache protects data consistency across all processes and cgroups. Such pages, that contain un-flushed data, have a special name: <strong>dirty pages</strong>.</p>
-<p>(II) – If process' data is not critical, it can lean on kernel and its flush process, which eventually lands data to disks. But if you develop a database management system (for instance for money transactions), you need write guaranties in order to protect your records from a sudden blackout. For such situations Linux provides <code>fsync()</code>, <code>fdatasync()</code>  and <code>msync()</code> syscalls which block until all dirty pages of the file get committed to disks. There are also <code>open()</code>  flags:  <code>O_SYNC</code> and <code>O_DSYNC</code>, which also you can use in order to make all file write operations durable by default. I&rsquo;m showing some examples of this logic later.</p>
+<p>(Ⅰ) – When a user-space program wants to write some data to disks, it also uses a bunch of syscalls, for instance: <code>write()</code>, <code>pwrite()</code>, <code>writev()</code>, <code>mmap()</code>, etc. The one big difference from the reads is that writes are usually faster, because real disk IO operations are not performed immediately. However this is correct only if the system or a cgroup doesn&rsquo;t have memory pressure issues and there is enough free pages (we will talk about eviction process later). So usually kernel just updates pages in Page Cache. This makes the write pipeline asynchronous in nature. The caller doesn’t know when the actual page flush occurs, but it does know that the subsequent reads will return the latest data. Page Cache protects data consistency across all processes and cgroups. Such pages, that contain un-flushed data, have a special name: <strong>dirty pages</strong>.</p>
+<p>(II) – If process' data is not critical, it can lean on kernel and its flush process, which eventually persists data to physical disk. But if you develop a database management system (for instance for money transactions), you need write guaranties in order to protect your records from a sudden blackout. For such situations Linux provides <code>fsync()</code>, <code>fdatasync()</code>  and <code>msync()</code> syscalls which block until all dirty pages of the file get committed to disks. There are also <code>open()</code>  flags:  <code>O_SYNC</code> and <code>O_DSYNC</code>, which you also can use in order to make all file write operations durable by default. I&rsquo;m showing some examples of this logic later.</p>
 
 
 

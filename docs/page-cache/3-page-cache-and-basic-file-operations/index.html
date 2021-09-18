@@ -20,7 +20,7 @@ Utils needed for this section:
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.af7407ece0408d598ef93269cfe9dca1a81ca661e8d39823962aa78fdb2e9317.js" integrity="sha256-r3QH7OBAjVmO&#43;TJpz&#43;ncoagcpmHo05gjliqnj9sukxc=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.69af0f445d6cfacf8806dbad5eee70eb90b9fde37d0d4f2bc9fd31009630d087.js" integrity="sha256-aa8PRF1s&#43;s&#43;IBtutXu5w65C5/eN9DU8ryf0xAJYw0Ic=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -368,7 +368,7 @@ For now we ignore how <code>vmtouch</code> works. I&rsquo;m showing how to write
 <p>I start with a simple program that reads the first 2 bytes from our test file <code>/var/tmp/file1.db</code>.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;br&#34;</span>) <span style="color:#66d9ef">as</span> f:  
     print(f<span style="color:#f92672">.</span>read(<span style="color:#ae81ff">2</span>))
-</code></pre></div><p>Usually this kind of read requests are translated into the <code>read()</code> syscall. Let&rsquo;s run the script with <code>strace</code> to make sure that <code>f.read()</code> uses s<code>read()</code> syscall:</p>
+</code></pre></div><p>Usually this kind of read requests are translated into the <code>read()</code> syscall. Let&rsquo;s run the script with <code>strace</code> to make sure that <code>f.read()</code> uses <code>read()</code> syscall:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ strace -s0 python3 ./read_2_bytes.py
 </code></pre></div><p>The output should look something like this:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">...
@@ -392,7 +392,7 @@ read<span style="color:#f92672">(</span>3, <span style="color:#e6db74">&#34;%B\3
 <p>By design kernel can&rsquo;t load anything less that 4KiB or one page into Page Cache, but what about other 19 pages? This is a good example of kernel&rsquo;s read ahead logic and its preference to perform sequential IO operations over random. The basic idea is to predict the subsequent reads and minimize the number of disk seeks. This behavior can be controlled by syscalls: <code>posix_fadvise()</code> (<code>man 2 posix_fadvise</code>) and <code>readahead()</code> (<code>man 2 readahead</code>).</p>
 <blockquote class="book-hint info">
   <p><strong>NOTE</strong></p>
-<p>Usually, in a production environment, it doesn’t make a big difference for database management systems and storages to tune the default read-ahead parameters. If DBMS doesn&rsquo;t need data which were cached by the read-ahead, the kernel memory reclaim policy should eventually evict these pages from Page Cache. And usually, the sequential IO are not expensive for kernel and hardware. But disabling read-ahead at all might even lead to some performance degradations due to increased number of disk IO operations in the kernel queues, more context switches and more time for kernel memory management subsystem to recognize the working set. We will talk about memory reclaiming policy, memory pressure and cache writeback later in this series.</p>
+<p>Usually, in a production environment, it doesn’t make a big difference for database management systems and storages to tune the default read-ahead parameters. If DBMS doesn&rsquo;t need data which were cached by the read-ahead, the kernel memory reclaim policy should eventually evict these pages from Page Cache. And usually, the sequential IO are not expensive for kernel and hardware. Disabling read-ahead at all might even lead to some performance degradations due to increased number of disk IO operations in the kernel queues, more context switches and more time for kernel memory management subsystem to recognize the working set. We will talk about memory reclaiming policy, memory pressure and cache writeback later in this series.</p>
 
 </blockquote>
 
@@ -456,7 +456,7 @@ read<span style="color:#f92672">(</span>3, <span style="color:#e6db74">&#34;%B\3
   Writing to files with <code>write()</code> syscall
   <a class="anchor" href="#writing-to-files-with-write-syscall">#</a>
 </h3>
-<p>Let’s continue working with our experimental file and try update the first 2 bytes instead:</p>
+<p>Let’s continue working with our experimental file and try to update the first 2 bytes instead:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;br+&#34;</span>) <span style="color:#66d9ef">as</span> f:
     print(f<span style="color:#f92672">.</span>write(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;ab&#34;</span>))
 </code></pre></div><blockquote class="book-hint warning">
@@ -500,30 +500,30 @@ file_dirty <span style="color:#ae81ff">4096</span>
 <p>Linux provides several options to get the amount of dirty pages. The first and the oldest one is to read <code>/proc/memstat</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/meminfo | grep Dirty
 Dirty:                 <span style="color:#ae81ff">4</span> kB
-</code></pre></div><p>Often the entire system information is hard to interpreter and use because we can&rsquo;t determine which process and which file has these dirty pages.</p>
+</code></pre></div><p>Often the entire system information is hard to interpret and use because we can&rsquo;t determine which process and which file has these dirty pages.</p>
 <p>That&rsquo;s why the best option in order to get dirty page info is to use cgroup:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat  | grep dirt
 file_dirty <span style="color:#ae81ff">4096</span>
-</code></pre></div><p>If your program uses <code>mmap()</code> to write to files, you have one more option to get dirty pages stats with a per process granularity. <code>procfs</code> has the <code>/proc/PID/smaps</code> where memory counters for the process are displayed broken down by virtual memory areas (VMA). With <code>mmap()</code> process has the VMA mapped to the file and corresponding info. We can get dirty pages by finding:</p>
+</code></pre></div><p>If your program uses <code>mmap()</code> to write to files, you have one more option to get dirty pages stats with a per process granularity. <code>procfs</code> has the <code>/proc/PID/smaps</code> file. It contains memory counters for the process broken down by virtual memory areas (VMA). With <code>mmap()</code> process has the VMA mapped to the file and corresponding info. We can get dirty pages by finding:</p>
 <ul>
 <li><code>Private_Dirty</code> – the amount of dirty data this process generated;</li>
-<li><code>Shared_Dirty</code> – and other processes. This metric will show data only for referenced pages. This means the process should access pages and keep it in it&rsquo;s page table (more details later).</li>
+<li><code>Shared_Dirty</code> – and the amount other processes wrote. This metric shows data only for referenced pages. This means the process should access pages and keep them in its <a href="https://en.wikipedia.org/wiki/Page_table" target="_blank" rel="noopener">page table</a> (more details later).</li>
 </ul>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat /proc/578097/smaps | grep file1.db -A <span style="color:#ae81ff">12</span> | grep Dirty
 Shared_Dirty:          <span style="color:#ae81ff">0</span> kB
 Private_Dirty:       <span style="color:#ae81ff">736</span> kB
-</code></pre></div><p>But what if we want to get the dirty page stats for a file. To answer this question linux kernel provides <a href="https://www.kernel.org/doc/Documentation/vm/pagemap.txt" target="_blank" rel="noopener">2 files</a> in <code>procfs</code>: <code>/proc/PID/pagemap</code> and <code>/proc/kpageflags</code>. I&rsquo;m showing how to write our own tool with them later in series, but for now we can use the debug tool from the linux kernel repo to get per file page info: <code>page-types</code> (<a href="https://github.com/torvalds/linux/blob/master/tools/vm/page-types.c%29" target="_blank" rel="noopener">https://github.com/torvalds/linux/blob/master/tools/vm/page-types.c)</a>.</p>
+</code></pre></div><p>But what if we want to get the dirty page stats for a file. To answer this question linux kernel provides <a href="https://www.kernel.org/doc/Documentation/vm/pagemap.txt" target="_blank" rel="noopener">2 files</a> in <code>procfs</code>: <code>/proc/PID/pagemap</code> and <code>/proc/kpageflags</code>. I&rsquo;m showing how to write our own tool with them later in  the series, but for now we can use the debug tool from the linux kernel repo to get per file page info: <a href="https://github.com/torvalds/linux/blob/master/tools/vm/page-types.c" target="_blank" rel="noopener"><code>page-types</code></a>.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo page-types -f /var/tmp/file1.db -b dirty
 </code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">             flags      page-count       MB  symbolic-flags                     long-symbolic-flags
 0x0000000000000838             <span style="color:#ae81ff">267</span>        <span style="color:#ae81ff">1</span>  ___UDl_____M________________________________       uptodate,dirty,lru,mmap
 0x000000000000083c              <span style="color:#ae81ff">20</span>        <span style="color:#ae81ff">0</span>  __RUDl_____M________________________________       referenced,uptodate,dirty,lru,mmap
              total             <span style="color:#ae81ff">287</span>        <span style="color:#ae81ff">1</span>
-</code></pre></div><p>I filtered all pages of our file <code>/var/tmp/file1.db</code> by the <code>dirty</code> flag. In the output you can see that the file has 287 dirty pages or 1 MiB of dirty data which will be written back to storage eventually.  <code>page-type</code> aggregates pages by flags, so you can see 2 sets in the output. Both have the dirty flag <code>D</code> and the difference between them is the presence of the referenced flag <code>R</code> (which I&rsquo;m briefly touching in the Page Cache eviction section later).</p>
+</code></pre></div><p>I filtered out all pages of our file <code>/var/tmp/file1.db</code> by the <code>dirty</code> flag. In the output you can see that the file has 287 dirty pages or 1 MiB of dirty data which will be persisted to storage eventually.  <code>page-type</code> aggregates pages by flags, so you can see 2 sets in the output. Both have the dirty flag <code>D</code> and the difference between them is the presence of the referenced flag <code>R</code> (which I&rsquo;m briefly touching in the Page Cache eviction section later).</p>
 <h3 id="synchronize-file-changes-with-fsync-fdatasync-and-msync">
   Synchronize file changes with <code>fsync()</code>, <code>fdatasync()</code> and <code>msync()</code>
   <a class="anchor" href="#synchronize-file-changes-with-fsync-fdatasync-and-msync">#</a>
 </h3>
-<p>We already used <code>sync</code> (<code>man 1 sync</code>) to flush all dirty pages to disks before every test to get a fresh system without any interferences. But what if we want to write a database management system and we need to be sure that all writes will hit get to disks before a power outage or other hardware errors occur. For such cases linux provides several methods to force kernel to run page cleanup for the file in Page Cache:</p>
+<p>We already used <code>sync</code> (<code>man 1 sync</code>) to flush all dirty pages to disks before every test to get a fresh system without any interferences. But what if we want to write a database management system and we need to be sure that all writes will get to disks before a power outage or other hardware errors occur. For such cases linux provides several methods to force kernel to run sync of pages for the file in Page Cache:</p>
 <ul>
 <li><code>fsync()</code> – blocks until all dirty pages of the target file and its metadata are synced;</li>
 <li><code>fdatasync()</code> – the same as the above but excluding metadata;</li>
@@ -532,7 +532,7 @@ Private_Dirty:       <span style="color:#ae81ff">736</span> kB
 </ul>
 <blockquote class="book-hint info">
   <p><strong>NOTE</strong></p>
-<p>You still need to care about write berries and understand how the underlying file system works. Usually a file append operation is safe and can&rsquo;t corrupt the previous written data. Other types of mutate operations may corrupt your files (for instance even with default journal settings in ext4). That&rsquo;s why all database management systems like MongoDB, PostgreSQL, Etcd, Dgraph, etc have a write ahead logs (WAL) which are append only. If you&rsquo;re curious more about this topic, this <a href="https://dgraph.io/blog/post/alice/" target="_blank" rel="noopener">blog post from Dgraph</a> is a good starting point.</p>
+<p>You still need to care about write berries and understand how the underlying file system works, because write operations might be reordered by the kernel scheduler. Usually a file append operation is safe and can&rsquo;t corrupt the previous written data. Other types of mutate operations may mess with your files (for instance, for ext4, even with the default journal). That&rsquo;s why all database management systems like MongoDB, PostgreSQL, Etcd, Dgraph, etc have a write ahead logs (WAL) which are append only. If you&rsquo;re curious more about this topic, this <a href="https://dgraph.io/blog/post/alice/" target="_blank" rel="noopener">blog post from Dgraph</a> is a good starting point.</p>
 
 </blockquote>
 

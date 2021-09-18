@@ -32,7 +32,7 @@ If you are using Windows or Mac OS, I would suggest installing Vagrant with Virt
       
       <guid>https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/</guid>
       <description>Essential Page Cache theory #  First of all let’s start with a bunch of reasonable questions about Page Cache:
- What is the Linux Page Cache? What problems does it solve? Why do we call it &amp;ldquo;Page&amp;rdquo; Cache ?  In essence the Page Cache is a part of Virtual File System (VFS) which main purpose, as you can guess, is improving IO latency of read and write operation. A write-back cache algorithm is a core building block of the Page Cache.</description>
+ What is the Linux Page Cache? What problems does it solve? Why do we call it &amp;ldquo;Page&amp;rdquo; Cache ?  In essence the Page Cache is a part of Virtual File System (VFS) which main purpose, as you can guess, is improving IO latency of read and write operations. A write-back cache algorithm is a core building block of the Page Cache.</description>
     </item>
     
     <item>
@@ -52,7 +52,7 @@ Utils needed for this section:
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/</guid>
-      <description>Page Cache eviction and page reclaim #  So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in cache and flushing cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&amp;rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache.</description>
+      <description>Page Cache eviction and page reclaim #  So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in the cache and flushing the cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&amp;rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache.</description>
     </item>
     
     <item>
