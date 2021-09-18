@@ -61,7 +61,7 @@ Utils needed for this section:
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/</guid>
-      <description>More about mmap() file access #  Before we start the cgroup chapter, where I&amp;rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve services reliability, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
+      <description>More about mmap() file access #  Before we start the cgroup chapter, where I&amp;rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve reliability of services, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
 mmap() overview #  Memory mapping is one of the most interesting features of the Linux systems.</description>
     </item>
     
@@ -71,7 +71,8 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/</guid>
-      <description>Cgroup v2 and Page Cache #  The cgroup subsystem is the way to fairly distribute and limit system resources. It organizes all data in a hierarchy where the leave nodes depend on their parents and inherit their settings. In additional, the cgroup provides a lot of useful resource counters and statistics. The control groups are everywhere. Even though you don&amp;rsquo;t use it explicitly, it&amp;rsquo;s already become turned on by default in all modern GNU/Linux distributives and got integrated in sysytemd.</description>
+      <description>Cgroup v2 and Page Cache #  The cgroup subsystem is the way to fairly distribute and limit system resources. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In additional, the cgroup provides a lot of useful resource counters and statistics.
+The control groups are everywhere. Even though you may not use them explicitly, they are already turned on by default in all modern GNU/Linux distributives and got integrated in sysytemd.</description>
     </item>
     
     <item>

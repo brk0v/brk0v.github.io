@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="More about mmap() file access #  Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve services reliability, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
+<meta name="description" content="More about mmap() file access #  Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve reliability of services, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
 mmap() overview #  Memory mapping is one of the most interesting features of the Linux systems.">
 <meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="5. More about `mmap()`" />
-<meta property="og:description" content="More about mmap() file access #  Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve services reliability, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
+<meta property="og:description" content="More about mmap() file access #  Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve reliability of services, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
 mmap() overview #  Memory mapping is one of the most interesting features of the Linux systems." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/" /><meta property="article:section" content="docs" />
@@ -18,7 +18,7 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.69af0f445d6cfacf8806dbad5eee70eb90b9fde37d0d4f2bc9fd31009630d087.js" integrity="sha256-aa8PRF1s&#43;s&#43;IBtutXu5w65C5/eN9DU8ryf0xAJYw0Ic=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.5a6ad7496a53a771fcf259c922ca33f313eefc2d3c4007adcaef761f352d92c0.js" integrity="sha256-WmrXSWpTp3H88lnJIsoz8xPu/C08QAetyu92HzUtksA=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -331,15 +331,15 @@ https://github.com/alex-shpak/hugo-book
   More about <code>mmap()</code> file access
   <a class="anchor" href="#more-about-mmap-file-access">#</a>
 </h1>
-<p>Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve services reliability, I want to delve a bit deeper into <code>mmap()</code>  syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with <code>mmap()</code>.</p>
+<p>Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve  reliability of services, I want to delve a bit deeper into <code>mmap()</code>  syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with <code>mmap()</code>.</p>
 <h2 id="mmap-overview">
   <code>mmap()</code> overview
   <a class="anchor" href="#mmap-overview">#</a>
 </h2>
 <p>Memory mapping is one of the most interesting features of the Linux systems. One of its features is the ability for software developers to transparently work with files whose size exceeds the actual physical memory of the system. In the image below, you can see what the <a href="https://en.wikipedia.org/wiki/Virtual_memory" target="_blank" rel="noopener">Virtual Memory</a> of a process looks like. Each process has it&rsquo;s own region where <code>mmap()</code> maps files.</p>
 <p><img src="../images/mmap.png" alt="AMD x86_64 process virtual memory" /></p>
-<p>What I&rsquo;m not touching here is whether to use <code>mmap()</code> or file read syscalls like <code>read()</code> and <code>write()</code> in your software. What is better, faster or safer to use, is beyond the scope of this post. But you definitely need to understand how to get the <code>mmap()</code> stats, because almost every Page Cache user-space tool has it.</p>
-<p>Let’s write one more script with <code>mmap()</code>. It prints a PID of the process, maps a file and sleeps. Sleep time should give us time to play with the process.</p>
+<p>What I&rsquo;m not touching here is whether to use <code>mmap()</code> or file syscalls like <code>read()</code> and <code>write()</code> in your software. What is better, faster or safer to use is beyond the scope of this post. But you definitely need to understand how to get the <code>mmap()</code> stats, because almost every Page Cache user-space tool uses it.</p>
+<p>Let’s write one more script with <code>mmap()</code>. It prints a PID of the process, maps the test file and sleeps. The sleep time should be enoughs to play with the process.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#f92672">import</span> mmap
 <span style="color:#f92672">import</span> os
 <span style="color:#f92672">from</span> time <span style="color:#f92672">import</span> sleep
@@ -351,29 +351,29 @@ print(<span style="color:#e6db74">&#34;pid:&#34;</span>, os<span style="color:#f
         sleep(<span style="color:#ae81ff">10000</span>)
 </code></pre></div><p>Run it in the one terminal window and in the another one run <code>pmap -x PID</code> with the PID of the script.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">pmap -x <span style="color:#ae81ff">369029</span> | less
-</code></pre></div><p>, where <code>369029</code> is my PID.</p>
-<p>The output of <code>pmap</code> show us all contiguous virtual memory areas (VMA or <a href="https://elixir.bootlin.com/linux/v5.14.1/source/include/linux/mm_types.h#L311" target="_blank" rel="noopener"><code>struct vm_area_struct</code></a>) of the process. We can determine virtual addresses of the mmaped file. In my case:</p>
+</code></pre></div><p>where <code>369029</code> is my PID.</p>
+<p>The output of the <code>pmap</code> shows us all contiguous virtual memory areas (VMA or <a href="https://elixir.bootlin.com/linux/v5.14.1/source/include/linux/mm_types.h#L311" target="_blank" rel="noopener"><code>struct vm_area_struct</code></a>) of the process. We can determine the virtual addresses of the mmaped test file <code>file1.db</code>. In my case:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">Address           Kbytes     RSS   Dirty Mode  Mapping
 ...
 00007f705cc12000  <span style="color:#ae81ff">131072</span>       <span style="color:#ae81ff">0</span>       <span style="color:#ae81ff">0</span> r--s- file1.db
-</code></pre></div><p>We can see that we have 0 dirty pages for the file (it only shows the dirty pages of this process). The <code>RSS</code> column equals to 0, which tells us how much memory in KiB our process has already referenced. This 0, by the way, doesn&rsquo;t mean that there is no pages of the file in Page Cache. It means that our process didn&rsquo;t access any pages yet. What is interesting about <code>mmap()</code> is how it transparently loads data on accessing and writing.</p>
+</code></pre></div><p>We can see that we have 0 dirty pages for the file (it only shows the dirty pages of this process). The <code>RSS</code> column equals to 0, which tells us how much memory in KiB our process has already referenced. This 0, by the way, doesn&rsquo;t mean that there is no pages of the file in Page Cache. It means that our process hasn&rsquo;t accessed any pages yet.
 <blockquote class="book-hint info">
   <p><strong>NOTE</strong></p>
 <p><code>pmap</code> can display even more detailed output with <code>-XX</code>. Without <code>-XX</code> it uses <code>/proc/pid/maps</code>, but for the extended mode it shows stats from <code>/proc/pid/smaps</code>. More info can be found in <code>man 5 proc</code> and <a href="https://www.kernel.org/doc/Documentation/filesystems/proc.rst" target="_blank" rel="noopener">kernel documentation filesystems/proc.rst</a>.</p>
 
 </blockquote>
-
-<p>And if you&rsquo;re wondering how we can track all these hidden reads and writes, the next section will answer these questions.</p>
+</p>
+<p>So, the most interesting part about <code>mmap()</code> for SRE is how it transparently loads data on accessing and writing. And I&rsquo;m showing all this in the next chapters.</p>
 <h2 id="what-is-a-page-fault">
   What is a page fault?
   <a class="anchor" href="#what-is-a-page-fault">#</a>
 </h2>
-<p>Before we start talking about file tools, we need to understand the concept of the page faults. Generally speaking the page fault is a CPU mechanism to communicate with the Linux Kernel and its memory subsystem. The page fault is a building block of the Virtual Memory concept and <a href="https://en.wikipedia.org/wiki/Demand_paging" target="_blank" rel="noopener">demand paging</a>. Briefly speaking, kernel usually doesn&rsquo;t allocate physical memory immediately after a memory request was done by <code>mmap()</code> or <code>malloc()</code>. Instead kernel creates some records it the process&rsquo;s <a href="https://en.wikipedia.org/wiki/Page_table" target="_blank" rel="noopener">page table structure</a> and uses it as a storage for memory promises. In additional, the page table contains extra info for each page, such as memory permissions and page flags (we&rsquo;ve already seen some of them: LRUs flags, dirty flag, etc).</p>
-<p>From the examples in chapter 2, you can see that in order to read mmaped file at any position, the code doesn&rsquo;t need to perform<code> any seeks (</code>man 2 lseek`), unlike with file operations. We can just start reading from or writing to any point of the mapped area. For this reason, when an application wants to access a page the page fault can occur if the target page has not been loaded to Page Cache or there is no connections between the page in the Page Cache and process' page table.</p>
+<p>Before we start talking about file tools, we need to understand the concept of the page faults. Generally speaking the page fault is the CPU mechanism to communicate with the Linux Kernel and its memory subsystem. The page fault is a building block of the Virtual Memory concept and <a href="https://en.wikipedia.org/wiki/Demand_paging" target="_blank" rel="noopener">demand paging</a>. Briefly speaking, kernel usually doesn&rsquo;t allocate physical memory immediately after a memory request is done by <code>mmap()</code> or <code>malloc()</code>. Instead, kernel creates some records it the process&rsquo;s <a href="https://en.wikipedia.org/wiki/Page_table" target="_blank" rel="noopener">page table structure</a> and uses it as a storage for its memory promises. In addition, the page table contains extra info for each page, such as memory permissions and page flags (we&rsquo;ve already seen some of them: LRUs flags, dirty flag, etc).</p>
+<p>From the examples in chapter 2, you can see that in order to read mmaped file at any position, the code doesn&rsquo;t need to perform any seeks (<code>man 2 lseek</code>), unlike with file operations. We can just start reading from or writing to any point of the mapped area. For this reason, when an application wants to access a page the page fault can occur if the target page has not been loaded to Page Cache or there is no connections between the page in the Page Cache and the process' page table.</p>
 <p>There are 2 useful for us types of page faults: <strong>minor</strong> and <strong>major</strong>. A minor basically means that there will be no disk access in order to fulfill a process&rsquo;s memory access. And on the other hand a major page fault means that there will be a disk IO operation.</p>
-<p>For example, if we load a half of a file with <code>dd</code> in Page Cache and afterward access this first half from a program with <code>mmap()</code>, we will trigger a minor page fault. Kernel doesn&rsquo;t need to go to disks because this page was already loaded to Page Cache. Kernel only needs to reference this already loaded page with the page table entry of the process. But if the process tries to read within the same mmaped area the second half of the file, the kernel will have to go to the disk to load the page and the system will generate a major page fault.</p>
-<p>If you want get more information about demand paging, Linux kernel and system internals, please watch <a href="https://www.youtube.com/watch?v=7aONIVSXiJ8" target="_blank" rel="noopener">Introduction to Memory Management in Linux</a> video form Embedded Linux Conf.</p>
-<p>Let’s make an experiment and write a script with infinitive random read of a file:</p>
+<p>For example, if we load a half of a file with <code>dd</code> in Page Cache and afterward access this first half from a program with <code>mmap()</code>, we will trigger a minor page faults. The kernel doesn&rsquo;t need to go to disks because this pages were already loaded to Page Cache. The kernel only needs to reference this already loaded pages with the page table entries of the process. But if the process tries to read within the same mmaped area the second half of the file, the kernel will have to go to the disk in order to load the pages and the system will generate major page faults.</p>
+<p>If you want get more information about demand paging, Linux kernel and system internals, please watch <a href="https://www.youtube.com/watch?v=7aONIVSXiJ8" target="_blank" rel="noopener">&ldquo;Introduction to Memory Management in Linux&rdquo;</a> video form Embedded Linux Conf.</p>
+<p>Let’s make an experiment and write a script with infinitive random read of the file:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#f92672">import</span> mmap
 <span style="color:#f92672">import</span> os
 <span style="color:#f92672">from</span> random <span style="color:#f92672">import</span> randint
@@ -436,8 +436,8 @@ pgmajfault <span style="color:#ae81ff">13</span>
 <p>In the other window try to evict pages with <code>vmtouch</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">vmtouch -e /var/tmp/file1.db
 </code></pre></div><p>And notice that the stats from the <code>smaps</code> output don&rsquo;t drop entirely. At the moment when you run the <code>vmtouch -e</code> command the <code>smaps</code> should show you some decrease of memory usage. The question is what happens? Why when we explicitly asks the kernel to evict the file pages by setting the <code>FADVISE_DONT_NEED</code> flag, some of them are still present in Page Cache?</p>
-<p>The answer is a little confusing, but very important to understand. If Linux kerne doesn&rsquo;t have memory pressure issues, why should it drop pages from Page Cache which were already accessed. There is a high probability that the program will need them in the future. But if you as a software developer is sure that they don&rsquo;t need them anymore there is a <code>madvise()</code> and <code>MADV_DONT_NEED</code> flag for that. It informs kernel that it can remove these pages from the corresponding page table and the following <code>vmtouch -e</code> call will successfully be able to expel the file data from Page Cache.</p>
-<p>In case of the memory pressure situation, the kernel will start reclaiming memory from inactive LRU lists. Which means eventually it can drop these pages if they will be good candidates for reclaiming.</p>
+<p>The answer is a little confusing, but very important to understand. If Linux kernel doesn&rsquo;t have any memory pressure issues, why should it drop pages from Page Cache? There is a high probability that the program will need them in the future. But if you as a software developer is sure that these pages are useless, there is a <code>madvise()</code> and <code>MADV_DONT_NEED</code> flag for that. It informs kernel that it can remove these pages from the corresponding page table and the following <code>vmtouch -e</code> call will successfully be able to expel the file data from Page Cache.</p>
+<p>In case of the memory pressure situation, the kernel will start reclaiming memory from inactive LRU lists. Which means eventually it can drop these pages if they are good candidates for reclaiming.</p>
 
 
 

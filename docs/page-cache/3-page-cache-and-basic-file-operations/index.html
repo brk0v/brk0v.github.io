@@ -20,7 +20,7 @@ Utils needed for this section:
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.69af0f445d6cfacf8806dbad5eee70eb90b9fde37d0d4f2bc9fd31009630d087.js" integrity="sha256-aa8PRF1s&#43;s&#43;IBtutXu5w65C5/eN9DU8ryf0xAJYw0Ic=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.5a6ad7496a53a771fcf259c922ca33f313eefc2d3c4007adcaef761f352d92c0.js" integrity="sha256-WmrXSWpTp3H88lnJIsoz8xPu/C08QAetyu92HzUtksA=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -415,7 +415,7 @@ read<span style="color:#f92672">(</span>3, <span style="color:#e6db74">&#34;%B\3
   Reading files with <code>mmap()</code> syscall
   <a class="anchor" href="#reading-files-with-mmap-syscall">#</a>
 </h3>
-<p>For reading data from files we can also use <code>mmap()</code> syscall (<code>man 2 mmap</code>). <code>mmap()</code> is a &ldquo;magic&rdquo; tool and can be used to solve a wide range of tasks. But for our tests we need only one its feature – an ability to map a file into a process' memory in order to access the file as a flat array. I&rsquo;m taking about <code>mmap()</code>  in more details later. But at the moment, if you are not familiar with it, <code>mmap()</code> API should be clear from the following example:</p>
+<p>For reading data from files we can also use <code>mmap()</code> syscall (<code>man 2 mmap</code>). <code>mmap()</code> is a &ldquo;magic&rdquo; tool and can be used to solve a wide range of tasks. But for our tests we need only one its feature – an ability to map a file into a process' memory in order to access the file as a flat array. I&rsquo;m taking about <code>mmap()</code>  in more detail later. But at the moment, if you are not familiar with it, <code>mmap()</code> API should be clear from the following example:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> mmap
 
 <span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;r&#34;</span>) <span style="color:#66d9ef">as</span> f:
