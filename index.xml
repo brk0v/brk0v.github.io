@@ -7,7 +7,7 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language><atom:link href="https://biriukov.dev/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>0. Linux Page Cache for SRE</title>
+      <title>Linux Page Cache for SRE</title>
       <link>https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -16,7 +16,7 @@
     </item>
     
     <item>
-      <title>1. Prepare environment</title>
+      <title>Prepare environment for experiments</title>
       <link>https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -26,7 +26,7 @@ If you are using Windows or Mac OS, I would suggest installing Vagrant with Virt
     </item>
     
     <item>
-      <title>2. Essential theory</title>
+      <title>Essential Linux Page Cache theory</title>
       <link>https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -36,7 +36,7 @@ If you are using Windows or Mac OS, I would suggest installing Vagrant with Virt
     </item>
     
     <item>
-      <title>3. Basic file operations</title>
+      <title>Page Cache and basic file operations</title>
       <link>https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -47,7 +47,7 @@ Utils needed for this section:
     </item>
     
     <item>
-      <title>4. Eviction and page reclaim</title>
+      <title>Page Cache eviction and page reclaim</title>
       <link>https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -56,7 +56,7 @@ Utils needed for this section:
     </item>
     
     <item>
-      <title>5. More about `mmap()`</title>
+      <title>More about mmap() file access</title>
       <link>https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -66,7 +66,7 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
     </item>
     
     <item>
-      <title>6. Cgroup v2</title>
+      <title>Cgroup v2 and Page Cache</title>
       <link>https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -76,7 +76,7 @@ The control groups are everywhere. Even though you may not use them explicitly, 
     </item>
     
     <item>
-      <title>7. Unique set and working set</title>
+      <title>Unique set size and working set size</title>
       <link>https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -85,7 +85,7 @@ The control groups are everywhere. Even though you may not use them explicitly, 
     </item>
     
     <item>
-      <title>8. Direct IO</title>
+      <title>Direct IO</title>
       <link>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -95,7 +95,7 @@ Why it’s good #  Some applications require low-level access to the storage sub
     </item>
     
     <item>
-      <title>9. Advanced tools</title>
+      <title>Advanced Page Cache observability and troubleshooting tools</title>
       <link>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="More about mmap() file access #  Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve reliability of services, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
 mmap() overview #  Memory mapping is one of the most interesting features of the Linux systems.">
-<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="5. More about `mmap()`" />
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="More about mmap() file access" />
 <meta property="og:description" content="More about mmap() file access #  Before we start the cgroup chapter, where I&rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve reliability of services, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
 mmap() overview #  Memory mapping is one of the most interesting features of the Linux systems." />
 <meta property="og:type" content="article" />
@@ -13,12 +13,12 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
 
 
 
-<title>5. More about `mmap()` | Viacheslav Biriukov</title>
+<title>More about mmap() file access | Viacheslav Biriukov</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.9ddb689ea4350298673d75dc73f4fb2d2934ffff2c530e43750f971be1c6347c.js" integrity="sha256-ndtonqQ1AphnPXXcc/T7LSk0//8sUw5DdQ&#43;XG&#43;HGNHw=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.1bab3c6861be30240311be285009b7c0acb8ebffb4ce6c17bc519e4cf9f3289d.js" integrity="sha256-G6s8aGG&#43;MCQDEb4oUAm3wKy46/&#43;0zmwXvFGeTPnzKJ0=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -71,159 +71,198 @@ https://github.com/alex-shpak/hugo-book
 
 
 
+
+<ul>
   
-  <ul>
+  
+  <li class="book-section-flat" >
     
-      
-        <li class="book-section-flat" >
-          
-  
-  
 
-  
-    <span>Linux Page Cache series</span>
-  
 
-          
-  <ul>
+
+
+<span>Linux Page Cache series</span>
+
+
     
-      
-        <li>
-          
+<ul>
   
   
-
-  
-    <a href="https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/" class="">0. Linux Page Cache for SRE</a>
-  
-
-        </li>
-      
+  <li>
     
-      
-        <li>
-          
-  
-  
 
-  
-    <a href="https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/" class="">1. Prepare environment</a>
-  
 
-        </li>
-      
+
+
+<a href="https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/" class="">
+  
+    0. Linux Page Cache for SRE
+  
+</a>
+
+
+  </li>
+  
+  
+  
+  <li>
     
-      
-        <li>
-          
-  
-  
 
-  
-    <a href="https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/" class="">2. Essential theory</a>
-  
 
-        </li>
-      
+
+
+<a href="https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/" class="">
+  
+    1. Prepare environments
+  
+</a>
+
+
+  </li>
+  
+  
+  
+  <li>
     
-      
-        <li>
-          
-  
-  
 
-  
-    <a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/" class="">3. Basic file operations</a>
-  
 
-        </li>
-      
+
+
+<a href="https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/" class="">
+  
+    2. Essential theory
+  
+</a>
+
+
+  </li>
+  
+  
+  
+  <li>
     
-      
-        <li>
-          
-  
-  
 
-  
-    <a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" class="">4. Eviction and page reclaim</a>
-  
 
-        </li>
-      
+
+
+<a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/" class="">
+  
+    3. Basic file operations
+  
+</a>
+
+
+  </li>
+  
+  
+  
+  <li>
     
-      
-        <li>
-          
-  
-  
 
-  
-    <a href="https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/" class=" active">5. More about `mmap()`</a>
-  
 
-        </li>
-      
+
+
+<a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" class="">
+  
+    4. Eviction and page reclaim
+  
+</a>
+
+
+  </li>
+  
+  
+  
+  <li>
     
-      
-        <li>
-          
-  
-  
 
-  
-    <a href="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/" class="">6. Cgroup v2</a>
-  
 
-        </li>
-      
+
+
+<a href="https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/" class=" active">
+  
+    5. More about mmap()
+  
+</a>
+
+
+  </li>
+  
+  
+  
+  <li>
     
-      
-        <li>
-          
-  
-  
 
-  
-    <a href="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class="">7. Unique set and working set</a>
-  
 
-        </li>
-      
+
+
+<a href="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/" class="">
+  
+    6. Cgroup v2
+  
+</a>
+
+
+  </li>
+  
+  
+  
+  <li>
     
-      
-        <li>
-          
-  
-  
 
-  
-    <a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" class="">8. Direct IO</a>
-  
 
-        </li>
-      
+
+
+<a href="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class="">
+  
+    7. Unique set and working set
+  
+</a>
+
+
+  </li>
+  
+  
+  
+  <li>
     
-      
-        <li>
-          
-  
-  
 
-  
-    <a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/" class="">9. Advanced tools</a>
-  
 
-        </li>
-      
+
+
+<a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" class="">
+  
+    8. Direct IO
+  
+</a>
+
+
+  </li>
+  
+  
+  
+  <li>
     
-  </ul>
 
-        </li>
-      
-    
-  </ul>
 
+
+
+<a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/" class="">
+  
+    9. Advanced tools
+  
+</a>
+
+
+  </li>
+  
+  
+</ul>
+
+  </li>
+  
+  
+</ul>
 
 
 
@@ -292,7 +331,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong>5. More about `mmap()`</strong>
+  <strong>More about mmap() file access</strong>
 
   <label for="toc-control">
     
