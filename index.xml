@@ -72,7 +72,7 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
       
       <guid>https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/</guid>
       <description>Cgroup v2 and Page Cache #  The cgroup subsystem is the way to fairly distribute and limit system resources. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In additional, the cgroup provides a lot of useful resource counters and statistics.
-The control groups are everywhere. Even though you may not use them explicitly, they are already turned on by default in all modern GNU/Linux distributives and got integrated in sysytemd.</description>
+The control groups are everywhere. Even though you may not use them explicitly, they are already turned on by default in all modern GNU/Linux distributives and got integrated in systemd.</description>
     </item>
     
     <item>
