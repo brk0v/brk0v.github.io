@@ -1,593 +1,65 @@
-<!DOCTYPE html>
-<html lang="en-us" dir="ltr">
-<head>
-  <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Advanced Page Cache observability and troubleshooting tools # Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Advanced Page Cache observability and troubleshooting tools # Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
 eBPF tools # First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
 Let&rsquo;s take a look at some tools which come with.
-Writeback monitor # $ sudo bpftrace .">
-<meta name="theme-color" content="#FFFFFF">
-<meta name="color-scheme" content="light dark"><meta property="og:title" content="Advanced Page Cache observability and troubleshooting tools" />
-<meta property="og:description" content="Advanced Page Cache observability and troubleshooting tools # Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
+Writeback monitor # $ sudo bpftrace ."><meta name=theme-color content="#FFFFFF"><meta name=color-scheme content="light dark"><meta property="og:title" content="Advanced Page Cache observability and troubleshooting tools"><meta property="og:description" content="Advanced Page Cache observability and troubleshooting tools # Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
 eBPF tools # First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
 Let&rsquo;s take a look at some tools which come with.
-Writeback monitor # $ sudo bpftrace ." />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/" /><meta property="article:section" content="docs" />
-
-
-
-<title>Advanced Page Cache observability and troubleshooting tools | Viacheslav Biriukov</title>
-<link rel="manifest" href="/manifest.json">
-<link rel="icon" href="/favicon.png" type="image/x-icon">
-<link rel="stylesheet" href="/book.min.82c5dbd23447cee0b4c2aa3ed08ce0961faa40e1fa370eee4f8c9f02e0d46b5f.css" integrity="sha256-gsXb0jRHzuC0wqo&#43;0Izglh&#43;qQOH6Nw7uT4yfAuDUa18=" crossorigin="anonymous">
-  <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.b7e86d2547352c41bdadc10c7c34231702a078a175ed43e20675f7fae7bd1c2b.js" integrity="sha256-t&#43;htJUc1LEG9rcEMfDQjFwKgeKF17UPiBnX3&#43;ue9HCs=" crossorigin="anonymous"></script>
-<!--
-Made with Book Theme
-https://github.com/alex-shpak/hugo-book
--->
-  
+Writeback monitor # $ sudo bpftrace ."><meta property="og:type" content="article"><meta property="og:url" content="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/"><meta property="article:section" content="docs"><title>Advanced Page Cache observability and troubleshooting tools | Viacheslav Biriukov</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png type=image/x-icon><link rel=stylesheet href=/book.min.82c5dbd23447cee0b4c2aa3ed08ce0961faa40e1fa370eee4f8c9f02e0d46b5f.css integrity="sha256-gsXb0jRHzuC0wqo+0Izglh+qQOH6Nw7uT4yfAuDUa18=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script>
+<script defer src=/en.search.min.4669d5edd457bd1a17786ad261212dc4a0bf84026ba7935de046a6ae6dc316b5.js integrity="sha256-RmnV7dRXvRoXeGrSYSEtxKC/hAJrp5Nd4Eamrm3DFrU=" crossorigin=anonymous></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-
-    gtag('config', 'G-599VSLESJL');
-</script>
-
-<link rel="stylesheet" href="/my_css/cookie.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
-</head>
-<body dir="ltr">
-  <input type="checkbox" class="hidden toggle" id="menu-control" />
-  <input type="checkbox" class="hidden toggle" id="toc-control" />
-  <main class="container flex">
-    <aside class="book-menu">
-      <div class="book-menu-content">
-        
-  <nav>
-<h2 class="book-brand">
-  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
-  </a>
-</h2>
-
-
-<div class="book-search">
-  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
-  <div class="book-search-spinner hidden"></div>
-  <ul id="book-search-results"></ul>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-  
-  <ul>
-    
-
-      
-        
-      
-        <li class="book-section-flat" >
-          
-  
-  
-
-  
-    <span>Linux Page Cache series</span>
-  
-
-          
-  <ul>
-    
-
-      
-        
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/docs/page-cache/0-linux-page-cache-for-sre/" class="">
-      
-        0. Linux Page Cache for SRE
-      
-    </a>
-  
-
-        </li>
-      
-    
-
-      
-        
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/docs/page-cache/1-prepare-environment-for-experiments/" class="">
-      
-        1. Prepare environments
-      
-    </a>
-  
-
-        </li>
-      
-    
-
-      
-        
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/docs/page-cache/2-essential-page-cache-theory/" class="">
-      
-        2. Essential theory
-      
-    </a>
-  
-
-        </li>
-      
-    
-
-      
-        
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/docs/page-cache/3-page-cache-and-basic-file-operations/" class="">
-      
-        3. Basic file operations
-      
-    </a>
-  
-
-        </li>
-      
-    
-
-      
-        
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" class="">
-      
-        4. Eviction and page reclaim
-      
-    </a>
-  
-
-        </li>
-      
-    
-
-      
-        
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/docs/page-cache/5-more-about-mmap-file-access/" class="">
-      
-        5. More about mmap()
-      
-    </a>
-  
-
-        </li>
-      
-    
-
-      
-        
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/docs/page-cache/6-cgroup-v2-and-page-cache/" class="">
-      
-        6. Cgroup v2
-      
-    </a>
-  
-
-        </li>
-      
-    
-
-      
-        
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class="">
-      
-        7. Unique set and working set
-      
-    </a>
-  
-
-        </li>
-      
-    
-
-      
-        
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/docs/page-cache/8-direct-io-dio/" class="">
-      
-        8. Direct IO
-      
-    </a>
-  
-
-        </li>
-      
-    
-
-      
-        
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/" class="active">
-      
-        9. Advanced tools
-      
-    </a>
-  
-
-        </li>
-      
-    
-  </ul>
-
-        </li>
-      
-    
-
-      
-        
-  </ul>
-
-
-
-
-
-
-
-
-<div style="margin-top: 30px; margin-bottom: 30px">
-  
-  <b>Other post series:</b>
-  <ul>
-    <li><a href="#">1. File descriptors, pipes, process sessions and terminals mini book</li>
-    <li><a href="#">2. Linux Page Cache mini book</li>
-  </ul>
-</div>
-
-
-
-
-  
-<ul>
-  
-  <li>
-    <a href="https://twitter.com/brk0v/" target="_blank" rel="noopener"><i class="bi bi-twitter"></i>
-        Twitter
-      </a>
-  </li>
-  
-  <li>
-    <a href="https://github.com/brk0v/" target="_blank" rel="noopener"><i class="bi bi-github"></i>
-        Github
-      </a>
-  </li>
-  
-  <li>
-    <a href="https://www.linkedin.com/in/biriukov/" target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
-        Linkedin
-      </a>
-  </li>
-  
-</ul>
-
-
-
-
-
-<div style="margin-top: 30px;">
-  <p xmlns:cc="http://creativecommons.org/ns#">
-    This content is licensed under 
-    <a
-      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
-      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
-      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
-      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
-      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
-      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
-      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
-      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
-    </a>
-  </p>
-</div>
-</nav>
-
-
-
-
-  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
-
-
- 
-      </div>
-    </aside>
-
-    <div class="book-page">
-      <header class="book-header">
-        
-  <div class="flex align-center justify-between">
-  <label for="menu-control">
-    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
-  </label>
-
-  <strong>Advanced Page Cache observability and troubleshooting tools</strong>
-
-  <label for="toc-control">
-    
-    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
-    
-  </label>
-</div>
-
-
-  
-  <aside class="hidden clearfix">
-    
-  
-<nav id="TableOfContents">
-  <ul>
-    <li><a href="#advanced-page-cache-observability-and-troubleshooting-tools">Advanced Page Cache observability and troubleshooting tools</a>
-      <ul>
-        <li><a href="#ebpf-tools">eBPF tools</a>
-          <ul>
-            <li><a href="#writeback-monitor">Writeback monitor</a></li>
-            <li><a href="#page-cache-top">Page Cache Top</a></li>
-            <li><a href="#cache-stat">Cache stat</a></li>
-            <li><a href="#bpftrace-and-kfunc-trace"><code>bpftrace</code> and <code>kfunc</code> trace</a></li>
-          </ul>
-        </li>
-        <li><a href="#perf-tool">Perf tool</a></li>
-      </ul>
-    </li>
-  </ul>
-</nav>
-
-
-
-  </aside>
-  
- 
-      </header>
-
-      
-      
-  <article class="markdown"><h1 id="advanced-page-cache-observability-and-troubleshooting-tools">
-  Advanced Page Cache observability and troubleshooting tools
-  <a class="anchor" href="#advanced-page-cache-observability-and-troubleshooting-tools">#</a>
-</h1>
-<p>Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.</p>
-<h2 id="ebpf-tools">
-  eBPF tools
-  <a class="anchor" href="#ebpf-tools">#</a>
-</h2>
-<p>First of all we can use <code>eBPF</code> tools. The [<code>bcc</code>]https://github.com/iovisor/bcc and <a href="https://github.com/iovisor/bpftrace" target="_blank" rel="noopener"><code>bpftrace</code></a> are your friends when you want to get some internal kernel information.</p>
-<p>Let&rsquo;s take a look at some tools which come with.</p>
-<h3 id="writeback-monitor">
-  Writeback monitor
-  <a class="anchor" href="#writeback-monitor">#</a>
-</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo bpftrace ./writeback.bt
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>Attaching <span style="color:#ae81ff">4</span> probes...
-</span></span><span style="display:flex;"><span>Tracing writeback... Hit Ctrl-C to end.
-</span></span><span style="display:flex;"><span>TIME      DEVICE   PAGES    REASON           ms
-</span></span><span style="display:flex;"><span>15:01:48  btrfs-1  <span style="color:#ae81ff">7355</span>     periodic         0.003
-</span></span><span style="display:flex;"><span>15:01:49  btrfs-1  <span style="color:#ae81ff">7355</span>     periodic         0.003
-</span></span><span style="display:flex;"><span>15:01:51  btrfs-1  <span style="color:#ae81ff">7355</span>     periodic         0.006
-</span></span><span style="display:flex;"><span>15:01:54  btrfs-1  <span style="color:#ae81ff">7355</span>     periodic         0.005
-</span></span><span style="display:flex;"><span>15:01:54  btrfs-1  <span style="color:#ae81ff">7355</span>     periodic         0.004
-</span></span><span style="display:flex;"><span>15:01:56  btrfs-1  <span style="color:#ae81ff">7355</span>     periodic         0.005
-</span></span></code></pre></div><h3 id="page-cache-top">
-  Page Cache Top
-  <a class="anchor" href="#page-cache-top">#</a>
-</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>19:49:52 Buffers MB: <span style="color:#ae81ff">0</span> / Cached MB: <span style="color:#ae81ff">610</span> / Sort: HITS / Order: descending  
-</span></span><span style="display:flex;"><span>PID      UID      CMD              HITS     MISSES   DIRTIES  READ_HIT%  WRITE_HIT%  
-</span></span><span style="display:flex;"><span>   <span style="color:#ae81ff">66229</span> vagrant  vmtouch             <span style="color:#ae81ff">44745</span>    <span style="color:#ae81ff">44032</span>        <span style="color:#ae81ff">0</span>      50.4%      49.6%  
-</span></span><span style="display:flex;"><span>   <span style="color:#ae81ff">66229</span> vagrant  bash                  <span style="color:#ae81ff">205</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>     100.0%       0.0%  
-</span></span><span style="display:flex;"><span>   <span style="color:#ae81ff">66227</span> root     cachetop               <span style="color:#ae81ff">17</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>     100.0%       0.0%  
-</span></span><span style="display:flex;"><span>     <span style="color:#ae81ff">222</span> dbus     dbus-daemon            <span style="color:#ae81ff">16</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>     100.0%       0.0%  
-</span></span><span style="display:flex;"><span>     <span style="color:#ae81ff">317</span> vagrant  tmux: server            <span style="color:#ae81ff">4</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>     100.0%       0.0%
-</span></span></code></pre></div><h3 id="cache-stat">
-  Cache stat
-  <a class="anchor" href="#cache-stat">#</a>
-</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#f92672">[</span>vagrant@archlinux tools<span style="color:#f92672">]</span>$ sudo ./cachestat  
-</span></span><span style="display:flex;"><span>    HITS   MISSES  DIRTIES HITRATIO   BUFFERS_MB  CACHED_MB  
-</span></span><span style="display:flex;"><span>      <span style="color:#ae81ff">10</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
-</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">4</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
-</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">4</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
-</span></span><span style="display:flex;"><span>      <span style="color:#ae81ff">21</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
-</span></span><span style="display:flex;"><span>     <span style="color:#ae81ff">624</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">438</span>  
-</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">2</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">438</span>  
-</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">4</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">438</span>  
-</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>    0.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">438</span>  
-</span></span><span style="display:flex;"><span>      <span style="color:#ae81ff">19</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">438</span>  
-</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">428</span>        <span style="color:#ae81ff">0</span>    0.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">546</span>  
-</span></span><span style="display:flex;"><span>   <span style="color:#ae81ff">28144</span>    <span style="color:#ae81ff">16384</span>        <span style="color:#ae81ff">0</span>   63.21%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
-</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>    0.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
-</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>    0.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
-</span></span><span style="display:flex;"><span>      <span style="color:#ae81ff">17</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>  100.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>  
-</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">0</span>    0.00%            <span style="color:#ae81ff">0</span>        <span style="color:#ae81ff">610</span>
-</span></span></code></pre></div><h3 id="bpftrace-and-kfunc-trace">
-  <code>bpftrace</code> and <code>kfunc</code> trace
-  <a class="anchor" href="#bpftrace-and-kfunc-trace">#</a>
-</h3>
-<p>Other than that, <code>eBPF</code> and <code>bpftrace</code> have recently got a new great feature named <a href="https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md#15-kfunckretfunc-kernel-functions-tracing" target="_blank" rel="noopener"><code>kfunc</code></a>.Thus, using it, you can trace some kernel functions without kernel debugging information installed.</p>
-<p>It&rsquo;s still close to experimental functionality, but it looks really promising.</p>
-<h2 id="perf-tool">
-  Perf tool
-  <a class="anchor" href="#perf-tool">#</a>
-</h2>
-<p>But if you want to go deeper, I have something for you. <code>perf</code> allows to setup dynamic tracing kernel probes almost at any kernel functions. The only issue is the kernel debug information should be installed. Unfortunately, not all distributives provide it and sometimes you will need to recompile the kernel manually with some additional flags.</p>
-<p>But when you got the debug info, you can perform really crazy investigations. For example, if we want to track the major page faults, we can find the kernel function which is in charge (<a href="https://elixir.bootlin.com/linux/latest/source" target="_blank" rel="noopener">https://elixir.bootlin.com/linux/latest/source</a> and its search for help) and setup a probe:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>perf probe -f <span style="color:#e6db74">&#34;do_read_fault vma-&gt;vm_file-&gt;f_inode-&gt;i_ino&#34;</span>
-</span></span></code></pre></div><p>where <code>do_read_fault</code> is our kernel function and <code>vma-&gt;vm_file-&gt;f_inode-&gt;i_ino</code> is an inode number of the file where the major page fault occurs.</p>
-<p>Now you can start recoding events:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>perf record -e probe:do_read_fault -ag -- sleep <span style="color:#ae81ff">10</span>
-</span></span></code></pre></div><p>And after 10 seconds, we can grep out the inodes with <code>perf script</code> and bash magic:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>perf script | grep i_ino | cut -d <span style="color:#e6db74">&#39; &#39;</span> -f 1,8| sed <span style="color:#e6db74">&#39;s#i_ino=##g&#39;</span> | sort | uniq -c | sort -rn
-</span></span></code></pre></div></article>
- 
-      
-
-      <footer class="book-footer">
-        
-  <div class="flex flex-wrap justify-between">
-
-
-
-
-
-</div>
-
-
-
-
- 
-        
-      </footer>
-
-      
-  
-  <div class="book-comments">
-
-</div>
-  
- 
-
-      <label for="menu-control" class="hidden book-menu-overlay"></label>
-    </div>
-
-    
-    <aside class="book-toc">
-      <div class="book-toc-content">
-        
-  
-<nav id="TableOfContents">
-  <ul>
-    <li><a href="#advanced-page-cache-observability-and-troubleshooting-tools">Advanced Page Cache observability and troubleshooting tools</a>
-      <ul>
-        <li><a href="#ebpf-tools">eBPF tools</a>
-          <ul>
-            <li><a href="#writeback-monitor">Writeback monitor</a></li>
-            <li><a href="#page-cache-top">Page Cache Top</a></li>
-            <li><a href="#cache-stat">Cache stat</a></li>
-            <li><a href="#bpftrace-and-kfunc-trace"><code>bpftrace</code> and <code>kfunc</code> trace</a></li>
-          </ul>
-        </li>
-        <li><a href="#perf-tool">Perf tool</a></li>
-      </ul>
-    </li>
-  </ul>
-</nav>
-
-
- 
-      </div>
-    </aside>
-    
-  </main>
-
-  
-<div class="cookie-container">
-    <p>
-        This website uses "<b>cookies</b>".
-        Using this website means you're OK with this.
-        If you are <b>NOT</b>, please close the site page.
-    </p>
-    <button class="cookie-btn">
-        ACCEPT AND CLOSE
-    </button>
-</div>
-<script src="/my_js/cookie.js"></script>
-</body>
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-599VSLESJL")</script><link rel=stylesheet href=/my_css/cookie.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
+<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Viacheslav Biriukov</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li class=book-section-flat><span>Linux Page Cache series</span><ul><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>0. Linux Page Cache for SRE</a></li><li><a href=/docs/page-cache/1-prepare-environment-for-experiments/>1. Prepare environments</a></li><li><a href=/docs/page-cache/2-essential-page-cache-theory/>2. Essential theory</a></li><li><a href=/docs/page-cache/3-page-cache-and-basic-file-operations/>3. Basic file operations</a></li><li><a href=/docs/page-cache/4-page-cache-eviction-and-page-reclaim/>4. Eviction and page reclaim</a></li><li><a href=/docs/page-cache/5-more-about-mmap-file-access/>5. More about mmap()</a></li><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/>6. Cgroup v2</a></li><li><a href=/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/>7. Unique set and working set</a></li><li><a href=/docs/page-cache/8-direct-io-dio/>8. Direct IO</a></li><li><a href=/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/ class=active>9. Advanced tools</a></li></ul></li></ul><div style=margin-top:30px;margin-bottom:30px><b>More post series:</b><ul><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons>1. File descriptors, pipes, terminals, user sessions, process groups and daemons <span style="padding:0 2px;border-radius:2px;background-color:#e84118;color:#f0f8ff">new</span></li><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>2. Linux Page Cache mini book</li></ul></div><ul><li><a href=https://twitter.com/brk0v/ target=_blank rel=noopener><i class="bi bi-twitter"></i>
+Twitter</a></li><li><a href=https://github.com/brk0v/ target=_blank rel=noopener><i class="bi bi-github"></i>
+Github</a></li><li><a href=https://www.linkedin.com/in/biriukov/ target=_blank rel=noopener><i class="bi bi-linkedin"></i>
+Linkedin</a></li></ul><div style=margin-top:30px><p xmlns:cc=http://creativecommons.org/ns#>This content is licensed under
+<a href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target=_blank rel="license noopener noreferrer" style=display:inline-block>CC BY-NC 4.0<img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu></label>
+<strong>Advanced Page Cache observability and troubleshooting tools</strong>
+<label for=toc-control><img src=/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav id=TableOfContents><ul><li><a href=#advanced-page-cache-observability-and-troubleshooting-tools>Advanced Page Cache observability and troubleshooting tools</a><ul><li><a href=#ebpf-tools>eBPF tools</a><ul><li><a href=#writeback-monitor>Writeback monitor</a></li><li><a href=#page-cache-top>Page Cache Top</a></li><li><a href=#cache-stat>Cache stat</a></li><li><a href=#bpftrace-and-kfunc-trace><code>bpftrace</code> and <code>kfunc</code> trace</a></li></ul></li><li><a href=#perf-tool>Perf tool</a></li></ul></li></ul></nav></aside></header><article class=markdown><h1 id=advanced-page-cache-observability-and-troubleshooting-tools>Advanced Page Cache observability and troubleshooting tools
+<a class=anchor href=#advanced-page-cache-observability-and-troubleshooting-tools>#</a></h1><p>Let&rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.</p><h2 id=ebpf-tools>eBPF tools
+<a class=anchor href=#ebpf-tools>#</a></h2><p>First of all we can use <code>eBPF</code> tools. The [<code>bcc</code>]https://github.com/iovisor/bcc and <a href=https://github.com/iovisor/bpftrace target=_blank rel=noopener><code>bpftrace</code></a> are your friends when you want to get some internal kernel information.</p><p>Let&rsquo;s take a look at some tools which come with.</p><h3 id=writeback-monitor>Writeback monitor
+<a class=anchor href=#writeback-monitor>#</a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo bpftrace ./writeback.bt
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>Attaching <span style=color:#ae81ff>4</span> probes...
+</span></span><span style=display:flex><span>Tracing writeback... Hit Ctrl-C to end.
+</span></span><span style=display:flex><span>TIME      DEVICE   PAGES    REASON           ms
+</span></span><span style=display:flex><span>15:01:48  btrfs-1  <span style=color:#ae81ff>7355</span>     periodic         0.003
+</span></span><span style=display:flex><span>15:01:49  btrfs-1  <span style=color:#ae81ff>7355</span>     periodic         0.003
+</span></span><span style=display:flex><span>15:01:51  btrfs-1  <span style=color:#ae81ff>7355</span>     periodic         0.006
+</span></span><span style=display:flex><span>15:01:54  btrfs-1  <span style=color:#ae81ff>7355</span>     periodic         0.005
+</span></span><span style=display:flex><span>15:01:54  btrfs-1  <span style=color:#ae81ff>7355</span>     periodic         0.004
+</span></span><span style=display:flex><span>15:01:56  btrfs-1  <span style=color:#ae81ff>7355</span>     periodic         0.005
+</span></span></code></pre></div><h3 id=page-cache-top>Page Cache Top
+<a class=anchor href=#page-cache-top>#</a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>19:49:52 Buffers MB: <span style=color:#ae81ff>0</span> / Cached MB: <span style=color:#ae81ff>610</span> / Sort: HITS / Order: descending  
+</span></span><span style=display:flex><span>PID      UID      CMD              HITS     MISSES   DIRTIES  READ_HIT%  WRITE_HIT%  
+</span></span><span style=display:flex><span>   <span style=color:#ae81ff>66229</span> vagrant  vmtouch             <span style=color:#ae81ff>44745</span>    <span style=color:#ae81ff>44032</span>        <span style=color:#ae81ff>0</span>      50.4%      49.6%  
+</span></span><span style=display:flex><span>   <span style=color:#ae81ff>66229</span> vagrant  bash                  <span style=color:#ae81ff>205</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>     100.0%       0.0%  
+</span></span><span style=display:flex><span>   <span style=color:#ae81ff>66227</span> root     cachetop               <span style=color:#ae81ff>17</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>     100.0%       0.0%  
+</span></span><span style=display:flex><span>     <span style=color:#ae81ff>222</span> dbus     dbus-daemon            <span style=color:#ae81ff>16</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>     100.0%       0.0%  
+</span></span><span style=display:flex><span>     <span style=color:#ae81ff>317</span> vagrant  tmux: server            <span style=color:#ae81ff>4</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>     100.0%       0.0%
+</span></span></code></pre></div><h3 id=cache-stat>Cache stat
+<a class=anchor href=#cache-stat>#</a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#f92672>[</span>vagrant@archlinux tools<span style=color:#f92672>]</span>$ sudo ./cachestat  
+</span></span><span style=display:flex><span>    HITS   MISSES  DIRTIES HITRATIO   BUFFERS_MB  CACHED_MB  
+</span></span><span style=display:flex><span>      <span style=color:#ae81ff>10</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>  100.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>610</span>  
+</span></span><span style=display:flex><span>       <span style=color:#ae81ff>4</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>  100.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>610</span>  
+</span></span><span style=display:flex><span>       <span style=color:#ae81ff>4</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>  100.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>610</span>  
+</span></span><span style=display:flex><span>      <span style=color:#ae81ff>21</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>  100.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>610</span>  
+</span></span><span style=display:flex><span>     <span style=color:#ae81ff>624</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>  100.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>438</span>  
+</span></span><span style=display:flex><span>       <span style=color:#ae81ff>2</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>  100.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>438</span>  
+</span></span><span style=display:flex><span>       <span style=color:#ae81ff>4</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>  100.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>438</span>  
+</span></span><span style=display:flex><span>       <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>    0.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>438</span>  
+</span></span><span style=display:flex><span>      <span style=color:#ae81ff>19</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>  100.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>438</span>  
+</span></span><span style=display:flex><span>       <span style=color:#ae81ff>0</span>      <span style=color:#ae81ff>428</span>        <span style=color:#ae81ff>0</span>    0.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>546</span>  
+</span></span><span style=display:flex><span>   <span style=color:#ae81ff>28144</span>    <span style=color:#ae81ff>16384</span>        <span style=color:#ae81ff>0</span>   63.21%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>610</span>  
+</span></span><span style=display:flex><span>       <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>    0.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>610</span>  
+</span></span><span style=display:flex><span>       <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>    0.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>610</span>  
+</span></span><span style=display:flex><span>      <span style=color:#ae81ff>17</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>  100.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>610</span>  
+</span></span><span style=display:flex><span>       <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span>    0.00%            <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>610</span>
+</span></span></code></pre></div><h3 id=bpftrace-and-kfunc-trace><code>bpftrace</code> and <code>kfunc</code> trace
+<a class=anchor href=#bpftrace-and-kfunc-trace>#</a></h3><p>Other than that, <code>eBPF</code> and <code>bpftrace</code> have recently got a new great feature named <a href=https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md#15-kfunckretfunc-kernel-functions-tracing target=_blank rel=noopener><code>kfunc</code></a>.Thus, using it, you can trace some kernel functions without kernel debugging information installed.</p><p>It&rsquo;s still close to experimental functionality, but it looks really promising.</p><h2 id=perf-tool>Perf tool
+<a class=anchor href=#perf-tool>#</a></h2><p>But if you want to go deeper, I have something for you. <code>perf</code> allows to setup dynamic tracing kernel probes almost at any kernel functions. The only issue is the kernel debug information should be installed. Unfortunately, not all distributives provide it and sometimes you will need to recompile the kernel manually with some additional flags.</p><p>But when you got the debug info, you can perform really crazy investigations. For example, if we want to track the major page faults, we can find the kernel function which is in charge (<a href=https://elixir.bootlin.com/linux/latest/source target=_blank rel=noopener>https://elixir.bootlin.com/linux/latest/source</a> and its search for help) and setup a probe:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>perf probe -f <span style=color:#e6db74>&#34;do_read_fault vma-&gt;vm_file-&gt;f_inode-&gt;i_ino&#34;</span>
+</span></span></code></pre></div><p>where <code>do_read_fault</code> is our kernel function and <code>vma->vm_file->f_inode->i_ino</code> is an inode number of the file where the major page fault occurs.</p><p>Now you can start recoding events:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>perf record -e probe:do_read_fault -ag -- sleep <span style=color:#ae81ff>10</span>
+</span></span></code></pre></div><p>And after 10 seconds, we can grep out the inodes with <code>perf script</code> and bash magic:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>perf script | grep i_ino | cut -d <span style=color:#e6db74>&#39; &#39;</span> -f 1,8| sed <span style=color:#e6db74>&#39;s#i_ino=##g&#39;</span> | sort | uniq -c | sort -rn
+</span></span></code></pre></div></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents><ul><li><a href=#advanced-page-cache-observability-and-troubleshooting-tools>Advanced Page Cache observability and troubleshooting tools</a><ul><li><a href=#ebpf-tools>eBPF tools</a><ul><li><a href=#writeback-monitor>Writeback monitor</a></li><li><a href=#page-cache-top>Page Cache Top</a></li><li><a href=#cache-stat>Cache stat</a></li><li><a href=#bpftrace-and-kfunc-trace><code>bpftrace</code> and <code>kfunc</code> trace</a></li></ul></li><li><a href=#perf-tool>Perf tool</a></li></ul></li></ul></nav></div></aside></main><div class=cookie-container><p>This website uses "<b>cookies</b>".
+Using this website means you're OK with this.
+If you are <b>NOT</b>, please close the site page.</p><button class=cookie-btn>
+ACCEPT AND CLOSE</button></div><script src=/my_js/cookie.js></script></body></html>
