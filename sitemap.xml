@@ -4,9 +4,19 @@
   <url>
     <loc>https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/</loc>
   </url><url>
+    <loc>https://biriukov.dev/docs/fd-pipe-session-terminal/0.-what-every-sre-should-know-about-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons/</loc>
+  </url><url>
+    <loc>https://biriukov.dev/docs/fd-pipe-session-terminal/1.-file-descriptors-and-open-file-descriptions/</loc>
+  </url><url>
     <loc>https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/</loc>
   </url><url>
+    <loc>https://biriukov.dev/docs/fd-pipe-session-terminal/2.-pipes/</loc>
+  </url><url>
     <loc>https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/</loc>
+  </url><url>
+    <loc>https://biriukov.dev/docs/fd-pipe-session-terminal/3.-process-groups-jobs-and-sessions/</loc>
+  </url><url>
+    <loc>https://biriukov.dev/docs/fd-pipe-session-terminal/4.-terminals-and-pseudoterminals/</loc>
   </url><url>
     <loc>https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/</loc>
   </url><url>
@@ -24,6 +34,8 @@
   </url><url>
     <loc>https://biriukov.dev/posts/</loc>
   </url><url>
+    <loc>https://biriukov.dev/</loc>
+  </url><url>
     <loc>https://biriukov.dev/categories/</loc>
   </url><url>
     <loc>https://biriukov.dev/docs/</loc>
@@ -32,6 +44,6 @@
   </url><url>
     <loc>https://biriukov.dev/tags/</loc>
   </url><url>
-    <loc>https://biriukov.dev/</loc>
+    <loc>https://biriukov.dev/docs/fd-pipe-session-terminal/</loc>
   </url>
 </urlset>

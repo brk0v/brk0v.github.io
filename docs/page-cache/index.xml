@@ -12,7 +12,7 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/</guid>
-      <description>SRE deep dive into Linux Page Cache #  In this series of articles I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to:</description>
+      <description>SRE deep dive into Linux Page Cache # In this series of articles I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to:</description>
     </item>
     
     <item>
@@ -21,7 +21,7 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/</guid>
-      <description>Prepare environment for experiments #  Before I start, I want to be on the same page with the reader, so any example or any code snippet can be executed, compiled and checked. Therefore we need a modern GNU/Linux installation where we can play with code and kernel.
+      <description>Prepare environment for experiments # Before I start, I want to be on the same page with the reader, so any example or any code snippet can be executed, compiled and checked. Therefore we need a modern GNU/Linux installation where we can play with code and kernel.
 If you are using Windows or Mac OS, I would suggest installing Vagrant with Virtual Box. For the GNU/Linux distributive I&amp;rsquo;d like to use Arch Linux.</description>
     </item>
     
@@ -31,8 +31,8 @@ If you are using Windows or Mac OS, I would suggest installing Vagrant with Virt
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/</guid>
-      <description>Essential Page Cache theory #  First of all let’s start with a bunch of reasonable questions about Page Cache:
- What is the Linux Page Cache? What problems does it solve? Why do we call it &amp;ldquo;Page&amp;rdquo; Cache ?  In essence the Page Cache is a part of Virtual File System (VFS) which main purpose, as you can guess, is improving IO latency of read and write operations. A write-back cache algorithm is a core building block of the Page Cache.</description>
+      <description>Essential Page Cache theory # First of all let’s start with a bunch of reasonable questions about Page Cache:
+What is the Linux Page Cache? What problems does it solve? Why do we call it &amp;ldquo;Page&amp;rdquo; Cache ? In essence the Page Cache is a part of Virtual File System (VFS) which main purpose, as you can guess, is improving IO latency of read and write operations. A write-back cache algorithm is a core building block of the Page Cache.</description>
     </item>
     
     <item>
@@ -41,9 +41,9 @@ If you are using Windows or Mac OS, I would suggest installing Vagrant with Virt
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/</guid>
-      <description>Page Cache and basic file operations #  Now it&amp;rsquo;s time to roll up our sleeves and get started with some practical examples. By the end of this chapter you will know how to interact with Page Cache and which tools you can use.
+      <description>Page Cache and basic file operations # Now it&amp;rsquo;s time to roll up our sleeves and get started with some practical examples. By the end of this chapter you will know how to interact with Page Cache and which tools you can use.
 Utils needed for this section:
- sync (man 1 sync) – a tool to flush all dirty pages to persistent storage; /proc/sys/vm/drop_caches (man 5 proc) – a kernel procfs file to trigger Page Cache clearance; vmtouch – a tool for getting Page Cache info about a particular file by its path.</description>
+sync (man 1 sync) – a tool to flush all dirty pages to persistent storage; /proc/sys/vm/drop_caches (man 5 proc) – a kernel procfs file to trigger Page Cache clearance; vmtouch – a tool for getting Page Cache info about a particular file by its path.</description>
     </item>
     
     <item>
@@ -52,7 +52,7 @@ Utils needed for this section:
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/</guid>
-      <description>Page Cache eviction and page reclaim #  So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in the cache and flushing the cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&amp;rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache.</description>
+      <description>Page Cache eviction and page reclaim # So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in the cache and flushing the cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&amp;rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache.</description>
     </item>
     
     <item>
@@ -61,8 +61,8 @@ Utils needed for this section:
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/</guid>
-      <description>More about mmap() file access #  Before we start the cgroup chapter, where I&amp;rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve reliability of services, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
-mmap() overview #  Memory mapping is one of the most interesting features of the Linux systems.</description>
+      <description>More about mmap() file access # Before we start the cgroup chapter, where I&amp;rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve reliability of services, I want to delve a bit deeper into mmap() syscall. We need to understand what is happening under the hood and shed more light on the process of reading and writing with mmap().
+mmap() overview # Memory mapping is one of the most interesting features of the Linux systems.</description>
     </item>
     
     <item>
@@ -71,7 +71,7 @@ mmap() overview #  Memory mapping is one of the most interesting features of the
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/</guid>
-      <description>Cgroup v2 and Page Cache #  The cgroup subsystem is the way to fairly distribute and limit system resources. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In additional, the cgroup provides a lot of useful resource counters and statistics.
+      <description>Cgroup v2 and Page Cache # The cgroup subsystem is the way to fairly distribute and limit system resources. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In additional, the cgroup provides a lot of useful resource counters and statistics.
 The control groups are everywhere. Even though you may not use them explicitly, they are already turned on by default in all modern GNU/Linux distributives and got integrated in systemd.</description>
     </item>
     
@@ -81,7 +81,7 @@ The control groups are everywhere. Even though you may not use them explicitly, 
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</guid>
-      <description>How much memory my program uses or the tale of working set size #  Currently, in the world of containers, auto-scaling and on-demand clouds, it&amp;rsquo;s very important to understand the resource needs of services both in norman regular situations and under pressure near the software limits. But every time someone touches on the topic of memory usage, it becomes almost immediately unclear what and how to measure. RAM is valuable and often expensive type of hardware.</description>
+      <description>How much memory my program uses or the tale of working set size # Currently, in the world of containers, auto-scaling and on-demand clouds, it&amp;rsquo;s very important to understand the resource needs of services both in norman regular situations and under pressure near the software limits. But every time someone touches on the topic of memory usage, it becomes almost immediately unclear what and how to measure. RAM is valuable and often expensive type of hardware.</description>
     </item>
     
     <item>
@@ -90,8 +90,8 @@ The control groups are everywhere. Even though you may not use them explicitly, 
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</guid>
-      <description>Direct IO (DIO) (NOT READY) #  As usual, there is always an exception in any rule. And Page Cache is not different. So let&amp;rsquo;s talk about file reads and writes which can ignore Page Cache content.
-Why it’s good #  Some applications require low-level access to the storage subsystem and linux kernel gives such feature by providing O_DIRECT file open flag. This IO is called the Direct IO or DIO.</description>
+      <description>Direct IO (DIO) (NOT READY) # As usual, there is always an exception in any rule. And Page Cache is not different. So let&amp;rsquo;s talk about file reads and writes which can ignore Page Cache content.
+Why it’s good # Some applications require low-level access to the storage subsystem and linux kernel gives such feature by providing O_DIRECT file open flag. This IO is called the Direct IO or DIO.</description>
     </item>
     
     <item>
@@ -100,10 +100,10 @@ Why it’s good #  Some applications require low-level access to the storage sub
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</guid>
-      <description>Advanced Page Cache observability and troubleshooting tools #  Let&amp;rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
-eBPF tools #  First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
+      <description>Advanced Page Cache observability and troubleshooting tools # Let&amp;rsquo;s touch some advanced tools that we can use in order to perform a low level kernel tracing and debugging.
+eBPF tools # First of all we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
 Let&amp;rsquo;s take a look at some tools which come with.
-Writeback monitor #  $ sudo bpftrace .</description>
+Writeback monitor # $ sudo bpftrace .</description>
     </item>
     
   </channel>

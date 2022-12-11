@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>What every SRE should know about file descriptors, pipes, terminals, user sessions, process groups and daemons on Viacheslav Biriukov</title>
+    <link>https://biriukov.dev/docs/fd-pipe-session-terminal/</link>
+    <description>Recent content in What every SRE should know about file descriptors, pipes, terminals, user sessions, process groups and daemons on Viacheslav Biriukov</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="https://biriukov.dev/docs/fd-pipe-session-terminal/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>What every SRE should know about file descriptors, pipes, terminals, user sessions, process groups and daemons</title>
+      <link>https://biriukov.dev/docs/fd-pipe-session-terminal/0.-what-every-sre-should-know-about-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://biriukov.dev/docs/fd-pipe-session-terminal/0.-what-every-sre-should-know-about-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons/</guid>
+      <description> What every SRE should know about file descriptors, pipes, terminals, user sessions, process groups and daemons # </description>
+    </item>
+    
+    <item>
+      <title>File descriptors and open file descriptions</title>
+      <link>https://biriukov.dev/docs/fd-pipe-session-terminal/1.-file-descriptors-and-open-file-descriptions/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://biriukov.dev/docs/fd-pipe-session-terminal/1.-file-descriptors-and-open-file-descriptions/</guid>
+      <description> File descriptors and open file descriptions # </description>
+    </item>
+    
+    <item>
+      <title>Pipes</title>
+      <link>https://biriukov.dev/docs/fd-pipe-session-terminal/2.-pipes/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://biriukov.dev/docs/fd-pipe-session-terminal/2.-pipes/</guid>
+      <description> Pipes # </description>
+    </item>
+    
+    <item>
+      <title>Process groups, jobs and sessions</title>
+      <link>https://biriukov.dev/docs/fd-pipe-session-terminal/3.-process-groups-jobs-and-sessions/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://biriukov.dev/docs/fd-pipe-session-terminal/3.-process-groups-jobs-and-sessions/</guid>
+      <description> Process groups, jobs and sessions # </description>
+    </item>
+    
+    <item>
+      <title>Terminals and pseudoterminals</title>
+      <link>https://biriukov.dev/docs/fd-pipe-session-terminal/4.-terminals-and-pseudoterminals/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://biriukov.dev/docs/fd-pipe-session-terminal/4.-terminals-and-pseudoterminals/</guid>
+      <description> Terminals and pseudoterminals # </description>
+    </item>
+    
+  </channel>
+</rss>

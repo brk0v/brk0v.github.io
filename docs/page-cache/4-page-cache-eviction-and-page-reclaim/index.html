@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en-us" dir="ltr">
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Page Cache eviction and page reclaim #  So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in the cache and flushing the cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache.">
-<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="Page Cache eviction and page reclaim" />
-<meta property="og:description" content="Page Cache eviction and page reclaim #  So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in the cache and flushing the cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache." />
+<meta name="description" content="Page Cache eviction and page reclaim # So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in the cache and flushing the cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache.">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="Page Cache eviction and page reclaim" />
+<meta property="og:description" content="Page Cache eviction and page reclaim # So far, we have talked about adding data to Page Cache by reading and writing files, checking existence of files in the cache and flushing the cache content manually. But the most important part of any cache system is its eviction policy or regarding Linux Page Cache it&rsquo;s also the memory page reclaim policy. Linux Page Cache, like any other cache, continuously monitors the last used pages, makes decisions about which pages should be deleted and which should be kept in the cache." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" /><meta property="article:section" content="docs" />
 
@@ -14,9 +15,9 @@
 <title>Page Cache eviction and page reclaim | Viacheslav Biriukov</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
-<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+<link rel="stylesheet" href="/book.min.82c5dbd23447cee0b4c2aa3ed08ce0961faa40e1fa370eee4f8c9f02e0d46b5f.css" integrity="sha256-gsXb0jRHzuC0wqo&#43;0Izglh&#43;qQOH6Nw7uT4yfAuDUa18=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.15ebc10467a8ce43bfa670b53cf8e5c452f511b59e5363a8ecae601da32ff14c.js" integrity="sha256-FevBBGeozkO/pnC1PPjlxFL1EbWeU2Oo7K5gHaMv8Uw=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.b7e86d2547352c41bdadc10c7c34231702a078a175ed43e20675f7fae7bd1c2b.js" integrity="sha256-t&#43;htJUc1LEG9rcEMfDQjFwKgeKF17UPiBnX3&#43;ue9HCs=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -69,204 +70,250 @@ https://github.com/alex-shpak/hugo-book
 
 
 
-
-<ul>
   
-  
-  <li class="book-section-flat" >
+  <ul>
     
 
-
-
-
-<span>Linux Page Cache series</span>
-
-
-    
-<ul>
+      
+        
+      
+        <li class="book-section-flat" >
+          
   
   
-  <li>
-    
 
-
-
-
-<a href="https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/" class="">
   
-    0. Linux Page Cache for SRE
+    <span>Linux Page Cache series</span>
   
-</a>
 
-
-  </li>
-  
-  
-  
-  <li>
+          
+  <ul>
     
 
-
-
-
-<a href="https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/" class="">
-  
-    1. Prepare environments
-  
-</a>
-
-
-  </li>
+      
+        
+      
+        <li>
+          
   
   
+
   
-  <li>
+    <a href="/docs/page-cache/0-linux-page-cache-for-sre/" class="">
+      
+        0. Linux Page Cache for SRE
+      
+    </a>
+  
+
+        </li>
+      
     
 
-
-
-
-<a href="https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/" class="">
-  
-    2. Essential theory
-  
-</a>
-
-
-  </li>
+      
+        
+      
+        <li>
+          
   
   
+
   
-  <li>
+    <a href="/docs/page-cache/1-prepare-environment-for-experiments/" class="">
+      
+        1. Prepare environments
+      
+    </a>
+  
+
+        </li>
+      
     
 
-
-
-
-<a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/" class="">
-  
-    3. Basic file operations
-  
-</a>
-
-
-  </li>
+      
+        
+      
+        <li>
+          
   
   
+
   
-  <li>
+    <a href="/docs/page-cache/2-essential-page-cache-theory/" class="">
+      
+        2. Essential theory
+      
+    </a>
+  
+
+        </li>
+      
     
 
-
-
-
-<a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" class=" active">
-  
-    4. Eviction and page reclaim
-  
-</a>
-
-
-  </li>
+      
+        
+      
+        <li>
+          
   
   
+
   
-  <li>
+    <a href="/docs/page-cache/3-page-cache-and-basic-file-operations/" class="">
+      
+        3. Basic file operations
+      
+    </a>
+  
+
+        </li>
+      
     
 
-
-
-
-<a href="https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/" class="">
-  
-    5. More about mmap()
-  
-</a>
-
-
-  </li>
+      
+        
+      
+        <li>
+          
   
   
+
   
-  <li>
+    <a href="/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" class="active">
+      
+        4. Eviction and page reclaim
+      
+    </a>
+  
+
+        </li>
+      
     
 
-
-
-
-<a href="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/" class="">
-  
-    6. Cgroup v2
-  
-</a>
-
-
-  </li>
+      
+        
+      
+        <li>
+          
   
   
+
   
-  <li>
+    <a href="/docs/page-cache/5-more-about-mmap-file-access/" class="">
+      
+        5. More about mmap()
+      
+    </a>
+  
+
+        </li>
+      
     
 
-
-
-
-<a href="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class="">
-  
-    7. Unique set and working set
-  
-</a>
-
-
-  </li>
+      
+        
+      
+        <li>
+          
   
   
+
   
-  <li>
+    <a href="/docs/page-cache/6-cgroup-v2-and-page-cache/" class="">
+      
+        6. Cgroup v2
+      
+    </a>
+  
+
+        </li>
+      
     
 
-
-
-
-<a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/" class="">
-  
-    8. Direct IO
-  
-</a>
-
-
-  </li>
+      
+        
+      
+        <li>
+          
   
   
+
   
-  <li>
+    <a href="/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class="">
+      
+        7. Unique set and working set
+      
+    </a>
+  
+
+        </li>
+      
     
 
-
-
-
-<a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/" class="">
-  
-    9. Advanced tools
-  
-</a>
-
-
-  </li>
+      
+        
+      
+        <li>
+          
   
   
-</ul>
 
-  </li>
+  
+    <a href="/docs/page-cache/8-direct-io-dio/" class="">
+      
+        8. Direct IO
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+        
+      
+        <li>
+          
   
   
-</ul>
+
+  
+    <a href="/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/" class="">
+      
+        9. Advanced tools
+      
+    </a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+
+      
+        
+  </ul>
 
 
 
 
 
 
+
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  
+  <b>Other post series:</b>
+  <ul>
+    <li><a href="#">1. File descriptors, pipes, process sessions and terminals mini book</li>
+    <li><a href="#">2. Linux Page Cache mini book</li>
+  </ul>
+</div>
 
 
 
@@ -298,23 +345,27 @@ https://github.com/alex-shpak/hugo-book
 
 
 
-<div style="margin-top: 24px;">
-    <p xmlns:cc="http://creativecommons.org/ns#">This content is licensed under <a
-            href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
-            rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
-                style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
-                src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
-                style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
-                src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
-                style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
-                src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p>
+<div style="margin-top: 30px;">
+  <p xmlns:cc="http://creativecommons.org/ns#">
+    This content is licensed under 
+    <a
+      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
+    </a>
+  </p>
 </div>
 </nav>
 
 
 
 
-  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
 
 
  
@@ -402,7 +453,7 @@ https://github.com/alex-shpak/hugo-book
 <p>But it&rsquo;s worth mentioning, that the real process of pages promotion and demotion is much more complicated and sophisticated.</p>
 <p>First of all, if a system has <a href="https://en.wikipedia.org/wiki/Non-uniform_memory_access" target="_blank" rel="noopener">NUMA</a> hardware nodes (<code>man 8 numastat</code>), <strong>it has twice more LRU lists</strong>. The reason is that the kernel tries to store memory information in the NUMA nodes in order to have fewer lock contentions.</p>
 <p>In addition, Linux Page Cache also has <strong>special shadow and referenced flag logic</strong> for promotion, demotion and re-promotion pages.</p>
-<p><strong>Shadow entries</strong> help to mitigate <strong>the <a href="https://en.wikipedia.org/wiki/Thrashing_%28computer_science%29" target="_blank" rel="noopener">memory thrashing problem</a></strong>. This issue happens when the programs' working set size is close to or greater than the real memory size (may be cgroup limit or the system RAM limitation). In such situation the reading pattern may evict pages from the inactive list before the subsequent second read request has appeared. The full idea described in the <a href="https://elixir.bootlin.com/linux/v5.14-rc7/source/mm/workingset.c" target="_blank" rel="noopener">mm/workingset.c</a> and includes calculating <strong>refault distance</strong>. This distance is used to make a judgment whether to put the page from the shadow entries immediately to the active LRU list or not.</p>
+<p><strong>Shadow entries</strong> help to mitigate <strong>the <a href="https://en.wikipedia.org/wiki/Thrashing_%28computer_science%29" target="_blank" rel="noopener">memory thrashing problem</a></strong>. This issue happens when the programs&rsquo; working set size is close to or greater than the real memory size (may be cgroup limit or the system RAM limitation). In such situation the reading pattern may evict pages from the inactive list before the subsequent second read request has appeared. The full idea described in the <a href="https://elixir.bootlin.com/linux/v5.14-rc7/source/mm/workingset.c" target="_blank" rel="noopener">mm/workingset.c</a> and includes calculating <strong>refault distance</strong>. This distance is used to make a judgment whether to put the page from the shadow entries immediately to the active LRU list or not.</p>
 <p>Another simplification that I made was about <a href="https://elixir.bootlin.com/linux/v5.14.3/source/include/linux/page-flags.h#L105" target="_blank" rel="noopener"><code>PG_referenced</code></a> page flag. In reality the page promotion and demotion use this flag as an addition input parameter in the decision algorithm. A more correct flow of the page promotion:</p>
 
 
@@ -439,42 +490,42 @@ flowchart LR
 
 <p><code>vmtouch</code> already can do that. Its <code>-e</code> flag commands kernel to evict all pages of the requested file from  Page Cache:</p>
 <p>For example:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ vmtouch /var/tmp/file1.db -e
-           Files: <span style="color:#ae81ff">1</span>
-     Directories: <span style="color:#ae81ff">0</span>
-   Evicted Pages: <span style="color:#ae81ff">32768</span> <span style="color:#f92672">(</span>128M<span style="color:#f92672">)</span>
-         Elapsed: 0.000704 seconds
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ vmtouch /var/tmp/file1.db
-           Files: 1.    LOOK HERE
-     Directories: <span style="color:#ae81ff">0</span>        ⬇
-  Resident Pages: 0/32768  0/128M  0% 
-  
-         Elapsed: 0.000566 seconds
-</code></pre></div><p>Let&rsquo;s look under the hood and figure out how it works. In order to write out own such tool we need to use already seen <code>posix_fadvise</code> syscall with the <code>POSIX_FADV_DONTNEED</code> option.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ vmtouch /var/tmp/file1.db -e
+</span></span><span style="display:flex;"><span>           Files: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>     Directories: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>   Evicted Pages: <span style="color:#ae81ff">32768</span> <span style="color:#f92672">(</span>128M<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>         Elapsed: 0.000704 seconds
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ vmtouch /var/tmp/file1.db
+</span></span><span style="display:flex;"><span>           Files: 1.    LOOK HERE
+</span></span><span style="display:flex;"><span>     Directories: <span style="color:#ae81ff">0</span>        ⬇
+</span></span><span style="display:flex;"><span>  Resident Pages: 0/32768  0/128M  0% 
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>         Elapsed: 0.000566 seconds
+</span></span></code></pre></div><p>Let&rsquo;s look under the hood and figure out how it works. In order to write out own such tool we need to use already seen <code>posix_fadvise</code> syscall with the <code>POSIX_FADV_DONTNEED</code> option.</p>
 <p>Code:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#f92672">import</span> os
-
-<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;br&#34;</span>) <span style="color:#66d9ef">as</span> f:
-    fd <span style="color:#f92672">=</span> f<span style="color:#f92672">.</span>fileno()
-    os<span style="color:#f92672">.</span>posix_fadvise(fd, <span style="color:#ae81ff">0</span>, os<span style="color:#f92672">.</span>fstat(fd)<span style="color:#f92672">.</span>st_size, os<span style="color:#f92672">.</span>POSIX_FADV_DONTNEED)
-</code></pre></div><p>For testing, I read the entire test file into Page Cache with <code>dd</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ dd <span style="color:#66d9ef">if</span><span style="color:#f92672">=</span>/var/tmp/file1.db of<span style="color:#f92672">=</span>/dev/null  
-262144+0 records in  
-262144+0 records out  
-<span style="color:#ae81ff">134217728</span> bytes <span style="color:#f92672">(</span><span style="color:#ae81ff">134</span> MB, <span style="color:#ae81ff">128</span> MiB<span style="color:#f92672">)</span> copied, 0.652248 s, <span style="color:#ae81ff">206</span> MB/s  
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ vmtouch /var/tmp/file1.db  
-           Files: <span style="color:#ae81ff">1</span>         LOOK HERE
-     Directories: <span style="color:#ae81ff">0</span>             ⬇
-  Resident Pages: 32768/32768  128M/128M  100%
-         Elapsed: 0.002719 seconds  
-</code></pre></div><p>And now after running our script we should see 0 pages in Page Cache:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ python3 ./evict_full_file.py  
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ vmtouch /var/tmp/file1.db  
-           Files: <span style="color:#ae81ff">1</span>     LOOK HERE
-     Directories: <span style="color:#ae81ff">0</span>        ⬇
-  Resident Pages: 0/32768  0/128M  0%
-         Elapsed: 0.000818 seconds
-</code></pre></div><h2 id="make-your-memory-unevictable">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-py" data-lang="py"><span style="display:flex;"><span><span style="color:#f92672">import</span> os
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;/var/tmp/file1.db&#34;</span>, <span style="color:#e6db74">&#34;br&#34;</span>) <span style="color:#66d9ef">as</span> f:
+</span></span><span style="display:flex;"><span>    fd <span style="color:#f92672">=</span> f<span style="color:#f92672">.</span>fileno()
+</span></span><span style="display:flex;"><span>    os<span style="color:#f92672">.</span>posix_fadvise(fd, <span style="color:#ae81ff">0</span>, os<span style="color:#f92672">.</span>fstat(fd)<span style="color:#f92672">.</span>st_size, os<span style="color:#f92672">.</span>POSIX_FADV_DONTNEED)
+</span></span></code></pre></div><p>For testing, I read the entire test file into Page Cache with <code>dd</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ dd <span style="color:#66d9ef">if</span><span style="color:#f92672">=</span>/var/tmp/file1.db of<span style="color:#f92672">=</span>/dev/null  
+</span></span><span style="display:flex;"><span>262144+0 records in  
+</span></span><span style="display:flex;"><span>262144+0 records out  
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">134217728</span> bytes <span style="color:#f92672">(</span><span style="color:#ae81ff">134</span> MB, <span style="color:#ae81ff">128</span> MiB<span style="color:#f92672">)</span> copied, 0.652248 s, <span style="color:#ae81ff">206</span> MB/s  
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ vmtouch /var/tmp/file1.db  
+</span></span><span style="display:flex;"><span>           Files: <span style="color:#ae81ff">1</span>         LOOK HERE
+</span></span><span style="display:flex;"><span>     Directories: <span style="color:#ae81ff">0</span>             ⬇
+</span></span><span style="display:flex;"><span>  Resident Pages: 32768/32768  128M/128M  100%
+</span></span><span style="display:flex;"><span>         Elapsed: 0.002719 seconds  
+</span></span></code></pre></div><p>And now after running our script we should see 0 pages in Page Cache:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ python3 ./evict_full_file.py  
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ vmtouch /var/tmp/file1.db  
+</span></span><span style="display:flex;"><span>           Files: <span style="color:#ae81ff">1</span>     LOOK HERE
+</span></span><span style="display:flex;"><span>     Directories: <span style="color:#ae81ff">0</span>        ⬇
+</span></span><span style="display:flex;"><span>  Resident Pages: 0/32768  0/128M  0%
+</span></span><span style="display:flex;"><span>         Elapsed: 0.000818 seconds
+</span></span></code></pre></div><h2 id="make-your-memory-unevictable">
   Make your memory unevictable
   <a class="anchor" href="#make-your-memory-unevictable">#</a>
 </h2>
@@ -491,12 +542,12 @@ flowchart LR
 <p>Lock pages that are currently resident and mark the entire range so that the remaining nonresident pages are locked when they are populated by a page fault.</p>
 </blockquote>
 <p>And don&rsquo;t forget about <em>limits</em> (<code>man 5 limits.conf</code>). It is very likely that you need to increased it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ulimit -l
-<span style="color:#ae81ff">64</span>
-</code></pre></div><p>And finally, to get the amount of unevictable memory, please, check the cgroup memory controller stats for your cgroup:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ grep unevictable /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat
-unevictable <span style="color:#ae81ff">0</span>
-</code></pre></div><h2 id="page-cache-vmswappiness-and-modern-kernels">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ulimit -l
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">64</span>
+</span></span></code></pre></div><p>And finally, to get the amount of unevictable memory, please, check the cgroup memory controller stats for your cgroup:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ grep unevictable /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat
+</span></span><span style="display:flex;"><span>unevictable <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><h2 id="page-cache-vmswappiness-and-modern-kernels">
   Page Cache, <code>vm.swappiness</code> and modern kernels
   <a class="anchor" href="#page-cache-vmswappiness-and-modern-kernels">#</a>
 </h2>
@@ -504,39 +555,39 @@ unevictable <span style="color:#ae81ff">0</span>
 <p>The Page Cache memory is usually evictable memory (with some rare <code>mlock()</code> exceptions). And thus, it maybe look obvious, that Page Cache should be the first and the only option for the memory eviction and reclaiming. Since disks already have all that data, right? But fortunately or unfortunately, in real production situations, this is not always the best choice.</p>
 <p>If the system has swap (and <a href="https://chrisdown.name/2018/01/02/in-defence-of-swap.html" target="_blank" rel="noopener">it should have it with modern kernels</a>), the kernel has one more option. It can swap out the anonymous (not file-backed) pages. It may seem counterintuitive, but the reality is that sometimes user-space daemons can load tons of initialization code and never use it afterwards. Some programs, especially statically built, for example, could have a lot of functionality in their binaries that may be used only several times in some edge cases. In all such situations there is no much sense to keep them in valuable memory.</p>
 <p>So, in order to control which inactive LRU list to prefer for scans, the kernel has the <code>sysctl</code> <code>vm.swappiness</code> knob.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo sysctl -a | grep swap
-vm.swappiness <span style="color:#f92672">=</span> <span style="color:#ae81ff">60</span>
-</code></pre></div><p>There are a lot of blog posts, stories and forum threads about this magic setting. On top of that, the legacy cgroup v1 memory subsystem has its own per cgroup <code>swappiness</code> knob. All this makes information about the current <code>vm.swappiness</code> meaning hard to understand and change. But let me try to explain some recent changes and give you fresh links.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo sysctl -a | grep swap
+</span></span><span style="display:flex;"><span>vm.swappiness <span style="color:#f92672">=</span> <span style="color:#ae81ff">60</span>
+</span></span></code></pre></div><p>There are a lot of blog posts, stories and forum threads about this magic setting. On top of that, the legacy cgroup v1 memory subsystem has its own per cgroup <code>swappiness</code> knob. All this makes information about the current <code>vm.swappiness</code> meaning hard to understand and change. But let me try to explain some recent changes and give you fresh links.</p>
 <p>First of all, by default <code>vm.swappiness</code> is set 60, <a href="https://github.com/torvalds/linux/blob/a3fa7a101dcff93791d1b1bdb3affcad1410c8c1/mm/vmscan.c#L174-L177" target="_blank" rel="noopener">the min is 0 and the max is 200</a>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">/*
-</span><span style="color:#75715e"> * From 0 .. 200.  Higher means more swappy.
-</span><span style="color:#75715e"> */</span>
-<span style="color:#66d9ef">int</span> vm_swappiness <span style="color:#f92672">=</span> <span style="color:#ae81ff">60</span>;
-</code></pre></div><p>The 100 value means that the kernel considers anonymous and Page Cache pages equally in terms of reclamation.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#75715e">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> * From 0 .. 200.  Higher means more swappy.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> */</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> vm_swappiness <span style="color:#f92672">=</span> <span style="color:#ae81ff">60</span>;
+</span></span></code></pre></div><p>The 100 value means that the kernel considers anonymous and Page Cache pages equally in terms of reclamation.</p>
 <p>Secondly, the cgroup v2 memory controller doesn&rsquo;t have the <code>swappiness</code> <a href="https://elixir.bootlin.com/linux/v5.15-rc1/source/include/linux/swap.h#L706" target="_blank" rel="noopener">knob at all</a>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">#ifdef CONFIG_MEMCG
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">mem_cgroup_swappiness</span>(<span style="color:#66d9ef">struct</span> mem_cgroup <span style="color:#f92672">*</span>memcg)
-{
-	<span style="color:#75715e">/* Cgroup2 doesn&#39;t have per-cgroup swappiness */</span>
-	<span style="color:#66d9ef">if</span> (cgroup_subsys_on_dfl(memory_cgrp_subsys))
-		<span style="color:#66d9ef">return</span> vm_swappiness;
-
-	<span style="color:#75715e">/* root ? */</span>
-	<span style="color:#66d9ef">if</span> (mem_cgroup_disabled() <span style="color:#f92672">||</span> mem_cgroup_is_root(memcg))
-		<span style="color:#66d9ef">return</span> vm_swappiness;
-
-	<span style="color:#66d9ef">return</span> memcg<span style="color:#f92672">-&gt;</span>swappiness;
-</code></pre></div><p>Instead, the kernel developers decided to significantly change the swappiness logic. You can check it if run <a href="https://github.com/torvalds/linux/blame/a3fa7a101dcff93791d1b1bdb3affcad1410c8c1/mm/vmscan.c#L2574" target="_blank" rel="noopener"><code>git blame</code> on <code>mm/vmscan.c</code> and search for the <code>get_scan_count()</code> function</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#75715e">#ifdef CONFIG_MEMCG
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">mem_cgroup_swappiness</span>(<span style="color:#66d9ef">struct</span> mem_cgroup <span style="color:#f92672">*</span>memcg)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">/* Cgroup2 doesn&#39;t have per-cgroup swappiness */</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (cgroup_subsys_on_dfl(memory_cgrp_subsys))
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> vm_swappiness;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">/* root ? */</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (mem_cgroup_disabled() <span style="color:#f92672">||</span> mem_cgroup_is_root(memcg))
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> vm_swappiness;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> memcg<span style="color:#f92672">-&gt;</span>swappiness;
+</span></span></code></pre></div><p>Instead, the kernel developers decided to significantly change the swappiness logic. You can check it if run <a href="https://github.com/torvalds/linux/blame/a3fa7a101dcff93791d1b1bdb3affcad1410c8c1/mm/vmscan.c#L2574" target="_blank" rel="noopener"><code>git blame</code> on <code>mm/vmscan.c</code> and search for the <code>get_scan_count()</code> function</a>.</p>
 <p>For example, at the time of writing, the anonymous memory will not be touched regardless of <code>vm.swappiness</code> if <a href="https://github.com/torvalds/linux/blob/a3fa7a101dcff93791d1b1bdb3affcad1410c8c1/mm/vmscan.c#L2623-L2630" target="_blank" rel="noopener">the inactive LRU Page Cache list has decent amount of pages</a>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">	<span style="color:#75715e">/*
-</span><span style="color:#75715e">	 * If there is enough inactive page cache, we do not reclaim
-</span><span style="color:#75715e">	 * anything from the anonymous working right now.
-</span><span style="color:#75715e">	 */</span>
-	<span style="color:#66d9ef">if</span> (sc<span style="color:#f92672">-&gt;</span>cache_trim_mode) {
-		scan_balance <span style="color:#f92672">=</span> SCAN_FILE;
-		<span style="color:#66d9ef">goto</span> out;
-	}
-</code></pre></div><p>The full logic, of making decisions what and from which LRU to reclaim, you can find in the <a href="https://github.com/torvalds/linux/blob/master/mm/vmscan.c" target="_blank" rel="noopener"><code>get_scan_count()</code>function in <code>mm/vmscan.c</code></a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span>	<span style="color:#75715e">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * If there is enough inactive page cache, we do not reclaim
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * anything from the anonymous working right now.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 */</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (sc<span style="color:#f92672">-&gt;</span>cache_trim_mode) {
+</span></span><span style="display:flex;"><span>		scan_balance <span style="color:#f92672">=</span> SCAN_FILE;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">goto</span> out;
+</span></span><span style="display:flex;"><span>	}
+</span></span></code></pre></div><p>The full logic, of making decisions what and from which LRU to reclaim, you can find in the <a href="https://github.com/torvalds/linux/blob/master/mm/vmscan.c" target="_blank" rel="noopener"><code>get_scan_count()</code>function in <code>mm/vmscan.c</code></a>.</p>
 <p>Also, please take a look at the <code>memory.swap.high</code> and the <code>memory.swap.max</code> cgroup v2 settings. You can control them if you want to correct the <code>vm.swappiness</code> logic for your cgroup and load pattern.</p>
 <p>Another interesting topic, which you should keep in mind when dealing with the swap and Page Cache, is the IO load during the swapping in/out processes. If you have IO pressure, you can easily hit your IO limits and, for example, degrade your Page Cache writeback performance.</p>
 <h2 id="understanding-memory-reclaim-process-with-procpidpagemap">
@@ -552,34 +603,34 @@ vm.swappiness <span style="color:#f92672">=</span> <span style="color:#ae81ff">6
 </h3>
 <p><code>page-types</code> is the Swiss knife of every kernel memory hacker. Its source code comes with the Linux kernel sources <a href="https://github.com/torvalds/linux/blob/master/tools/vm/page-types.c" target="_blank" rel="noopener">tools/vm/page-types.c</a>.</p>
 <p>If you didn&rsquo;t install it in the first chapter:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ wget https://github.com/torvalds/linux/archive/refs/tags/v5.13.tar.gz
-$ tar -xzf ./v5.13.tar.gz
-$ cd v5.13/vm/tools
-$ make
-</code></pre></div><p>Now let&rsquo;s use it in order to understand how many pages of our test file <code>/var/tmp/file1.db</code> the kernel has placed in Active and Inactive LRU lists:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo ./page-types --raw -Cl -f /var/tmp/file1.db 
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">foffset cgroup  offset  len     flags
-/var/tmp/file1.db       Inode: <span style="color:#ae81ff">133367</span>   Size: <span style="color:#ae81ff">134217728</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">32768</span> pages<span style="color:#f92672">)</span>
-Modify: Mon Aug <span style="color:#ae81ff">30</span> 13:14:19 <span style="color:#ae81ff">2021</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">13892</span> seconds ago<span style="color:#f92672">)</span>
-Access: Mon Aug <span style="color:#ae81ff">30</span> 13:15:47 <span style="color:#ae81ff">2021</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">13804</span> seconds ago<span style="color:#f92672">)</span>
-<span style="color:#ae81ff">10689</span>   @1749   21fa    <span style="color:#ae81ff">1</span>       ___U_lA_______________________P____f_____F_1
-
-...
-
-<span style="color:#ae81ff">18965</span>   @1749   24d37   <span style="color:#ae81ff">1</span>       ___U_l________________________P____f_____F_1
-<span style="color:#ae81ff">18966</span>   @1749   <span style="color:#ae81ff">28874</span>   <span style="color:#ae81ff">1</span>       ___U_l________________________P____f_____F_1
-<span style="color:#ae81ff">18967</span>   @1749   <span style="color:#ae81ff">10273</span>   <span style="color:#ae81ff">1</span>       ___U_l________________________P____f_____F_1
-<span style="color:#ae81ff">18968</span>   @1749   1f6ad   <span style="color:#ae81ff">1</span>       ___U_l________________________P____f_____F_1
-
-
-             flags      page-count       MB  symbolic-flags                     long-symbolic-flags
-0xa000010800000028             <span style="color:#ae81ff">105</span>        <span style="color:#ae81ff">0</span>  ___U_l________________________P____f_____F_1       uptodate,lru,private,softdirty,file,mmap_exclusive
-0xa00001080000002c              <span style="color:#ae81ff">16</span>        <span style="color:#ae81ff">0</span>  __RU_l________________________P____f_____F_1       referenced,uptodate,lru,private,softdirty,file,mmap_exclusive
-0xa000010800000068             <span style="color:#ae81ff">820</span>        <span style="color:#ae81ff">3</span>  ___U_lA_______________________P____f_____F_1       uptodate,lru,active,private,softdirty,file,mmap_exclusive
-0xa001010800000068               <span style="color:#ae81ff">1</span>        <span style="color:#ae81ff">0</span>  ___U_lA_______________________P____f_I___F_1       uptodate,lru,active,private,softdirty,readahead,file,mmap_exclusive
-0xa00001080000006c              <span style="color:#ae81ff">16</span>        <span style="color:#ae81ff">0</span>  __RU_lA_______________________P____f_____F_1       referenced,uptodate,lru,active,private,softdirty,file,mmap_exclusive
-             total             <span style="color:#ae81ff">958</span>        <span style="color:#ae81ff">3</span>
-</code></pre></div><p>The output contains 2 section: the first one provides per page information and the second one aggregates all pages with the same flags and counts the summary. What we need from the output in order to answer to the LRU question are <code>A</code> and <code>l</code> flags, which as you can guess, stand for &ldquo;active&rdquo; and &ldquo;inactive&rdquo; lists.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ wget https://github.com/torvalds/linux/archive/refs/tags/v5.13.tar.gz
+</span></span><span style="display:flex;"><span>$ tar -xzf ./v5.13.tar.gz
+</span></span><span style="display:flex;"><span>$ cd v5.13/vm/tools
+</span></span><span style="display:flex;"><span>$ make
+</span></span></code></pre></div><p>Now let&rsquo;s use it in order to understand how many pages of our test file <code>/var/tmp/file1.db</code> the kernel has placed in Active and Inactive LRU lists:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo ./page-types --raw -Cl -f /var/tmp/file1.db 
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>foffset cgroup  offset  len     flags
+</span></span><span style="display:flex;"><span>/var/tmp/file1.db       Inode: <span style="color:#ae81ff">133367</span>   Size: <span style="color:#ae81ff">134217728</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">32768</span> pages<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Modify: Mon Aug <span style="color:#ae81ff">30</span> 13:14:19 <span style="color:#ae81ff">2021</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">13892</span> seconds ago<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Access: Mon Aug <span style="color:#ae81ff">30</span> 13:15:47 <span style="color:#ae81ff">2021</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">13804</span> seconds ago<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">10689</span>   @1749   21fa    <span style="color:#ae81ff">1</span>       ___U_lA_______________________P____f_____F_1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">18965</span>   @1749   24d37   <span style="color:#ae81ff">1</span>       ___U_l________________________P____f_____F_1
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">18966</span>   @1749   <span style="color:#ae81ff">28874</span>   <span style="color:#ae81ff">1</span>       ___U_l________________________P____f_____F_1
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">18967</span>   @1749   <span style="color:#ae81ff">10273</span>   <span style="color:#ae81ff">1</span>       ___U_l________________________P____f_____F_1
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">18968</span>   @1749   1f6ad   <span style="color:#ae81ff">1</span>       ___U_l________________________P____f_____F_1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>             flags      page-count       MB  symbolic-flags                     long-symbolic-flags
+</span></span><span style="display:flex;"><span>0xa000010800000028             <span style="color:#ae81ff">105</span>        <span style="color:#ae81ff">0</span>  ___U_l________________________P____f_____F_1       uptodate,lru,private,softdirty,file,mmap_exclusive
+</span></span><span style="display:flex;"><span>0xa00001080000002c              <span style="color:#ae81ff">16</span>        <span style="color:#ae81ff">0</span>  __RU_l________________________P____f_____F_1       referenced,uptodate,lru,private,softdirty,file,mmap_exclusive
+</span></span><span style="display:flex;"><span>0xa000010800000068             <span style="color:#ae81ff">820</span>        <span style="color:#ae81ff">3</span>  ___U_lA_______________________P____f_____F_1       uptodate,lru,active,private,softdirty,file,mmap_exclusive
+</span></span><span style="display:flex;"><span>0xa001010800000068               <span style="color:#ae81ff">1</span>        <span style="color:#ae81ff">0</span>  ___U_lA_______________________P____f_I___F_1       uptodate,lru,active,private,softdirty,readahead,file,mmap_exclusive
+</span></span><span style="display:flex;"><span>0xa00001080000006c              <span style="color:#ae81ff">16</span>        <span style="color:#ae81ff">0</span>  __RU_lA_______________________P____f_____F_1       referenced,uptodate,lru,active,private,softdirty,file,mmap_exclusive
+</span></span><span style="display:flex;"><span>             total             <span style="color:#ae81ff">958</span>        <span style="color:#ae81ff">3</span>
+</span></span></code></pre></div><p>The output contains 2 section: the first one provides per page information and the second one aggregates all pages with the same flags and counts the summary. What we need from the output in order to answer to the LRU question are <code>A</code> and <code>l</code> flags, which as you can guess, stand for &ldquo;active&rdquo; and &ldquo;inactive&rdquo; lists.</p>
 <p>As you can see we have:</p>
 <ul>
 <li><code>105 + 16 = 121 pages</code> or  <code>121 * 4096 = 484 KiB</code> in inactive LRU list.</li>
@@ -592,22 +643,22 @@ Access: Mon Aug <span style="color:#ae81ff">30</span> 13:15:47 <span style="colo
 <p><code>page-types</code> is really useful tool for low level debugging and investigations, but its output format is hard to read and aggregate. I promised earlier that we would write our own <code>vmtouch</code>, so now we&rsquo;re creating it. Our alternative version will provide even more information about pages. It will show not only how many pages are in Page Cache, but also how many of them are in the active and the inactive LRU lists.</p>
 <p>For doing this, we need 2 kernel files: <a href="https://www.kernel.org/doc/Documentation/vm/pagemap.txt" target="_blank" rel="noopener"><code>/proc/PID/pagemap</code> and <code>/proc/kpageflags</code></a>.</p>
 <p>The full code you can find in the <a href="https://github.com/brk0v/sre-page-cache-article/tree/main/lru" target="_blank" rel="noopener">github repo</a>, however here I would like to focus on a few important moments:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">    ...
-①  err <span style="color:#f92672">=</span> syscall.Madvise<span style="color:#f92672">(</span>mm, syscall.MADV_RANDOM<span style="color:#f92672">)</span>
-    ...
-
-②  ret, _, err :<span style="color:#f92672">=</span> syscall.Syscall<span style="color:#f92672">(</span>syscall.SYS_MINCORE, mmPtr, sizePtr, cachedPtr<span style="color:#f92672">)</span> 
-
-    <span style="color:#66d9ef">for</span> i, p :<span style="color:#f92672">=</span> range cached <span style="color:#f92672">{</span>
-③      <span style="color:#66d9ef">if</span> p%2 <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">{</span> 
-④           _ <span style="color:#f92672">=</span> *<span style="color:#f92672">(</span>*int<span style="color:#f92672">)(</span>unsafe.Pointer<span style="color:#f92672">(</span>mmPtr + uintptr<span style="color:#f92672">(</span>pageSize*int64<span style="color:#f92672">(</span>i<span style="color:#f92672">))))</span>
-        <span style="color:#f92672">}</span>
-    <span style="color:#f92672">}</span>
-   ...
-        
-⑤  err <span style="color:#f92672">=</span> syscall.Madvise<span style="color:#f92672">(</span>mm, syscall.MADV_SEQUENTIAL<span style="color:#f92672">)</span>
-    ...
-</code></pre></div><ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>①  err <span style="color:#f92672">=</span> syscall.Madvise<span style="color:#f92672">(</span>mm, syscall.MADV_RANDOM<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>②  ret, _, err :<span style="color:#f92672">=</span> syscall.Syscall<span style="color:#f92672">(</span>syscall.SYS_MINCORE, mmPtr, sizePtr, cachedPtr<span style="color:#f92672">)</span> 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i, p :<span style="color:#f92672">=</span> range cached <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>③      <span style="color:#66d9ef">if</span> p%2 <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">{</span> 
+</span></span><span style="display:flex;"><span>④           _ <span style="color:#f92672">=</span> *<span style="color:#f92672">(</span>*int<span style="color:#f92672">)(</span>unsafe.Pointer<span style="color:#f92672">(</span>mmPtr + uintptr<span style="color:#f92672">(</span>pageSize*int64<span style="color:#f92672">(</span>i<span style="color:#f92672">))))</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>   ...
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>⑤  err <span style="color:#f92672">=</span> syscall.Madvise<span style="color:#f92672">(</span>mm, syscall.MADV_SEQUENTIAL<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    ...
+</span></span></code></pre></div><ul>
 <li>① – Here we need to disable the read ahead logic for the target file in order to protect ourselves from loading (charging) unneeded data to Page Cache by our tool;</li>
 <li>② – Use <code>mincore()</code> syscall to get a vector of the pages in Page Cache;</li>
 <li>③ – Here we check whether a page is in Page Cache or not;</li>
@@ -615,10 +666,10 @@ Access: Mon Aug <span style="color:#ae81ff">30</span> 13:15:47 <span style="colo
 <li>⑤ – Here we are turning off the harvesting of reference bits. This is required due to kernel reclaim logic. Our tool read memory and hence influence the kerne LRU lists. By using <code>madvise()</code> with <code>MADV_SEQUENTIAL</code> we notify linux kernel to ignore our operations.</li>
 </ul>
 <p>Let&rsquo;s test our tool. We need 2 terminals. In the first one start our tool with <code>watch</code> (<code>man 1 watch</code>) to run our tool ever 100ms in an infinitive loop:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">watch -n 0.1 <span style="color:#e6db74">&#39;sudo go run ./lru.go&#39;</span>
-</code></pre></div><p>And in the second terminal we will read the file with the <code>dd</code> (<code>man 1 dd</code>):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">dd <span style="color:#66d9ef">if</span><span style="color:#f92672">=</span>/var/tmp/file1.db of<span style="color:#f92672">=</span>/dev/null
-</code></pre></div><p>Demo of what you should see:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>watch -n 0.1 <span style="color:#e6db74">&#39;sudo go run ./lru.go&#39;</span>
+</span></span></code></pre></div><p>And in the second terminal we will read the file with the <code>dd</code> (<code>man 1 dd</code>):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>dd <span style="color:#66d9ef">if</span><span style="color:#f92672">=</span>/var/tmp/file1.db of<span style="color:#f92672">=</span>/dev/null
+</span></span></code></pre></div><p>Demo of what you should see:</p>
 <script id="asciicast-a6Ox5TnM6R8WiwfxlvKUM1hys" src="https://asciinema.org/a/a6Ox5TnM6R8WiwfxlvKUM1hys.js" async></script>
 <p>Using the above approach you now can perform low level Page Cache investigations.</p>
 
@@ -646,8 +697,6 @@ Access: Mon Aug <span style="color:#ae81ff">30</span> 13:15:47 <span style="colo
 </div>
 
 
-
-  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
 
 
  

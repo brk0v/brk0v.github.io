@@ -1,24 +1,23 @@
 <!DOCTYPE html>
 <html lang="en-us" dir="ltr">
 <head>
-	<meta name="generator" content="Hugo 0.101.0" />
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Hi! # This is my home page, you probably want to check out my Linux Page Cache mini book or read some blog posts about system programming, Linux kernel, golang, python, etc.
-File descriptors, pipes, process sessions and terminals mini book # 0. What every SRE should know about file descriptors, pipes, terminals, user sessions, process groups and daemons 1. File descriptors and open file descriptions 2. Pipes 3. Process groups, jobs and sessions 4.">
+<meta name="description" content=" Pipes # ">
 <meta name="theme-color" content="#FFFFFF">
-<meta name="color-scheme" content="light dark"><meta property="og:title" content="🏠" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://biriukov.dev/" />
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="Pipes" />
+<meta property="og:description" content=" Pipes # " />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://biriukov.dev/docs/fd-pipe-session-terminal/2.-pipes/" /><meta property="article:section" content="docs" />
 
-<title>🏠 | Viacheslav Biriukov</title>
+
+
+<title>Pipes | Viacheslav Biriukov</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.82c5dbd23447cee0b4c2aa3ed08ce0961faa40e1fa370eee4f8c9f02e0d46b5f.css" integrity="sha256-gsXb0jRHzuC0wqo&#43;0Izglh&#43;qQOH6Nw7uT4yfAuDUa18=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
   <script defer src="/en.search.min.b7e86d2547352c41bdadc10c7c34231702a078a175ed43e20675f7fae7bd1c2b.js" integrity="sha256-t&#43;htJUc1LEG9rcEMfDQjFwKgeKF17UPiBnX3&#43;ue9HCs=" crossorigin="anonymous"></script>
-<link rel="alternate" type="application/rss+xml" href="https://biriukov.dev/index.xml" title="Viacheslav Biriukov" />
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -80,6 +79,124 @@ https://github.com/alex-shpak/hugo-book
 
       
         
+      
+        <li class="book-section-flat" >
+          
+  
+  
+
+  
+    <span>What every SRE should know about file descriptors, pipes, terminals, user sessions, process groups and daemons</span>
+  
+
+          
+  <ul>
+    
+
+      
+        
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/fd-pipe-session-terminal/0.-what-every-sre-should-know-about-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons/" class="">
+      
+        0. fd, pipe, session for SRE
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+        
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/fd-pipe-session-terminal/1.-file-descriptors-and-open-file-descriptions/" class="">
+      
+        1. File descriptors and open file descriptions
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+        
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/fd-pipe-session-terminal/2.-pipes/" class="active">
+      
+        2. Pipes
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+        
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/fd-pipe-session-terminal/3.-process-groups-jobs-and-sessions/" class="">
+      
+        3. Process groups, jobs and sessions
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+        
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/fd-pipe-session-terminal/4.-terminals-and-pseudoterminals/" class="">
+      
+        4. Terminals and pseudoterminals
+      
+    </a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
   </ul>
 
 
@@ -163,7 +280,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong>🏠</strong>
+  <strong>Pipes</strong>
 
   <label for="toc-control">
     
@@ -177,50 +294,10 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"><h1 id="hi">
-  Hi!
-  <a class="anchor" href="#hi">#</a>
+  <article class="markdown"><h1 id="pipes">
+  Pipes
+  <a class="anchor" href="#pipes">#</a>
 </h1>
-<p>This is my home page, you probably want to check out my Linux Page Cache mini book or read some blog posts about system programming, Linux kernel, <code>golang</code>, <code>python</code>, etc.</p>
-<div class="book-columns flex flex-wrap">
-
-  <div class="flex-even markdown-inner">
-    <h2 id="file-descriptors-pipes-process-sessions-and-terminals-mini-book">
-  File descriptors, pipes, process sessions and terminals mini book
-  <a class="anchor" href="#file-descriptors-pipes-process-sessions-and-terminals-mini-book">#</a>
-</h2>
-<ul>
-<li><a href="/docs/fd-pipe-session-terminal/">0. What every SRE should know about file descriptors, pipes, terminals, user sessions, process groups and daemons</a></li>
-<li><a href="/docs/fd-pipe-session-terminal/">1. File descriptors and open file descriptions</a></li>
-<li><a href="/docs/fd-pipe-session-terminal">2. Pipes</a></li>
-<li><a href="docs/fd-pipe-session-terminal/">3. Process groups, jobs and sessions</a></li>
-<li><a href="/docs/fd-pipe-session-terminal/">4. Terminals and pseudoterminals</a></li>
-</ul>
-
-  </div>
-
-  <div class="flex-even markdown-inner">
-    <h2 id="linux-page-cache-mini-book">
-  Linux Page Cache mini book
-  <a class="anchor" href="#linux-page-cache-mini-book">#</a>
-</h2>
-<ul>
-<li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">0. Linux Page Cache for SRE</a></li>
-<li><a href="/docs/page-cache/1-prepare-environment-for-experiments/">1. Prepare environment for experiments</a></li>
-<li><a href="/docs/page-cache/2-essential-page-cache-theory/">2. Essential Page Cache theory</a></li>
-<li><a href="docs/page-cache/3-page-cache-and-basic-file-operations/">3. Page Cache and basic file operations</a></li>
-<li><a href="/docs/page-cache/4-page-cache-eviction-and-page-reclaim/">4. Page Cache eviction and page reclaim</a></li>
-<li><a href="/docs/page-cache/5-more-about-mmap-file-access/">5. More about mmap() file access</a></li>
-<li><a href="/docs/page-cache/6-cgroup-v2-and-page-cache/">6. Cgroup v2 and Page Cache</a></li>
-<li><a href="/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/">7. How much memory my program uses or the tale of working set size</a></li>
-<li><a href="/docs/page-cache/8-direct-io-dio/">8. Direct IO (DIO)</a></li>
-<li><a href="/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/">9. Advanced Page Cache observability and troubleshooting tools</a></li>
-</ul>
-
-  </div>
-
-</div>
-
 </article>
  
       
