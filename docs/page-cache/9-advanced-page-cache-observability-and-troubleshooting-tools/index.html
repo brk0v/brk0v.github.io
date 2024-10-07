@@ -1,10 +1,69 @@
-<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Advanced Page Cache observability and troubleshooting tools # Let&rsquo;s touch on some advanced tools we can use to perform low-level kernel tracing and debugging.
-eBPF tools # First of all, we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="
+  Advanced Page Cache observability and troubleshooting tools
+  #
+
+Let&rsquo;s touch on some advanced tools we can use to perform low-level kernel tracing and debugging.
+
+  eBPF tools
+  #
+
+First of all, we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
 Let&rsquo;s take a look at some tools which come with it.
-Writeback monitor # $ sudo bpftrace ./writeback.bt Attaching 4 probes."><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/"><meta property="og:site_name" content="Viacheslav Biriukov"><meta property="og:title" content="Advanced Page Cache observability and troubleshooting tools"><meta property="og:description" content="Advanced Page Cache observability and troubleshooting tools # Let’s touch on some advanced tools we can use to perform low-level kernel tracing and debugging.
+
+  Writeback monitor
+  #
+
+$ sudo bpftrace ./writeback.bt
+
+Attaching 4 probes...
+Tracing writeback... Hit Ctrl-C to end.
+TIME      DEVICE   PAGES    REASON           ms
+15:01:48  btrfs-1  7355     periodic         0.003
+15:01:49  btrfs-1  7355     periodic         0.003
+15:01:51  btrfs-1  7355     periodic         0.006
+15:01:54  btrfs-1  7355     periodic         0.005
+15:01:54  btrfs-1  7355     periodic         0.004
+15:01:56  btrfs-1  7355     periodic         0.005
+
+  Page Cache Top
+  #
+
+19:49:52 Buffers MB: 0 / Cached MB: 610 / Sort: HITS / Order: descending  
+PID      UID      CMD              HITS     MISSES   DIRTIES  READ_HIT%  WRITE_HIT%  
+   66229 vagrant  vmtouch             44745    44032        0      50.4%      49.6%  
+   66229 vagrant  bash                  205        0        0     100.0%       0.0%  
+   66227 root     cachetop               17        0        0     100.0%       0.0%  
+     222 dbus     dbus-daemon            16        0        0     100.0%       0.0%  
+     317 vagrant  tmux: server            4        0        0     100.0%       0.0%
+
+  Cache stat
+  #
+
+[vagrant@archlinux tools]$ sudo ./cachestat  
+    HITS   MISSES  DIRTIES HITRATIO   BUFFERS_MB  CACHED_MB  
+      10        0        0  100.00%            0        610  
+       4        0        0  100.00%            0        610  
+       4        0        0  100.00%            0        610  
+      21        0        0  100.00%            0        610  
+     624        0        0  100.00%            0        438  
+       2        0        0  100.00%            0        438  
+       4        0        0  100.00%            0        438  
+       0        0        0    0.00%            0        438  
+      19        0        0  100.00%            0        438  
+       0      428        0    0.00%            0        546  
+   28144    16384        0   63.21%            0        610  
+       0        0        0    0.00%            0        610  
+       0        0        0    0.00%            0        610  
+      17        0        0  100.00%            0        610  
+       0        0        0    0.00%            0        610
+
+  bpftrace and kfunc trace
+  #
+
+Other than that, eBPF and bpftrace have recently got a new great feature named kfunc. Thus, using it, you can trace some kernel functions without kernel debugging information installed."><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/"><meta property="og:site_name" content="Viacheslav Biriukov"><meta property="og:title" content="Advanced Page Cache observability and troubleshooting tools"><meta property="og:description" content=" Advanced Page Cache observability and troubleshooting tools # Let’s touch on some advanced tools we can use to perform low-level kernel tracing and debugging.
 eBPF tools # First of all, we can use eBPF tools. The [bcc]https://github.com/iovisor/bcc and bpftrace are your friends when you want to get some internal kernel information.
 Let’s take a look at some tools which come with it.
-Writeback monitor # $ sudo bpftrace ./writeback.bt Attaching 4 probes."><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="docs"><title>Advanced Page Cache observability and troubleshooting tools | Viacheslav Biriukov</title>
+Writeback monitor # $ sudo bpftrace ./writeback.bt Attaching 4 probes... Tracing writeback... Hit Ctrl-C to end. TIME DEVICE PAGES REASON ms 15:01:48 btrfs-1 7355 periodic 0.003 15:01:49 btrfs-1 7355 periodic 0.003 15:01:51 btrfs-1 7355 periodic 0.006 15:01:54 btrfs-1 7355 periodic 0.005 15:01:54 btrfs-1 7355 periodic 0.004 15:01:56 btrfs-1 7355 periodic 0.005 Page Cache Top # 19:49:52 Buffers MB: 0 / Cached MB: 610 / Sort: HITS / Order: descending PID UID CMD HITS MISSES DIRTIES READ_HIT% WRITE_HIT% 66229 vagrant vmtouch 44745 44032 0 50.4% 49.6% 66229 vagrant bash 205 0 0 100.0% 0.0% 66227 root cachetop 17 0 0 100.0% 0.0% 222 dbus dbus-daemon 16 0 0 100.0% 0.0% 317 vagrant tmux: server 4 0 0 100.0% 0.0% Cache stat # [vagrant@archlinux tools]$ sudo ./cachestat HITS MISSES DIRTIES HITRATIO BUFFERS_MB CACHED_MB 10 0 0 100.00% 0 610 4 0 0 100.00% 0 610 4 0 0 100.00% 0 610 21 0 0 100.00% 0 610 624 0 0 100.00% 0 438 2 0 0 100.00% 0 438 4 0 0 100.00% 0 438 0 0 0 0.00% 0 438 19 0 0 100.00% 0 438 0 428 0 0.00% 0 546 28144 16384 0 63.21% 0 610 0 0 0 0.00% 0 610 0 0 0 0.00% 0 610 17 0 0 100.00% 0 610 0 0 0 0.00% 0 610 bpftrace and kfunc trace # Other than that, eBPF and bpftrace have recently got a new great feature named kfunc. Thus, using it, you can trace some kernel functions without kernel debugging information installed."><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="docs"><title>Advanced Page Cache observability and troubleshooting tools | Viacheslav Biriukov</title>
 <link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.min.33a48f5432973b8ff9a82679d9e45d67f2c15d4399bd2829269455cfe390b5e8.css integrity="sha256-M6SPVDKXO4/5qCZ52eRdZ/LBXUOZvSgpJpRVz+OQteg=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script><script defer src=/en.search.min.a6d076bca4e51b90fc64fdc46f9dd1925580cc21fa6cda9c4fdd1279e2633493.js integrity="sha256-ptB2vKTlG5D8ZP3Eb53RklWAzCH6bNqcT90SeeJjNJM=" crossorigin=anonymous></script><script async src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-599VSLESJL")</script><link rel=stylesheet href=/my_css/cookie.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
 <input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Viacheslav Biriukov</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li class=book-section-flat><span>Linux Page Cache series</span><ul><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>0. Linux Page Cache for SRE</a></li><li><a href=/docs/page-cache/1-prepare-environment-for-experiments/>1. Prepare environments</a></li><li><a href=/docs/page-cache/2-essential-page-cache-theory/>2. Essential theory</a></li><li><a href=/docs/page-cache/3-page-cache-and-basic-file-operations/>3. Basic file operations</a></li><li><a href=/docs/page-cache/4-page-cache-eviction-and-page-reclaim/>4. Eviction and page reclaim</a></li><li><a href=/docs/page-cache/5-more-about-mmap-file-access/>5. More about mmap()</a></li><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/>6. Cgroup v2</a></li><li><a href=/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/>7. Unique set and working set</a></li><li><a href=/docs/page-cache/8-direct-io-dio/>8. Direct IO</a></li><li><a href=/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/ class=active>9. Advanced tools</a></li></ul></li></ul><div style=margin-top:30px;margin-bottom:30px><b>More post series:</b><ul><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons>1. File descriptors, pipes, terminals, user sessions, process groups and daemons</li><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>2. Linux Page Cache mini book</li><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>3. Resolvers and Dual-Stack applications <span style="padding:0 2px;border-radius:2px;background-color:#e84118;color:#f0f8ff">new</span></li></ul></div><ul><li><a href=https://twitter.com/brk0v/ target=_blank rel=noopener><i class="bi bi-twitter"></i>
 Twitter</a></li><li><a href=https://www.linkedin.com/in/biriukov/ target=_blank rel=noopener><i class="bi bi-linkedin"></i>
