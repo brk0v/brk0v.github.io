@@ -1,137 +1,205 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Linux Page Cache series on Viacheslav Biriukov</title><link>https://biriukov.dev/docs/page-cache/</link><description>Recent content in Linux Page Cache series on Viacheslav Biriukov</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://biriukov.dev/docs/page-cache/index.xml" rel="self" type="application/rss+xml"/><item><title>Linux Page Cache for SRE</title><link>https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/</guid><description>&lt;h1 id="sre-deep-dive-into-linux-page-cache">
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Linux Page Cache series on Viacheslav Biriukov</title><link>https://biriukov.dev/docs/page-cache/</link><description>Recent content in Linux Page Cache series on Viacheslav Biriukov</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://biriukov.dev/docs/page-cache/index.xml" rel="self" type="application/rss+xml"/><item><title>Linux Page Cache for SRE</title><link>https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/</guid><description>&lt;h1 id="sre-deep-dive-into-linux-page-cache"&gt;
  SRE deep dive into Linux Page Cache
- &lt;a class="anchor" href="#sre-deep-dive-into-linux-page-cache">#&lt;/a>
-&lt;/h1>
-&lt;p>In this series of articles, I would like to talk about &lt;strong>Linux Page Cache&lt;/strong>. I believe that the following knowledge of the theory and tools is &lt;strong>essential and crucial for every SRE&lt;/strong>. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to the following:&lt;/p></description></item><item><title>Prepare environment for experiments</title><link>https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/</guid><description>&lt;h1 id="prepare-environment-for-experiments">
+ &lt;a class="anchor" href="#sre-deep-dive-into-linux-page-cache"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/"&gt;Prepare environment for experiments&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/"&gt;Essential Page Cache theory&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/"&gt;Page Cache and basic file operations&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/"&gt;Page Cache eviction and page reclaim&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/"&gt;More about &lt;code&gt;mmap()&lt;/code&gt; file access&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/"&gt;cgroup v2 and Page Cache&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/"&gt;How much memory my program uses or the tale of working set size&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/"&gt;Direct IO (DIO)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/"&gt;Advanced Page Cache observability and troubleshooting tools&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr/&gt;
+&lt;p&gt;In this series of articles, I would like to talk about &lt;strong&gt;Linux Page Cache&lt;/strong&gt;. I believe that the following knowledge of the theory and tools is &lt;strong&gt;essential and crucial for every SRE&lt;/strong&gt;. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to the following:&lt;/p&gt;</description></item><item><title>Prepare environment for experiments</title><link>https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/1-prepare-environment-for-experiments/</guid><description>&lt;h1 id="prepare-environment-for-experiments"&gt;
  Prepare environment for experiments
- &lt;a class="anchor" href="#prepare-environment-for-experiments">#&lt;/a>
-&lt;/h1>
-&lt;p>Before starting, I want to be on the same page with the reader so that any example or code snippet can be executed, compiled, and checked. Therefore we need a modern GNU/Linux installation to play with code and kernel.&lt;/p>
-&lt;p>If you are using Windows or Mac OS, I would suggest installing &lt;a href="https://www.vagrantup.com" target="_blank" rel="noopener">Vagrant&lt;/a> with &lt;a href="https://www.virtualbox.org/" target="_blank" rel="noopener">Virtual Box&lt;/a>. For the GNU/Linux distributive, I&amp;rsquo;d like to use &lt;a href="https://archlinux.org/" target="_blank" rel="noopener">Arch Linux&lt;/a>. Arch is a good example of an actual modern version of the GNU/Linux system (&lt;a href="https://i.redd.it/qxsttm8sg5k11.png" target="_blank" rel="noopener">BTW, I use Arch Linux&lt;/a>). It supports the latest kernels, systemd and cgroup v2.&lt;/p></description></item><item><title>Essential Linux Page Cache theory</title><link>https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/</guid><description>&lt;h1 id="essential-page-cache-theory">
+ &lt;a class="anchor" href="#prepare-environment-for-experiments"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;Before starting, I want to be on the same page with the reader so that any example or code snippet can be executed, compiled, and checked. Therefore we need a modern GNU/Linux installation to play with code and kernel.&lt;/p&gt;
+&lt;p&gt;If you are using Windows or Mac OS, I would suggest installing &lt;a href="https://www.vagrantup.com" target="_blank" rel="noopener"&gt;Vagrant&lt;/a&gt; with &lt;a href="https://www.virtualbox.org/" target="_blank" rel="noopener"&gt;Virtual Box&lt;/a&gt;. For the GNU/Linux distributive, I&amp;rsquo;d like to use &lt;a href="https://archlinux.org/" target="_blank" rel="noopener"&gt;Arch Linux&lt;/a&gt;. Arch is a good example of an actual modern version of the GNU/Linux system (&lt;a href="https://i.redd.it/qxsttm8sg5k11.png" target="_blank" rel="noopener"&gt;BTW, I use Arch Linux&lt;/a&gt;). It supports the latest kernels, systemd and cgroup v2.&lt;/p&gt;</description></item><item><title>Essential Linux Page Cache theory</title><link>https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/</guid><description>&lt;h1 id="essential-page-cache-theory"&gt;
  Essential Page Cache theory
- &lt;a class="anchor" href="#essential-page-cache-theory">#&lt;/a>
-&lt;/h1>
-&lt;p>First of all, let’s start with a bunch of reasonable questions about Page Cache:&lt;/p>
-&lt;ul>
-&lt;li>What is the &lt;strong>Linux Page Cache&lt;/strong>?&lt;/li>
-&lt;li>What problems does it solve?&lt;/li>
-&lt;li>Why do we call it &lt;strong>«Page»&lt;/strong> Cache ?&lt;/li>
-&lt;/ul>
-&lt;p>In essence, the Page Cache is a part of the Virtual File System (&lt;a href="https://en.wikipedia.org/wiki/Virtual_file_system" target="_blank" rel="noopener">VFS&lt;/a>) whose primary purpose, as you can guess, is improving the IO latency of read and write operations. A write-back cache algorithm is a core building block of the Page Cache.&lt;/p></description></item><item><title>Page Cache and basic file operations</title><link>https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/</guid><description>&lt;h1 id="page-cache-and-basic-file-operations">
+ &lt;a class="anchor" href="#essential-page-cache-theory"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/#read-requests"&gt;Read requests&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/2-essential-page-cache-theory/#write-requests"&gt;Write requests&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;First of all, let’s start with a bunch of reasonable questions about Page Cache:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;What is the &lt;strong&gt;Linux Page Cache&lt;/strong&gt;?&lt;/li&gt;
+&lt;li&gt;What problems does it solve?&lt;/li&gt;
+&lt;li&gt;Why do we call it &lt;strong&gt;«Page»&lt;/strong&gt; Cache ?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In essence, the Page Cache is a part of the Virtual File System (&lt;a href="https://en.wikipedia.org/wiki/Virtual_file_system" target="_blank" rel="noopener"&gt;VFS&lt;/a&gt;) whose primary purpose, as you can guess, is improving the IO latency of read and write operations. A write-back cache algorithm is a core building block of the Page Cache.&lt;/p&gt;</description></item><item><title>Page Cache and basic file operations</title><link>https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/</guid><description>&lt;h1 id="page-cache-and-basic-file-operations"&gt;
  Page Cache and basic file operations
- &lt;a class="anchor" href="#page-cache-and-basic-file-operations">#&lt;/a>
-&lt;/h1>
-&lt;p>Now it&amp;rsquo;s time to roll up our sleeves and get started with some practical examples. By the end of this chapter, you will know how to interact with Page Cache and which tools you can use.&lt;/p>
-&lt;p>Utils needed for this section:&lt;/p>
-&lt;ul>
-&lt;li>&lt;code>sync&lt;/code> (&lt;a href="https://man7.org/linux/man-pages/man1/sync.1.html" target="_blank" rel="noopener">&lt;code>man 1 sync&lt;/code>&lt;/a>) – a tool to flush all dirty pages to persistent storage;&lt;/li>
-&lt;li>&lt;code>/proc/sys/vm/drop_caches&lt;/code> (&lt;a href="https://man7.org/linux/man-pages/man5/proc.5.html" target="_blank" rel="noopener">&lt;code>man 5 proc&lt;/code>&lt;/a>) – the kernel &lt;code>procfs&lt;/code> file to trigger Page Cache clearance;&lt;/li>
-&lt;li>&lt;a href="https://github.com/hoytech/vmtouch" target="_blank" rel="noopener">&lt;code>vmtouch&lt;/code>&lt;/a> – a tool for getting Page Cache info about a particular file by its path.&lt;/li>
-&lt;/ul>
-&lt;blockquote class="book-hint info">
- &lt;strong>NOTE&lt;/strong>
-For now, we ignore how &lt;code>vmtouch&lt;/code> works. I&amp;rsquo;m showing how to write an alternative with almost all its features later.
-&lt;/blockquote>
-
-&lt;h2 id="file-reads">
- File reads
- &lt;a class="anchor" href="#file-reads">#&lt;/a>
-&lt;/h2>
-&lt;h3 id="reading-files-with-read-syscall">
- Reading files with &lt;code>read()&lt;/code> syscall
- &lt;a class="anchor" href="#reading-files-with-read-syscall">#&lt;/a>
-&lt;/h3>
-&lt;p>I start with a simple program that reads the first 2 bytes from our test file &lt;code>/var/tmp/file1.db&lt;/code>.&lt;/p></description></item><item><title>Page Cache eviction and page reclaim</title><link>https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/</guid><description>&lt;h1 id="page-cache-eviction-and-page-reclaim">
+ &lt;a class="anchor" href="#page-cache-and-basic-file-operations"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/#file-reads"&gt;File reads&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/#reading-files-with-read-syscall"&gt;Reading files with &lt;code&gt;read()&lt;/code&gt; syscall&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/#reading-files-with-mmap-syscall"&gt;Reading files with &lt;code&gt;mmap()&lt;/code&gt; syscall&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/#file-writes"&gt;File writes&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/#writing-to-files-with-write-syscall"&gt;Writing to files with &lt;code&gt;write()&lt;/code&gt; syscall&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/#file-writes-with-mmap--syscall"&gt;File writes with &lt;code&gt;mmap()&lt;/code&gt; syscall&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/#dirty-pages"&gt;Dirty pages&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/#synchronize-file-changes-with-fsync-fdatasync-and-msync"&gt;Synchronize file changes with &lt;code&gt;fsync()&lt;/code&gt;, &lt;code&gt;fdatasync()&lt;/code&gt; and &lt;code&gt;msync()&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/3-page-cache-and-basic-file-operations/#checking-file-presence-in-page-cache-with-mincore"&gt;Checking file presence in Page Cache with &lt;code&gt;mincore()&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;Now it&amp;rsquo;s time to roll up our sleeves and get started with some practical examples. By the end of this chapter, you will know how to interact with Page Cache and which tools you can use.&lt;/p&gt;</description></item><item><title>Page Cache eviction and page reclaim</title><link>https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/</guid><description>&lt;h1 id="page-cache-eviction-and-page-reclaim"&gt;
  Page Cache eviction and page reclaim
- &lt;a class="anchor" href="#page-cache-eviction-and-page-reclaim">#&lt;/a>
-&lt;/h1>
-&lt;p>So far, we have talked about adding data to Page Cache by reading and writing files, checking the existence of files in the cache, and flushing the cache content manually. But the most crucial part of any cache system is its &lt;strong>eviction policy&lt;/strong>, or regarding Linux Page Cache, it&amp;rsquo;s also the memory &lt;strong>page reclaim&lt;/strong> policy. Like any other cache, Linux Page Cache continuously monitors the last used pages and makes decisions about which pages should be deleted and which should be kept in the cache.&lt;/p></description></item><item><title>More about mmap() file access</title><link>https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/</guid><description>&lt;h1 id="more-about-mmap-file-access">
- More about &lt;code>mmap()&lt;/code> file access
- &lt;a class="anchor" href="#more-about-mmap-file-access">#&lt;/a>
-&lt;/h1>
-&lt;p>Before we start the cgroup chapter, where I&amp;rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve the reliability of services, I want to delve a bit deeper into &lt;code>mmap()&lt;/code> syscall. We need to understand what is happening under the hood and shed more light on the reading and writing process with &lt;code>mmap()&lt;/code>.&lt;/p>
-&lt;h2 id="mmap-overview">
- &lt;code>mmap()&lt;/code> overview
- &lt;a class="anchor" href="#mmap-overview">#&lt;/a>
-&lt;/h2>
-&lt;p>Memory mapping is one of the most interesting features of Linux systems. One of its features is the ability for software developers to work transparently with files whose size exceeds the actual physical memory of the system. In the image below, you can see what the &lt;a href="https://en.wikipedia.org/wiki/Virtual_memory" target="_blank" rel="noopener">Virtual Memory&lt;/a> of a process looks like. Each process has its own region where &lt;code>mmap()&lt;/code> maps files.&lt;/p></description></item><item><title>Cgroup v2 and Page Cache</title><link>https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/</guid><description>&lt;h1 id="cgroup-v2-and-page-cache">
- Cgroup v2 and Page Cache
- &lt;a class="anchor" href="#cgroup-v2-and-page-cache">#&lt;/a>
-&lt;/h1>
-&lt;p>The cgroup subsystem is the way to distribute and limit system resources fairly. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In addition, the cgroup provides a lot of helpful resource counters and statistics.&lt;/p>
-&lt;p>The control groups are everywhere. Even though you may not use them explicitly, they are already turned on by default in all modern GNU/Linux distributives and got integrated into &lt;code>systemd&lt;/code>. It means that each service in a modern linux system runs under its own cgroup.&lt;/p></description></item><item><title>Unique set size and working set size</title><link>https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</guid><description>&lt;h1 id="how-much-memory-my-program-uses-or-the-tale-of-working-set-size">
+ &lt;a class="anchor" href="#page-cache-eviction-and-page-reclaim"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/#theory"&gt;Essesntial theory&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/#manual-pages-eviction-with-posix_fadv_dontneed"&gt;Manual pages eviction with &lt;code&gt;POSIX_FADV_DONTNEED&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/#make-your-memory-unevictable"&gt;Make your memory unevictable&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/#page-cache-vmswappiness-and-modern-kernels"&gt;Page Cache, &lt;code&gt;vm.swappiness&lt;/code&gt; and modern kernels&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/#understanding-memory-reclaim-process-with-procpidpagemap"&gt;Understanding memory reclaim process with &lt;code&gt;/proc/pid/pagemap&lt;/code&gt;&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/#page-types-kernel-page-tool"&gt;&lt;code&gt;page-types&lt;/code&gt; kernel page tool&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/4-page-cache-eviction-and-page-reclaim/#writing-page-cache-lru-monitor-tool"&gt;Writing Page Cache LRU monitor tool&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;So far, we have talked about adding data to Page Cache by reading and writing files, checking the existence of files in the cache, and flushing the cache content manually. But the most crucial part of any cache system is its &lt;strong&gt;eviction policy&lt;/strong&gt;, or regarding Linux Page Cache, it&amp;rsquo;s also the memory &lt;strong&gt;page reclaim&lt;/strong&gt; policy. Like any other cache, Linux Page Cache continuously monitors the last used pages and makes decisions about which pages should be deleted and which should be kept in the cache.&lt;/p&gt;</description></item><item><title>More about mmap() file access</title><link>https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/</guid><description>&lt;h1 id="more-about-mmap-file-access"&gt;
+ More about &lt;code&gt;mmap()&lt;/code&gt; file access
+ &lt;a class="anchor" href="#more-about-mmap-file-access"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/#mmap-overview"&gt;&lt;code&gt;mmap()&lt;/code&gt; overview&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/#what-is-a-page-fault"&gt;What is a page fault?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/5-more-about-mmap-file-access/#subtle-madv_dont_need-mmap-feature"&gt;Subtle &lt;code&gt;MADV_DONT_NEED&lt;/code&gt; &lt;code&gt;mmap()&lt;/code&gt; feature&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;Before we start the cgroup chapter, where I&amp;rsquo;m showing how to leverage memory and IO limits in order to control Page Cache eviction and improve the reliability of services, I want to delve a bit deeper into &lt;code&gt;mmap()&lt;/code&gt; syscall. We need to understand what is happening under the hood and shed more light on the reading and writing process with &lt;code&gt;mmap()&lt;/code&gt;.&lt;/p&gt;</description></item><item><title>cgroup v2 and Page Cache</title><link>https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/</guid><description>&lt;h1 id="cgroup-v2-and-page-cache"&gt;
+ cgroup v2 and Page Cache
+ &lt;a class="anchor" href="#cgroup-v2-and-page-cache"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/#overview"&gt;Overview&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/#memory-cgroup-files"&gt;Memory cgroup files&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/#pressure-stall-information-psi"&gt;Pressure Stall Information (PSI)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/#writeback-and-io"&gt;Writeback and I/O&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/#memory-and-io-cgroup-ownership"&gt;Memory and I/O cgroup ownership&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/#safe-ad-hoc-tasks"&gt;Safe ad-hoc tasks&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;The cgroup subsystem is the way to distribute and limit system resources fairly. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In addition, the cgroup provides a lot of helpful resource counters and statistics.&lt;/p&gt;</description></item><item><title>Unique set size and working set size</title><link>https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/</guid><description>&lt;h1 id="how-much-memory-my-program-uses-or-the-tale-of-working-set-size"&gt;
  How much memory my program uses or the tale of working set size
- &lt;a class="anchor" href="#how-much-memory-my-program-uses-or-the-tale-of-working-set-size">#&lt;/a>
-&lt;/h1>
-&lt;p>Currently, in the world of containers, auto-scaling, and on-demand clouds, it&amp;rsquo;s vital to understand the resource needs of services both in norman regular situations and under pressure near the software limits. But every time someone touches on the topic of memory usage, it becomes almost immediately unclear what and how to measure. RAM is a valuable and often expensive type of hardware. In some cases, its latency is even more important than disk latency. Therefore, the Linux kernel tries as hard as it can to optimize memory utilization, for instance by sharing the same pages among processes. In addition, the Linux Kernel has its Page Cache in order to improve storage IO speed by storing a subset of the disk data in memory. Page Cache not only, by its nature, performs implicit memory sharing, which usually confuses users, but also actively asynchronously works with the storage in the background. Thus, Page Cache brings even more complexity to the table of memory usage estimation.&lt;/p></description></item><item><title>Direct IO</title><link>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</guid><description>&lt;h1 id="direct-io-dio-not-ready">
+ &lt;a class="anchor" href="#how-much-memory-my-program-uses-or-the-tale-of-working-set-size"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/#its-all-about-who-counts-or-the-story-of-unique-set-size"&gt;It’s all about who counts or the story of unique set size&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/#idle-pages-and-working-set-size"&gt;Idle pages and working set size&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/#calculating-memory-limits-with-pressure-stall-information-psi"&gt;Calculating memory limits with Pressure Stall Information (PSI)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/#-and-what-about-writeback"&gt;… and what about writeback?&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;Currently, in the world of containers, auto-scaling, and on-demand clouds, it&amp;rsquo;s vital to understand the resource needs of services both in norman regular situations and under pressure near the software limits. But every time someone touches on the topic of memory usage, it becomes almost immediately unclear what and how to measure. RAM is a valuable and often expensive type of hardware. In some cases, its latency is even more important than disk latency. Therefore, the Linux kernel tries as hard as it can to optimize memory utilization, for instance by sharing the same pages among processes. In addition, the Linux Kernel has its Page Cache in order to improve storage IO speed by storing a subset of the disk data in memory. Page Cache not only, by its nature, performs implicit memory sharing, which usually confuses users, but also actively asynchronously works with the storage in the background. Thus, Page Cache brings even more complexity to the table of memory usage estimation.&lt;/p&gt;</description></item><item><title>Direct IO</title><link>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/8-direct-io-dio/</guid><description>&lt;h1 id="direct-io-dio-not-ready"&gt;
  Direct IO (DIO) (NOT READY)
- &lt;a class="anchor" href="#direct-io-dio-not-ready">#&lt;/a>
-&lt;/h1>
-&lt;p>As usual, there is always an exception to any rule. And Page Cache is no different. So let&amp;rsquo;s talk about file reads and writes, which can ignore Page Cache content.&lt;/p>
-&lt;h2 id="why-its-good">
+ &lt;a class="anchor" href="#direct-io-dio-not-ready"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/#why-its-good"&gt;Why it’s good&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/8-direct-io-dio/#why-its-bad-and-io_uring-alternative"&gt;Why it’s bad and &lt;code&gt;io_uring&lt;/code&gt; alternative
+&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;As usual, there is always an exception to any rule. And Page Cache is no different. So let&amp;rsquo;s talk about file reads and writes, which can ignore Page Cache content.&lt;/p&gt;
+&lt;h2 id="why-its-good"&gt;
  Why it’s good
- &lt;a class="anchor" href="#why-its-good">#&lt;/a>
-&lt;/h2>
-&lt;p>Some applications require low-level access to the storage subsystem and the linux kernel gives such a feature by providing &lt;code>O_DIRECT&lt;/code> file open flag. This IO is called the Direct IO or DIO. A program, which opens a file with this flag, bypasses the kernel Page Cache completely and directly communicates with the VFS and the underlying filesystem.&lt;/p></description></item><item><title>Advanced Page Cache observability and troubleshooting tools</title><link>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</guid><description>&lt;h1 id="advanced-page-cache-observability-and-troubleshooting-tools">
+ &lt;a class="anchor" href="#why-its-good"&gt;#&lt;/a&gt;
+&lt;/h2&gt;
+&lt;p&gt;Some applications require low-level access to the storage subsystem and the linux kernel gives such a feature by providing &lt;code&gt;O_DIRECT&lt;/code&gt; file open flag. This IO is called the Direct IO or DIO. A program, which opens a file with this flag, bypasses the kernel Page Cache completely and directly communicates with the VFS and the underlying filesystem.&lt;/p&gt;</description></item><item><title>Advanced Page Cache observability and troubleshooting tools</title><link>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/</guid><description>&lt;h1 id="advanced-page-cache-observability-and-troubleshooting-tools"&gt;
  Advanced Page Cache observability and troubleshooting tools
- &lt;a class="anchor" href="#advanced-page-cache-observability-and-troubleshooting-tools">#&lt;/a>
-&lt;/h1>
-&lt;p>Let&amp;rsquo;s touch on some advanced tools we can use to perform low-level kernel tracing and debugging.&lt;/p>
-&lt;h2 id="ebpf-tools">
+ &lt;a class="anchor" href="#advanced-page-cache-observability-and-troubleshooting-tools"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/#ebpf-tools"&gt;&lt;code&gt;eBPF&lt;/code&gt; tools&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/#writeback-monitor"&gt;Writeback monitor&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/#page-cache-top"&gt;Page Cache Top&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/#cache-stat"&gt;Cache stat&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/#bpftrace-and-kfunc-trace"&gt;&lt;code&gt;bpftrace&lt;/code&gt; and &lt;code&gt;kfunc&lt;/code&gt; trace&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/#perf-tool"&gt;&lt;code&gt;perf&lt;/code&gt; tool&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;Let&amp;rsquo;s touch on some advanced tools we can use to perform low-level kernel tracing and debugging.&lt;/p&gt;
+&lt;h2 id="ebpf-tools"&gt;
  eBPF tools
- &lt;a class="anchor" href="#ebpf-tools">#&lt;/a>
-&lt;/h2>
-&lt;p>First of all, we can use &lt;code>eBPF&lt;/code> tools. The [&lt;code>bcc&lt;/code>]https://github.com/iovisor/bcc and &lt;a href="https://github.com/iovisor/bpftrace" target="_blank" rel="noopener">&lt;code>bpftrace&lt;/code>&lt;/a> are your friends when you want to get some internal kernel information.&lt;/p>
-&lt;p>Let&amp;rsquo;s take a look at some tools which come with it.&lt;/p>
-&lt;h3 id="writeback-monitor">
- Writeback monitor
- &lt;a class="anchor" href="#writeback-monitor">#&lt;/a>
-&lt;/h3>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>$ sudo bpftrace ./writeback.bt
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Attaching &lt;span style="color:#ae81ff">4&lt;/span> probes...
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Tracing writeback... Hit Ctrl-C to end.
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>TIME DEVICE PAGES REASON ms
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>15:01:48 btrfs-1 &lt;span style="color:#ae81ff">7355&lt;/span> periodic 0.003
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>15:01:49 btrfs-1 &lt;span style="color:#ae81ff">7355&lt;/span> periodic 0.003
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>15:01:51 btrfs-1 &lt;span style="color:#ae81ff">7355&lt;/span> periodic 0.006
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>15:01:54 btrfs-1 &lt;span style="color:#ae81ff">7355&lt;/span> periodic 0.005
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>15:01:54 btrfs-1 &lt;span style="color:#ae81ff">7355&lt;/span> periodic 0.004
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>15:01:56 btrfs-1 &lt;span style="color:#ae81ff">7355&lt;/span> periodic 0.005
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="page-cache-top">
- Page Cache Top
- &lt;a class="anchor" href="#page-cache-top">#&lt;/a>
-&lt;/h3>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>19:49:52 Buffers MB: &lt;span style="color:#ae81ff">0&lt;/span> / Cached MB: &lt;span style="color:#ae81ff">610&lt;/span> / Sort: HITS / Order: descending 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>PID UID CMD HITS MISSES DIRTIES READ_HIT% WRITE_HIT% 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">66229&lt;/span> vagrant vmtouch &lt;span style="color:#ae81ff">44745&lt;/span> &lt;span style="color:#ae81ff">44032&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 50.4% 49.6% 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">66229&lt;/span> vagrant bash &lt;span style="color:#ae81ff">205&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.0% 0.0% 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">66227&lt;/span> root cachetop &lt;span style="color:#ae81ff">17&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.0% 0.0% 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">222&lt;/span> dbus dbus-daemon &lt;span style="color:#ae81ff">16&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.0% 0.0% 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">317&lt;/span> vagrant tmux: server &lt;span style="color:#ae81ff">4&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.0% 0.0%
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="cache-stat">
- Cache stat
- &lt;a class="anchor" href="#cache-stat">#&lt;/a>
-&lt;/h3>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">[&lt;/span>vagrant@archlinux tools&lt;span style="color:#f92672">]&lt;/span>$ sudo ./cachestat 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> HITS MISSES DIRTIES HITRATIO BUFFERS_MB CACHED_MB 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">10&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">610&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">4&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">610&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">4&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">610&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">21&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">610&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">624&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">438&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">2&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">438&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">4&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">438&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 0.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">438&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">19&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">438&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">428&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 0.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">546&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">28144&lt;/span> &lt;span style="color:#ae81ff">16384&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 63.21% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">610&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 0.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">610&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 0.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">610&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">17&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 100.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">610&lt;/span> 
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span> 0.00% &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#ae81ff">610&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="bpftrace-and-kfunc-trace">
- &lt;code>bpftrace&lt;/code> and &lt;code>kfunc&lt;/code> trace
- &lt;a class="anchor" href="#bpftrace-and-kfunc-trace">#&lt;/a>
-&lt;/h3>
-&lt;p>Other than that, &lt;code>eBPF&lt;/code> and &lt;code>bpftrace&lt;/code> have recently got a new great feature named &lt;a href="https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md#15-kfunckretfunc-kernel-functions-tracing" target="_blank" rel="noopener">&lt;code>kfunc&lt;/code>&lt;/a>. Thus, using it, you can trace some kernel functions without kernel debugging information installed.&lt;/p></description></item></channel></rss>
+ &lt;a class="anchor" href="#ebpf-tools"&gt;#&lt;/a&gt;
+&lt;/h2&gt;
+&lt;p&gt;First of all, we can use &lt;code&gt;eBPF&lt;/code&gt; tools. The [&lt;code&gt;bcc&lt;/code&gt;]https://github.com/iovisor/bcc and &lt;a href="https://github.com/iovisor/bpftrace" target="_blank" rel="noopener"&gt;&lt;code&gt;bpftrace&lt;/code&gt;&lt;/a&gt; are your friends when you want to get some internal kernel information.&lt;/p&gt;</description></item></channel></rss>

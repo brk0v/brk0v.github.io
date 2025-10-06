@@ -1,48 +1,48 @@
 .right-button {
-    margin-top: 20px;
-    margin-bottom: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .cookie-container {
-    position: fixed;
-    bottom: -100%;
-    left: 0;
-    right: 0;
-    background: #2f3640;
-    color: #f5f6fa;
-    padding: 0 32px;
-    box-shadow: 0 -2px 16px rgba(47, 54, 64, 0.39);
-    transition: 400ms;
+  position: fixed;
+  bottom: -100%;
+  left: 0;
+  right: 0;
+  background: #2f3640;
+  color: #f5f6fa;
+  padding: 0 32px;
+  box-shadow: 0 -2px 16px rgba(47, 54, 64, 0.39);
+  transition: 400ms;
 }
 
 .cookie-container.active {
-    bottom: 0;
+  bottom: 0;
 }
 
 .cookie-container a {
-    color: #f5f6fa;
+  color: #f5f6fa;
 }
 
 .cookie-btn {
-    background: #e84118;
-    border: 0;
-    color: #f5f6fa;
-    padding: 12px 48px;
-    font-size: 18px;
-    margin-bottom: 16px;
-    border-radius: 8px;
-    cursor: pointer;
+  background: #e84118;
+  border: 0;
+  color: #f5f6fa;
+  padding: 12px 48px;
+  font-size: 18px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-.img-center {  
-    padding: 20px;
-    text-align:center; 
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
+.img-center {
+  padding: 20px;
+  text-align: center;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .text-center {
-    text-align: center;
-    padding-bottom: 20px;
+  text-align: center;
+  padding-bottom: 20px;
 }

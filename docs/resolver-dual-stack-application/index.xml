@@ -1,168 +1,298 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>DNS resolvers and Dual-Stack applications on Viacheslav Biriukov</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/</link><description>Recent content in DNS resolvers and Dual-Stack applications on Viacheslav Biriukov</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://biriukov.dev/docs/resolver-dual-stack-application/index.xml" rel="self" type="application/rss+xml"/><item><title>What every SRE should know about GNU/Linux resolvers and Dual-Stack applications</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/</guid><description>&lt;h1 id="what-every-sre-should-know-about-gnulinux-resolvers-and-dual-stack-applications">
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>DNS resolvers and Dual-Stack applications on Viacheslav Biriukov</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/</link><description>Recent content in DNS resolvers and Dual-Stack applications on Viacheslav Biriukov</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://biriukov.dev/docs/resolver-dual-stack-application/index.xml" rel="self" type="application/rss+xml"/><item><title>What every SRE should know about GNU/Linux resolvers and Dual-Stack applications</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/</guid><description>&lt;h1 id="what-every-sre-should-know-about-gnulinux-resolvers-and-dual-stack-applications"&gt;
  What every SRE should know about GNU/Linux resolvers and Dual-Stack applications
- &lt;a class="anchor" href="#what-every-sre-should-know-about-gnulinux-resolvers-and-dual-stack-applications">#&lt;/a>
-&lt;/h1>
-&lt;p>In this series of posts, I’d like to make a deep dive into the GNU/Linux local facilities used to convert a domain name or hostname into IP addresses, specifically in the context of dual-stack applications. This process of resolution is one of the oldest forms of networking abstraction, designed to replace hard-to-remember network addresses with human-readable strings. Although it may seem simple at first glance, the entire process involving stub resolvers is filled with complexities and subtle nuances. One contributing factor to this complexity is the growing number of IPv6 addresses, which, although not increasing at the pace everyone might want, is gradually changing servers and clients to support dual-stack hosts. Thus a seamless transition to IPv6 become an important feature and should occur without degrading user experience or increasing response latency.&lt;/p></description></item><item><title>What is a stub resolver?</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/1-what-is-a-stub-resolver/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/1-what-is-a-stub-resolver/</guid><description>&lt;h1 id="1-what-is-a-stub-resolver">
+ &lt;a class="anchor" href="#what-every-sre-should-know-about-gnulinux-resolvers-and-dual-stack-applications"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/1-what-is-a-stub-resolver/"&gt;What is a stub resolver?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/2-history-gethostbyname/"&gt;History: &lt;code&gt;gethostbyname()&lt;/code&gt; and old good friends&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/"&gt;&lt;code&gt;getaddrinfo()&lt;/code&gt; and POSIX spec&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/"&gt;&lt;code&gt;getaddrinfo() &lt;/code&gt;from glibc&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/5-getaddrinfo-from-musl-libc/"&gt;&lt;code&gt;getaddrinfo()&lt;/code&gt; from musl libc&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/"&gt;Dual-Stack applications&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/"&gt;Async non-blocking resolvers in &lt;code&gt;C&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/"&gt;Stub resolvers in languages&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/9-dual-stack-software-examples/"&gt;Dual-stack software examples&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/"&gt;&lt;code&gt;systemd-resolved&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/"&gt;Querying Nameservers on dual-stack hosts&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/"&gt;The Present and the future of resolvers and DNS related features&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/"&gt;Tools for troubleshooting in one place&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr/&gt;
+&lt;p&gt;In this series of posts, I’d like to make a deep dive into the GNU/Linux local facilities used to convert a domain name or hostname into IP addresses, specifically in the context of dual-stack applications. This process of resolution is one of the oldest forms of networking abstraction, designed to replace hard-to-remember network addresses with human-readable strings. Although it may seem simple at first glance, the entire process involving stub resolvers is filled with complexities and subtle nuances. One contributing factor to this complexity is the growing number of IPv6 addresses, which, although not increasing at the pace everyone might want, is gradually changing servers and clients to support dual-stack hosts. Thus a seamless transition to IPv6 become an important feature and should occur without degrading user experience or increasing response latency.&lt;/p&gt;</description></item><item><title>What is a stub resolver?</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/1-what-is-a-stub-resolver/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/1-what-is-a-stub-resolver/</guid><description>&lt;h1 id="1-what-is-a-stub-resolver"&gt;
  1. What is a stub resolver?
- &lt;a class="anchor" href="#1-what-is-a-stub-resolver">#&lt;/a>
-&lt;/h1>
-&lt;p>First of all, let’s shed some light on what a stub resolver is.&lt;/p>
-&lt;p>Whenever someone begins talking about hostname resolution issues or nameserver changes, the first thing most people think of is the &lt;code>/etc/resolv.conf&lt;/code> configuration file. Indeed, &lt;code>/etc/resolv.conf&lt;/code> is a core and fundamental part of the local resolver system, and we will discuss it in detail later in this series, including how it’s managed on modern GNU/Linux distributions with &lt;code>systemd&lt;/code>. However, it’s far from being the only component involved in converting a hostname string into a list of IP addresses. Often, other lesser-known parts of the system may cause unpredictable behaviors and have their own unique features and limitations.&lt;/p></description></item><item><title>History: gethostbyname() and old good friends</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/2-history-gethostbyname/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/2-history-gethostbyname/</guid><description>&lt;h1 id="2-history-gethostbyname-and-old-good-friends">
- 2. History: &lt;code>gethostbyname()&lt;/code> and old good friends
- &lt;a class="anchor" href="#2-history-gethostbyname-and-old-good-friends">#&lt;/a>
-&lt;/h1>
-&lt;blockquote class="book-hint warning">
- Please do not use any of the code snippets from this chapter in your projects. They are provided solely for historical and educational purposes. Instead, you should use &lt;code>getaddrinfo()&lt;/code>.
-&lt;/blockquote>
+ &lt;a class="anchor" href="#1-what-is-a-stub-resolver"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;First of all, let’s shed some light on what a stub resolver is.&lt;/p&gt;
+&lt;p&gt;Whenever someone begins talking about hostname resolution issues or nameserver changes, the first thing most people think of is the &lt;code&gt;/etc/resolv.conf&lt;/code&gt; configuration file. Indeed, &lt;code&gt;/etc/resolv.conf&lt;/code&gt; is a core and fundamental part of the local resolver system, and we will discuss it in detail later in this series, including how it’s managed on modern GNU/Linux distributions with &lt;code&gt;systemd&lt;/code&gt;. However, it’s far from being the only component involved in converting a hostname string into a list of IP addresses. Often, other lesser-known parts of the system may cause unpredictable behaviors and have their own unique features and limitations.&lt;/p&gt;</description></item><item><title>History: gethostbyname() and old good friends</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/2-history-gethostbyname/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/2-history-gethostbyname/</guid><description>&lt;h1 id="2-history-gethostbyname-and-old-good-friends"&gt;
+ 2. History: &lt;code&gt;gethostbyname()&lt;/code&gt; and old good friends
+ &lt;a class="anchor" href="#2-history-gethostbyname-and-old-good-friends"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;blockquote class="book-hint warning"&gt;
+ Please do not use any of the code snippets from this chapter in your projects. They are provided solely for historical and educational purposes. Instead, you should use &lt;code&gt;getaddrinfo()&lt;/code&gt;.
+&lt;/blockquote&gt;
 
-&lt;p>The &lt;code>gethostbyname&lt;/code> (&lt;code>&lt;a href="https://man7.org/linux/man-pages/man3/gethostbyname.3.html" target="_blank" rel="noopener">man 3 gethostbyname&lt;/a>&lt;/code>) function first appeared in the 1980s and has been a part of the networking landscape ever since. Despite its obsoletion, some programs still use it. It was deprecated in POSIX.1-2001, over two decades ago, due to its internal design limitations and limited functionality. However, for a long time, it was the preferred and standardized helper function for resolving a domain name into a list of IP addresses.&lt;/p></description></item><item><title>getaddrinfo() and POSIX spec</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/</guid><description>&lt;h1 id="3-getaddrinfo-and-posix-spec">
- 3. &lt;code>getaddrinfo()&lt;/code> and POSIX spec
- &lt;a class="anchor" href="#3-getaddrinfo-and-posix-spec">#&lt;/a>
-&lt;/h1>
-&lt;p>Thus, instead of the deprecated &lt;code>gethostbyname()&lt;/code>, &lt;code>getaddrinfo()&lt;/code> should be used within &lt;code>libc&lt;/code>. The &lt;code>getaddrinfo()&lt;/code> function is a POSIX-&lt;a href="https://pubs.opengroup.org/onlinepubs/9799919799.2024edition/functions/getaddrinfo.html" target="_blank" rel="noopener">standardized&lt;/a> function and is defined in &lt;a href="http://www.ietf.org/rfc/rfc3493.txt" target="_blank" rel="noopener">RFC 3943&lt;/a>. It is IP version agnostic and returns data structures that can be easily reused in subsequent socket API calls (such as &lt;code>socket()&lt;/code>, &lt;code>connect()&lt;/code>, &lt;code>sendto()&lt;/code>).&lt;/p>
-&lt;p>First of all, if you have a codebase that uses &lt;code>gethostbyname()&lt;/code> and you are looking to migrate to the modern &lt;code>getaddrinfo()&lt;/code>, I have bad news: it’s not a drop-in replacement. You need to understand the new data structures, logic and flags.&lt;/p></description></item><item><title>getaddrinfo() from glibc</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/</guid><description>&lt;h1 id="4-getaddrinfo-from-glibc">
- 4. &lt;code>getaddrinfo()&lt;/code> from &lt;code>glibc&lt;/code>
- &lt;a class="anchor" href="#4-getaddrinfo-from-glibc">#&lt;/a>
-&lt;/h1>
-&lt;p>The standard in POSIX describes only the behavior and interface of the &lt;code>getaddrinfo()&lt;/code> function. However, the actual implementation can vary between different frameworks. In this chapter, we will examine the internals of the &lt;code>getaddrinfo()&lt;/code> implementation from &lt;code>glibc&lt;/code> version 2.39. In the GNU/Linux world the &lt;code>glibc&lt;/code> remains the default C library for the overwhelming majority of systems.&lt;/p>
-&lt;h2 id="41-internals-and-design">
- 4.1 Internals and design
- &lt;a class="anchor" href="#41-internals-and-design">#&lt;/a>
-&lt;/h2>
-&lt;p>Even though the main purpose of a stub resolver is to send DNS queries to a recursive server, the reality is more complex than that. The chart below illustrates the main steps that the &lt;code>glibc&lt;/code> &lt;code>getaddrinfo()&lt;/code> function performs each time you call it.&lt;/p></description></item><item><title>getaddrinfo() from musl libc</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/5-getaddrinfo-from-musl-libc/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/5-getaddrinfo-from-musl-libc/</guid><description>&lt;h1 id="5-getaddrinfo-from-musl-libc">
- 5. &lt;code>getaddrinfo()&lt;/code> from &lt;code>musl&lt;/code> &lt;code>libc&lt;/code>
- &lt;a class="anchor" href="#5-getaddrinfo-from-musl-libc">#&lt;/a>
-&lt;/h1>
-&lt;p>&lt;code>musl libc&lt;/code> is a lightweight, fast, and simple implementation of the standard C library (&lt;code>libc&lt;/code>) that aims for efficiency, standards compliance, and security.&lt;/p>
-&lt;p>It gained popularity following its extensive use in &lt;a href="https://alpinelinux.org/" target="_blank" rel="noopener">Alpine Linux&lt;/a>, a security-oriented, lightweight Linux distribution often used as a base image for Docker containers.&lt;/p>
-&lt;p>However, it is crucial for us to understand that &lt;code>musl libc&lt;/code> incorporates a completely new resolver code that behaves differently in certain &lt;a href="https://wiki.musl-libc.org/functional-differences-from-glibc.html#Name_Resolver_.2F_DNS" target="_blank" rel="noopener">situations&lt;/a>. The most significant differences include:&lt;/p></description></item><item><title>Dual-Stack applications</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/</guid><description>&lt;h1 id="6-dual-stack-applications">
+&lt;p&gt;The &lt;code&gt;gethostbyname&lt;/code&gt; (&lt;code&gt;&lt;a href="https://man7.org/linux/man-pages/man3/gethostbyname.3.html" target="_blank" rel="noopener"&gt;man 3 gethostbyname&lt;/a&gt;&lt;/code&gt;) function first appeared in the 1980s and has been a part of the networking landscape ever since. Despite its obsoletion, some programs still use it. It was deprecated in POSIX.1-2001, over two decades ago, due to its internal design limitations and limited functionality. However, for a long time, it was the preferred and standardized helper function for resolving a domain name into a list of IP addresses.&lt;/p&gt;</description></item><item><title>getaddrinfo() and POSIX spec</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/</guid><description>&lt;h1 id="3-getaddrinfo-and-posix-spec"&gt;
+ 3. &lt;code&gt;getaddrinfo()&lt;/code&gt; and POSIX spec
+ &lt;a class="anchor" href="#3-getaddrinfo-and-posix-spec"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/#31-resolving-hostname-node"&gt;3.1 Resolving hostname (node)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/#32-resolving-ports-services"&gt;3.2 Resolving ports (services)&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;Thus, instead of the deprecated &lt;code&gt;gethostbyname()&lt;/code&gt;, &lt;code&gt;getaddrinfo()&lt;/code&gt; should be used within &lt;code&gt;libc&lt;/code&gt;. The &lt;code&gt;getaddrinfo()&lt;/code&gt; function is a POSIX-&lt;a href="https://pubs.opengroup.org/onlinepubs/9799919799.2024edition/functions/getaddrinfo.html" target="_blank" rel="noopener"&gt;standardized&lt;/a&gt; function and is defined in &lt;a href="http://www.ietf.org/rfc/rfc3493.txt" target="_blank" rel="noopener"&gt;RFC 3943&lt;/a&gt;. It is IP version agnostic and returns data structures that can be easily reused in subsequent socket API calls (such as &lt;code&gt;socket()&lt;/code&gt;, &lt;code&gt;connect()&lt;/code&gt;, &lt;code&gt;sendto()&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;First of all, if you have a codebase that uses &lt;code&gt;gethostbyname()&lt;/code&gt; and you are looking to migrate to the modern &lt;code&gt;getaddrinfo()&lt;/code&gt;, I have bad news: it’s not a drop-in replacement. You need to understand the new data structures, logic and flags.&lt;/p&gt;</description></item><item><title>getaddrinfo() from glibc</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/</guid><description>&lt;h1 id="4-getaddrinfo-from-glibc"&gt;
+ 4. &lt;code&gt;getaddrinfo()&lt;/code&gt; from &lt;code&gt;glibc&lt;/code&gt;
+ &lt;a class="anchor" href="#4-getaddrinfo-from-glibc"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/#41-internals-and-design"&gt;4.1 Internals and design&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/#42-name-service-switch-nss"&gt;4.2 Name Service Switch (&lt;code&gt;nss&lt;/code&gt;)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/#43-name-service-cache-daemon-nscd"&gt;4.3 Name service cache daemon &lt;code&gt;NSCD&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/#44-thread-safety-issues-with-getaddrinfo"&gt;4.4 Thread safety issues with &lt;code&gt;getaddrinfo()&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/#45-etcresolvconf"&gt;4.5. &lt;code&gt;/etc/resolv.conf&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/#46-etchosts"&gt;4.6. &lt;code&gt;/etc/hosts&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;The standard in POSIX describes only the behavior and interface of the &lt;code&gt;getaddrinfo()&lt;/code&gt; function. However, the actual implementation can vary between different frameworks. In this chapter, we will examine the internals of the &lt;code&gt;getaddrinfo()&lt;/code&gt; implementation from &lt;code&gt;glibc&lt;/code&gt; version 2.39. In the GNU/Linux world the &lt;code&gt;glibc&lt;/code&gt; remains the default C library for the overwhelming majority of systems.&lt;/p&gt;</description></item><item><title>getaddrinfo() from musl libc</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/5-getaddrinfo-from-musl-libc/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/5-getaddrinfo-from-musl-libc/</guid><description>&lt;h1 id="5-getaddrinfo-from-musl-libc"&gt;
+ 5. &lt;code&gt;getaddrinfo()&lt;/code&gt; from &lt;code&gt;musl&lt;/code&gt; &lt;code&gt;libc&lt;/code&gt;
+ &lt;a class="anchor" href="#5-getaddrinfo-from-musl-libc"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;musl libc&lt;/code&gt; is a lightweight, fast, and simple implementation of the standard C library (&lt;code&gt;libc&lt;/code&gt;) that aims for efficiency, standards compliance, and security.&lt;/p&gt;
+&lt;p&gt;It gained popularity following its extensive use in &lt;a href="https://alpinelinux.org/" target="_blank" rel="noopener"&gt;Alpine Linux&lt;/a&gt;, a security-oriented, lightweight Linux distribution often used as a base image for Docker containers.&lt;/p&gt;
+&lt;p&gt;However, it is crucial for us to understand that &lt;code&gt;musl libc&lt;/code&gt; incorporates a completely new resolver code that behaves differently in certain &lt;a href="https://wiki.musl-libc.org/functional-differences-from-glibc.html#Name_Resolver_.2F_DNS" target="_blank" rel="noopener"&gt;situations&lt;/a&gt;. The most significant differences include:&lt;/p&gt;</description></item><item><title>Dual-Stack applications</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/</guid><description>&lt;h1 id="6-dual-stack-applications"&gt;
  6. Dual-Stack applications
- &lt;a class="anchor" href="#6-dual-stack-applications">#&lt;/a>
-&lt;/h1>
-&lt;img alt="IPv4 or IPv6" src="../images/dns_two_buttons.png" width="50%" class="img-center">
-&lt;p>Let’s now focus on dual-stack programs, which support both IPv4 and IPv6. Here are some critical questions to consider:&lt;/p>
-&lt;p>For server code:&lt;/p>
-&lt;ul>
-&lt;li>How can we easily listen on all IPv4 and all IPv6 addresses? Do we need separate listeners for each?&lt;/li>
-&lt;li>Are there any tools or helpers available to manage multiple listeners?&lt;/li>
-&lt;/ul>
-&lt;p>For client code:&lt;/p>
-&lt;ul>
-&lt;li>Which address family should our client program resolve and use: &lt;code>A&lt;/code>, &lt;code>AAAA&lt;/code>, or both?&lt;/li>
-&lt;li>What to do if the resolver returns multiple addresses for each family?&lt;/li>
-&lt;li>Does a machine have active IPv4 and IPv6 connectivity? Is the IPv6 routing configured correctly to the destination?&lt;/li>
-&lt;li>In case of connection errors, which address should be used to reconnect?&lt;/li>
-&lt;/ul>
-&lt;p>Ideally, we want to abstract away from these technical details to focus more on developing our core business logic, such as converting &lt;code>JSON&lt;/code>s to &lt;code>protobuf&lt;/code>s and vice versa. 🙃&lt;/p></description></item><item><title>Async non-blocking resolvers in C</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/</guid><description>&lt;h1 id="7-async-non-blocking-resolvers-in-c">
- 7. Async non-blocking resolvers in &lt;code>C&lt;/code>
- &lt;a class="anchor" href="#7-async-non-blocking-resolvers-in-c">#&lt;/a>
-&lt;/h1>
-&lt;p>Now that we’ve covered the essential theory, let’s explore alternative stub resolver libraries and frameworks for the &lt;code>C&lt;/code> language. Other languages will be discussed next, but don’t skip this chapter, as it contains foundational information that will be referenced later.&lt;/p>
-&lt;h2 id="71-getaddrinfo_a">
- 7.1 &lt;code>getaddrinfo_a()&lt;/code>
- &lt;a class="anchor" href="#71-getaddrinfo_a">#&lt;/a>
-&lt;/h2>
-&lt;p>&lt;code>getaddrinfo_a&lt;/code> (&lt;code>&lt;a href="https://www.man7.org/linux/man-pages/man3/getaddrinfo_a.3.html" target="_blank" rel="noopener">man 7 getaddrinfo_a&lt;/a>&lt;/code>) is an asynchronous version of &lt;code>getaddrinfo()&lt;/code> but with some limitations: results can be collected by polling or notified by a signal.&lt;/p></description></item><item><title>Stub resolvers in languages</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/</guid><description>&lt;h1 id="8-stub-resolvers-in-languages">
+ &lt;a class="anchor" href="#6-dual-stack-applications"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/#61-dual-stack-server"&gt;6.1 Dual stack server&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/#611--ipv6_v6only-socket-option"&gt;6.1.1 &lt;code&gt;IPV6_V6ONLY&lt;/code&gt; socket option&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/#612-multiple-listening-sockets-with-systemd"&gt;6.1.2 Multiple listening sockets with &lt;code&gt;systemd&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/#62-dual-stack-client"&gt;6.2 Dual stack client&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/#621-sorting-destination-addresses-rfc-6724"&gt;6.2.1 Sorting destination addresses (RFC 6724)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/6-dual-stack-applications/#622-happy-eyeballs-success-with-dual-stack-hosts"&gt;6.2.2 Happy Eyeballs: Success with Dual-Stack Hosts&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;img alt="IPv4 or IPv6" src="../images/dns_two_buttons.png" width="40%" class="img-center"&gt;
+&lt;p&gt;Let’s now focus on dual-stack programs, which support both IPv4 and IPv6. Here are some critical questions to consider:&lt;/p&gt;
+&lt;p&gt;For server code:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;How can we easily listen on all IPv4 and all IPv6 addresses? Do we need separate listeners for each?&lt;/li&gt;
+&lt;li&gt;Are there any tools or helpers available to manage multiple listeners?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For client code:&lt;/p&gt;</description></item><item><title>Async non-blocking resolvers in C</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/</guid><description>&lt;h1 id="7-async-non-blocking-resolvers-in-c"&gt;
+ 7. Async non-blocking resolvers in &lt;code&gt;C&lt;/code&gt;
+ &lt;a class="anchor" href="#7-async-non-blocking-resolvers-in-c"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/#71-getaddrinfo_a"&gt;7.1 &lt;code&gt;getaddrinfo_a()&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/#72--c-ares-library"&gt;7.2 &lt;code&gt;c-ares&lt;/code&gt; library&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/#721-essentials"&gt;7.2.1 Essentials&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/#721-dual-stack-application"&gt;7.2.1 Dual stack application&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;Now that we’ve covered the essential theory, let’s explore alternative stub resolver libraries and frameworks for the &lt;code&gt;C&lt;/code&gt; language. Other languages will be discussed next, but don’t skip this chapter, as it contains foundational information that will be referenced later.&lt;/p&gt;
+&lt;h2 id="71-getaddrinfo_a"&gt;
+ 7.1 &lt;code&gt;getaddrinfo_a()&lt;/code&gt;
+ &lt;a class="anchor" href="#71-getaddrinfo_a"&gt;#&lt;/a&gt;
+&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;getaddrinfo_a&lt;/code&gt; (&lt;code&gt;&lt;a href="https://www.man7.org/linux/man-pages/man3/getaddrinfo_a.3.html" target="_blank" rel="noopener"&gt;man 7 getaddrinfo_a&lt;/a&gt;&lt;/code&gt;) is an asynchronous version of &lt;code&gt;getaddrinfo()&lt;/code&gt; but with some limitations: results can be collected by polling or notified by a signal.&lt;/p&gt;</description></item><item><title>Stub resolvers in languages</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/</guid><description>&lt;h1 id="8-stub-resolvers-in-languages"&gt;
  8. Stub resolvers in languages
- &lt;a class="anchor" href="#8-stub-resolvers-in-languages">#&lt;/a>
-&lt;/h1>
-&lt;p>Let’s now take a look at other popular languages and understand the capabilities, features and options they provide in the context of resolvers.&lt;/p>
-&lt;h2 id="81-python">
- 8.1 Python
- &lt;a class="anchor" href="#81-python">#&lt;/a>
-&lt;/h2>
-&lt;p>We are going to talk about &lt;code>cpython&lt;/code> 3.12.&lt;/p>
-&lt;h3 id="811--stub-resolvers">
- 8.1.1 Stub resolvers
- &lt;a class="anchor" href="#811--stub-resolvers">#&lt;/a>
-&lt;/h3>
-&lt;p>The Python standard library provides &lt;code>&lt;a href="https://docs.python.org/3/library/socket.html#socket.getaddrinfo:" target="_blank" rel="noopener">socket.getaddrinfo()&lt;/a>&lt;/code>:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>socket&lt;span style="color:#f92672">.&lt;/span>getaddrinfo(host, port, family&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">0&lt;/span>, type&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">0&lt;/span>, proto&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">0&lt;/span>, flags&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">0&lt;/span>)
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>which internally calls &lt;code>libc&lt;/code> &lt;code>&lt;a href="https://github.com/python/cpython/blob/5f6001130f8ada871193377954cfcfee01ef93b6/Modules/socketmodule.c#L6679:" target="_blank" rel="noopener">getaddrinfo()&lt;/a>&lt;/code>:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">/* Python interface to getaddrinfo(host, port). */&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">/*ARGSUSED*/&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">static&lt;/span> PyObject &lt;span style="color:#f92672">*&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">socket_getaddrinfo&lt;/span>(PyObject &lt;span style="color:#f92672">*&lt;/span>self, PyObject &lt;span style="color:#f92672">*&lt;/span>args, PyObject&lt;span style="color:#f92672">*&lt;/span> kwargs)
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>{
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> ...
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">memset&lt;/span>(&lt;span style="color:#f92672">&amp;amp;&lt;/span>hints, &lt;span style="color:#ae81ff">0&lt;/span>, &lt;span style="color:#66d9ef">sizeof&lt;/span>(hints));
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> hints.ai_family &lt;span style="color:#f92672">=&lt;/span> family;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> hints.ai_socktype &lt;span style="color:#f92672">=&lt;/span> socktype;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> hints.ai_protocol &lt;span style="color:#f92672">=&lt;/span> protocol;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> hints.ai_flags &lt;span style="color:#f92672">=&lt;/span> flags;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> Py_BEGIN_ALLOW_THREADS
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> error &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">getaddrinfo&lt;/span>(hptr, pptr, &lt;span style="color:#f92672">&amp;amp;&lt;/span>hints, &lt;span style="color:#f92672">&amp;amp;&lt;/span>res0);
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> ...
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>There are also &lt;code>&lt;a href="https://docs.python.org/3/library/socket.html#socket.gethostbyname" target="_blank" rel="noopener">socket.gethostbyname()&lt;/a>&lt;/code> and &lt;code>&lt;a href="https://docs.python.org/3/library/socket.html#socket.gethostbyname_ex" target="_blank" rel="noopener">socket.gethostbyname_ex()&lt;/a>&lt;/code>, but they both don&amp;rsquo;t support IPv6.&lt;/p></description></item><item><title>Dual-stack software examples</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/9-dual-stack-software-examples/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/9-dual-stack-software-examples/</guid><description>&lt;h1 id="9-dual-stack-software-examples">
+ &lt;a class="anchor" href="#8-stub-resolvers-in-languages"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#81-python"&gt;8.1 &lt;code&gt;Python&lt;/code&gt;&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#811--stub-resolvers"&gt;8.1.1 Stub resolvers&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#812-happy-eyeballs"&gt;8.1.2 Happy Eyeballs&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#82-go-golang"&gt;8.2 &lt;code&gt;Go&lt;/code&gt; (&lt;code&gt;golang&lt;/code&gt;)&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#821-resolver"&gt;8.2.1 Resolver&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#822-happy-eyeballs"&gt;8.2.2 Happy Eyeballs&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#83-rust"&gt;8.3 &lt;code&gt;Rust&lt;/code&gt;&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#831-resolver"&gt;8.3.1 Resolver&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#832-happy-eyeballs"&gt;8.3.2 Happy Eyeballs&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#84-java-and-netty"&gt;8.4 &lt;code&gt;Java&lt;/code&gt; and &lt;code&gt;Netty&lt;/code&gt;&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#841-resolver"&gt;8.4.1 Resolver&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#842-java-securitymanager"&gt;8.4.2 &lt;code&gt;Java&lt;/code&gt; &lt;code&gt;SecurityManager&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#843-happy-eyeballs"&gt;8.4.3 Happy eyeballs&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#85-nodejs"&gt;8.5 &lt;code&gt;Node.js&lt;/code&gt;&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#851-resoler"&gt;8.5.1 Resoler&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/#852-happy-eyeballs"&gt;8.5.2 Happy Eyeballs&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;Let’s now take a look at other popular languages and understand the capabilities, features and options they provide in the context of resolvers.&lt;/p&gt;</description></item><item><title>Dual-stack software examples</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/9-dual-stack-software-examples/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/9-dual-stack-software-examples/</guid><description>&lt;h1 id="9-dual-stack-software-examples"&gt;
  9. Dual-stack software examples
- &lt;a class="anchor" href="#9-dual-stack-software-examples">#&lt;/a>
-&lt;/h1>
-&lt;h2 id="91-nginx">
+ &lt;a class="anchor" href="#9-dual-stack-software-examples"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/9-dual-stack-software-examples/#91-nginx"&gt;9.1 &lt;code&gt;Nginx&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/9-dual-stack-software-examples/#92-envoy-proxy"&gt;9.2 &lt;code&gt;Envoy&lt;/code&gt; proxy&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/9-dual-stack-software-examples/#93-haproxy"&gt;9.3 &lt;code&gt;HAProxy&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;h2 id="91-nginx"&gt;
  9.1 Nginx
- &lt;a class="anchor" href="#91-nginx">#&lt;/a>
-&lt;/h2>
-&lt;p>&lt;code>Nginx&lt;/code> treats the hostname as a set of distinct entries rather than multiple paths to the same host. From the upstream module &lt;a href="https://nginx.org/en/docs/http/ngx_http_upstream_module.html#server" target="_blank" rel="noopener">doc&lt;/a>:&lt;/p>
-&lt;blockquote>
-&lt;p>A domain name that resolves to several IP addresses defines multiple servers at once.&lt;/p>
-&lt;/blockquote>
-&lt;p>On start &lt;code>Nginx&lt;/code> resolves all hostnames using its &lt;a href="https://github.com/nginx/nginx/blob/145b228530c364452c14d3184f1eee5e09b324aa/src/core/ngx_inet.c#L1117" target="_blank" rel="noopener">static resolver&lt;/a> with &lt;code>getaddrinfo()&lt;/code> and the &lt;code>AF_UNSPEC&lt;/code> and the &lt;code>AI_ADDRCONFIG&lt;/code> flags.&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">ngx_int_t&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">ngx_inet_resolve_host&lt;/span>(&lt;span style="color:#66d9ef">ngx_pool_t&lt;/span> &lt;span style="color:#f92672">*&lt;/span>pool, &lt;span style="color:#66d9ef">ngx_url_t&lt;/span> &lt;span style="color:#f92672">*&lt;/span>u)
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>{
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>...
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>hints.ai_family &lt;span style="color:#f92672">=&lt;/span> AF_UNSPEC;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> hints.ai_socktype &lt;span style="color:#f92672">=&lt;/span> SOCK_STREAM;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#ifdef AI_ADDRCONFIG
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> hints.ai_flags &lt;span style="color:#f92672">=&lt;/span> AI_ADDRCONFIG;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">#endif
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">if&lt;/span> (&lt;span style="color:#a6e22e">getaddrinfo&lt;/span>((&lt;span style="color:#66d9ef">char&lt;/span> &lt;span style="color:#f92672">*&lt;/span>) host, NULL, &lt;span style="color:#f92672">&amp;amp;&lt;/span>hints, &lt;span style="color:#f92672">&amp;amp;&lt;/span>res) &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span>) {
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> u&lt;span style="color:#f92672">-&amp;gt;&lt;/span>err &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#e6db74">&amp;#34;host not found&amp;#34;&lt;/span>;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">ngx_free&lt;/span>(host);
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> NGX_ERROR;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> ...
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If you have a paid Plus version of &lt;code>Nginx&lt;/code> or use a &lt;a href="https://docs.wallarm.com/admin-en/configure-dynamic-dns-resolution-nginx" target="_blank" rel="noopener">workaround with a variable&lt;/a> in &lt;code>proxy_pass&lt;/code>, &lt;code>Nginx &lt;/code>can periodically update in memory resolution cache. In order to enable it, you need to specify the &lt;a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#resolver" target="_blank" rel="noopener">global resolver&lt;/a> first:&lt;/p></description></item><item><title>systemd-resolved</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/</guid><description>&lt;h1 id="10-systemd-resolved">
+ &lt;a class="anchor" href="#91-nginx"&gt;#&lt;/a&gt;
+&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;Nginx&lt;/code&gt; treats the hostname as a set of distinct entries rather than multiple paths to the same host. From the upstream module &lt;a href="https://nginx.org/en/docs/http/ngx_http_upstream_module.html#server" target="_blank" rel="noopener"&gt;doc&lt;/a&gt;:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;A domain name that resolves to several IP addresses defines multiple servers at once.&lt;/p&gt;&lt;/blockquote&gt;
+&lt;p&gt;On start &lt;code&gt;Nginx&lt;/code&gt; resolves all hostnames using its &lt;a href="https://github.com/nginx/nginx/blob/145b228530c364452c14d3184f1eee5e09b324aa/src/core/ngx_inet.c#L1117" target="_blank" rel="noopener"&gt;static resolver&lt;/a&gt; with &lt;code&gt;getaddrinfo()&lt;/code&gt; and the &lt;code&gt;AF_UNSPEC&lt;/code&gt; and the &lt;code&gt;AI_ADDRCONFIG&lt;/code&gt; flags.&lt;/p&gt;</description></item><item><title>systemd-resolved</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/</guid><description>&lt;h1 id="10-systemd-resolved"&gt;
  10. systemd-resolved
- &lt;a class="anchor" href="#10-systemd-resolved">#&lt;/a>
-&lt;/h1>
-&lt;h2 id="101-managing-etcresolvconf-content">
- 10.1 Managing &lt;code>/etc/resolv.conf&lt;/code> content
- &lt;a class="anchor" href="#101-managing-etcresolvconf-content">#&lt;/a>
-&lt;/h2>
-&lt;p>The main issue with &lt;code>/etc/resolv.conf&lt;/code> is managing it in modern distributions, which can have multiple sources of nameserver and search domain information due to multiple interfaces (both real and virtual, such as VPN tunnels) with concurrent DHCP clients.&lt;/p>
-&lt;p>The legacy method to handle this complexity was the &lt;code>&lt;a href="https://en.wikipedia.org/wiki/Resolvconf" target="_blank" rel="noopener">Resolvconf&lt;/a>&lt;/code> project. It set up a number of hooks and updated &lt;code>/etc/resolv.conf&lt;/code> appropriately by following some defined rules. However, its main issue is its lack of flexibility and inability to manage several nameservers and search domains on a per-link basis, which is sometimes needed in complex setups.&lt;/p></description></item><item><title>Querying Nameservers on dual-stack hosts</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/</guid><description>&lt;h1 id="11-querying-nameservers-on-dual-stack-hosts">
+ &lt;a class="anchor" href="#10-systemd-resolved"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/#101-managing-etcresolvconf-content"&gt;10.1 Managing &lt;code&gt;/etc/resolv.conf&lt;/code&gt; content&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/#102-integrating-systemd-resolved-into-system"&gt;10.2 Integrating &lt;code&gt;systemd-resolved &lt;/code&gt;into system&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/#103-per-link-name-servers-and-search-domains"&gt;10.3 Per link name servers and search domains&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/#104-useful-commands"&gt;10.4 Useful commands&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/#105-querying-systemd-resolved"&gt;10.5 Querying &lt;code&gt;systemd-resolved&lt;/code&gt;&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/#1051-varlink"&gt;10.5.1 &lt;code&gt;Varlink&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/#1052-d-bus"&gt;10.5.2 &lt;code&gt;D-Bus&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;h2 id="101-managing-etcresolvconf-content"&gt;
+ 10.1 Managing &lt;code&gt;/etc/resolv.conf&lt;/code&gt; content
+ &lt;a class="anchor" href="#101-managing-etcresolvconf-content"&gt;#&lt;/a&gt;
+&lt;/h2&gt;
+&lt;p&gt;The main issue with &lt;code&gt;/etc/resolv.conf&lt;/code&gt; is managing it in modern distributions, which can have multiple sources of nameserver and search domain information due to multiple interfaces (both real and virtual, such as VPN tunnels) with concurrent DHCP clients.&lt;/p&gt;</description></item><item><title>Querying Nameservers on dual-stack hosts</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/</guid><description>&lt;h1 id="11-querying-nameservers-on-dual-stack-hosts"&gt;
  11. Querying Nameservers on dual-stack hosts
- &lt;a class="anchor" href="#11-querying-nameservers-on-dual-stack-hosts">#&lt;/a>
-&lt;/h1>
-&lt;p>The already seen &lt;a href="https://datatracker.ietf.org/doc/html/rfc8305" target="_blank" rel="noopener">RFC 8305 Happy Eyeballs Version 2: Better Connectivity Using Concurrency&lt;/a> force the same preference for IPv6 name servers as it does for establishing new connections:&lt;/p>
-&lt;blockquote>
-&lt;p>If multiple DNS server addresses are configured for the current network, the client may have the option of sending its DNS queries over IPv4 or IPv6. In keeping with the Happy Eyeballs approach, queries SHOULD be sent over IPv6 first (note that this is not referring to the sending of &lt;code>AAAA&lt;/code> or &lt;code>A&lt;/code> queries, but rather the address of the DNS server itself and IP version used to transport DNS messages). If DNS queries sent to the IPv6 address do not receive responses, that address may be marked as penalized and queries can be sent to other DNS server addresses.&lt;/p></description></item><item><title>The Present and the future of resolvers and DNS related features</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/</guid><description>&lt;h1 id="12-the-present-and-the-future-of-resolvers-and-dns-related-features">
+ &lt;a class="anchor" href="#11-querying-nameservers-on-dual-stack-hosts"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;The already seen &lt;a href="https://datatracker.ietf.org/doc/html/rfc8305" target="_blank" rel="noopener"&gt;RFC 8305 Happy Eyeballs Version 2: Better Connectivity Using Concurrency&lt;/a&gt; force the same preference for IPv6 name servers as it does for establishing new connections:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;i&gt;If multiple DNS server addresses are configured for the current network, the client may have the option of sending its DNS queries over IPv4 or IPv6. In keeping with the Happy Eyeballs approach, queries SHOULD be sent over IPv6 first (note that this is not referring to the sending of &lt;code&gt;AAAA&lt;/code&gt; or &lt;code&gt;A&lt;/code&gt; queries, but rather the address of the DNS server itself and IP version used to transport DNS messages). If DNS queries sent to the IPv6 address do not receive responses, that address may be marked as penalized and queries can be sent to other DNS server addresses.&lt;/i&gt;&lt;/p&gt;</description></item><item><title>The Present and the future of resolvers and DNS related features</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/</guid><description>&lt;h1 id="12-the-present-and-the-future-of-resolvers-and-dns-related-features"&gt;
  12. The Present and the future of resolvers and DNS related features
- &lt;a class="anchor" href="#12-the-present-and-the-future-of-resolvers-and-dns-related-features">#&lt;/a>
-&lt;/h1>
-&lt;p>Let me briefly review some important features and topics related to DNS, stub resolvers, and dual-stack applications. While these are beyond the scope of this series, they are worth mentioning.&lt;/p>
-&lt;h2 id="121-new-dns-record-https">
- 12.1 New DNS record: HTTPS
- &lt;a class="anchor" href="#121-new-dns-record-https">#&lt;/a>
-&lt;/h2>
-&lt;p>&lt;a href="https://www.rfc-editor.org/rfc/rfc9460.html" target="_blank" rel="noopener">DNS has introduced&lt;/a> a new and interesting resource record called HTTPS. This record addresses problems related to web service clients. Typically, when a client has only a domain name without additional information, it connects using plain text port 80. The server usually redirects to port 443 with HTTPS and sets an &lt;a href="https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security" target="_blank" rel="noopener">HSTS&lt;/a> header. However, this initial plain text request-response has security issues and is vulnerable to Man-in-the-Middle (&lt;a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack" target="_blank" rel="noopener">MitM&lt;/a>) attacks.&lt;/p></description></item><item><title>Troubleshooting tools for resolvers and DNS</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/</guid><description>&lt;h1 id="tools-for-troubleshooting-in-one-place">
+ &lt;a class="anchor" href="#12-the-present-and-the-future-of-resolvers-and-dns-related-features"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#121-new-dns-record-https"&gt;12.1 New DNS record: HTTPS&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#122-dnssec"&gt;12.2. DNSSEC&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#123-dns-over-tls-dot--dsn-over-https-doh-and-dns-over-quick-doq"&gt;12.3 DNS over TLS (DoT), DSN over HTTPS (DoH) and DNS over QUICK (DoQ)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#124-oblivious-dns"&gt;12.4 Oblivious DNS&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#125-dns-push-notifications"&gt;12.5. DNS Push Notifications&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;Let me briefly review some important features and topics related to DNS, stub resolvers, and dual-stack applications. While these are beyond the scope of this series, they are worth mentioning.&lt;/p&gt;</description></item><item><title>Troubleshooting tools for resolvers and DNS</title><link>https://biriukov.dev/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/</guid><description>&lt;h1 id="tools-for-troubleshooting-in-one-place"&gt;
  Tools for troubleshooting in one place
- &lt;a class="anchor" href="#tools-for-troubleshooting-in-one-place">#&lt;/a>
-&lt;/h1>
-&lt;p>Let me reiterate and consolidate all the tools that can be used to troubleshoot applications and systems when the stub resolver is under suspicion.&lt;/p>
-&lt;h2 id="-getent">
- • &lt;code>getent&lt;/code>
- &lt;a class="anchor" href="#-getent">#&lt;/a>
-&lt;/h2>
-&lt;p>&lt;code>&lt;a href="https://man7.org/linux/man-pages/man1/getent.1.html" target="_blank" rel="noopener">man 1 getent&lt;/a>&lt;/code>&lt;/p>
-&lt;p>When you need to query hostname via all NSS modules:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>$ getent host microsoft.com
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>$ getent ahost microsoft.com
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="-tcpdump">
- • &lt;code>tcpdump&lt;/code>
- &lt;a class="anchor" href="#-tcpdump">#&lt;/a>
-&lt;/h2>
-&lt;p>To dump in a user friendly format all requests to 53 port:&lt;/p></description></item></channel></rss>
+ &lt;a class="anchor" href="#tools-for-troubleshooting-in-one-place"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;Let me reiterate and consolidate all the tools that can be used to troubleshoot applications and systems when the stub resolver is under suspicion.&lt;/p&gt;
+&lt;h2 id="-getent"&gt;
+ • &lt;code&gt;getent&lt;/code&gt;
+ &lt;a class="anchor" href="#-getent"&gt;#&lt;/a&gt;
+&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;&lt;a href="https://man7.org/linux/man-pages/man1/getent.1.html" target="_blank" rel="noopener"&gt;man 1 getent&lt;/a&gt;&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;When you need to query hostname via all NSS modules:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;$ getent host microsoft.com
+&lt;/span&gt;&lt;/span&gt;&lt;span style="display:flex;"&gt;&lt;span&gt;$ getent ahost microsoft.com
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="-tcpdump"&gt;
+ • &lt;code&gt;tcpdump&lt;/code&gt;
+ &lt;a class="anchor" href="#-tcpdump"&gt;#&lt;/a&gt;
+&lt;/h2&gt;
+&lt;p&gt;To dump in a user friendly format all requests to 53 port:&lt;/p&gt;</description></item></channel></rss>

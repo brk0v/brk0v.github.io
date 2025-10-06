@@ -1,34 +1,108 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>GNU/Linux shell related internals on Viacheslav Biriukov</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/</link><description>Recent content in GNU/Linux shell related internals on Viacheslav Biriukov</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://biriukov.dev/docs/fd-pipe-session-terminal/index.xml" rel="self" type="application/rss+xml"/><item><title>GNU/Linux shell related internals</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons/</guid><description>&lt;h1 id="what-every-sre-should-know-about-gnulinux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>GNU/Linux shell related internals on Viacheslav Biriukov</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/</link><description>Recent content in GNU/Linux shell related internals on Viacheslav Biriukov</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://biriukov.dev/docs/fd-pipe-session-terminal/index.xml" rel="self" type="application/rss+xml"/><item><title>GNU/Linux shell related internals</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons/</guid><description>&lt;h1 id="what-every-sre-should-know-about-gnulinux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons"&gt;
  What every SRE should know about GNU/Linux shell related internals: file descriptors, pipes, terminals, user sessions, process groups and daemons
- &lt;a class="anchor" href="#what-every-sre-should-know-about-gnulinux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">#&lt;/a>
-&lt;/h1>
-&lt;p>Despite the era of containers, virtualization, and the rising number of UI of all kinds, SREs often spend a significant part of their time in GNU/Linux shells. It could be debugging, testing, developing, or preparing the new infrastructure. It may be the good old &lt;code>bash&lt;/code>, the more recent and fancy &lt;code>zsh&lt;/code>, or even &lt;code>fish&lt;/code> or &lt;code>tcsh&lt;/code> with their interesting and unique features.&lt;/p></description></item><item><title>File descriptor and open file description</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/</guid><description>&lt;h1 id="file-descriptor-and-open-file-description">
+ &lt;a class="anchor" href="#what-every-sre-should-know-about-gnulinux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/"&gt;File descriptor and open file description&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/"&gt;Pipes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/"&gt;Process groups, jobs and sessions&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/"&gt;Terminals and pseudoterminals&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr/&gt;
+&lt;p&gt;Despite the era of containers, virtualization, and the rising number of UI of all kinds, SREs often spend a significant part of their time in GNU/Linux shells. It could be debugging, testing, developing, or preparing the new infrastructure. It may be the good old &lt;code&gt;bash&lt;/code&gt;, the more recent and fancy &lt;code&gt;zsh&lt;/code&gt;, or even &lt;code&gt;fish&lt;/code&gt; or &lt;code&gt;tcsh&lt;/code&gt; with their interesting and unique features.&lt;/p&gt;</description></item><item><title>File descriptor and open file description</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/</guid><description>&lt;h1 id="file-descriptor-and-open-file-description"&gt;
  File descriptor and open file description
- &lt;a class="anchor" href="#file-descriptor-and-open-file-description">#&lt;/a>
-&lt;/h1>
-&lt;p>First of all, I want to touch on the two fundamental concepts of working with files:&lt;/p>
-&lt;ul>
-&lt;li>&lt;strong>file descriptor;&lt;/strong>&lt;/li>
-&lt;li>&lt;strong>open file description&lt;/strong>.&lt;/li>
-&lt;/ul>
-&lt;p>These two abstractions are crucial for understanding the internals of a process creation, communication, and data transition.&lt;/p>
-&lt;p>The first concept is a &lt;strong>file descriptor&lt;/strong> or &lt;strong>&lt;code>fd&lt;/code>&lt;/strong>. It’s a positive integer number used by file system calls instead of a file path in order to make a variety of operations. Every process has its own &lt;strong>file descriptor table&lt;/strong> (see Image 1 below). The main idea of a file descriptor is to decouple a file path (or, more correctly, an inode with minor and major device numbers) from a file object inside a process and the Linux kernel. This allows software developers to open the same file an arbitrary number of times for different purposes, with various flags (for instance: &lt;code>O_DIRECT&lt;/code>, &lt;code>O_SYNC&lt;/code>, &lt;code>O_APPEND&lt;/code>, etc.), and at different offsets.&lt;/p></description></item><item><title>Pipes</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/</guid><description>&lt;h1 id="pipes">
+ &lt;a class="anchor" href="#file-descriptor-and-open-file-description"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/#stdin-stdout-and-stderr"&gt;&lt;code&gt;stdin&lt;/code&gt;, &lt;code&gt;stdout&lt;/code&gt; and &lt;code&gt;stderr&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/#procfs-and-file-descriptors"&gt;&lt;code&gt;Procfs&lt;/code&gt; and file descriptors&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/#sharing-file-descriptors-between-parent-and-child-after-fork"&gt;Sharing file descriptors between parent and child after &lt;code&gt;fork()&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/#duplication-of-file-descriptors"&gt;Duplication of file descriptors&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/#execve-and-file-descriptors"&gt;&lt;code&gt;execve()&lt;/code&gt; and file descriptors&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/#check-if-2-file-descriptors-share-the-same-open-file-description-with-kcmp"&gt;Check if 2 file descriptors share the same open file description with &lt;code&gt;kcmp()&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/#more-ways-to-transfer-file-descriptors-between-processes-pidfd_getfd-and-unix-datagrams"&gt;More ways to transfer file descriptors between processes: &lt;code&gt;pidfd_getfd()&lt;/code&gt; and Unix datagrams.&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/#shell-redirections-and-file-descriptors"&gt;Shell redirections and file descriptors&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;First of all, I want to touch on the two fundamental concepts of working with files:&lt;/p&gt;</description></item><item><title>Pipes</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/</guid><description>&lt;h1 id="pipes"&gt;
  Pipes
- &lt;a class="anchor" href="#pipes">#&lt;/a>
-&lt;/h1>
-&lt;p>The pipe is a neat feature of the Linux kernel that allows us to build &lt;strong>one-directional communication channels&lt;/strong> between related processes (often a parent and a child).&lt;/p>
-&lt;p>Pipes are usually well known from shells, where we use &amp;ldquo;&lt;code>|&lt;/code>&amp;rdquo; symbol to build command pipelines. But first of all, the pipe is a system call, or actually, there are 2 of them: &lt;code>pipe()&lt;/code> and &lt;code>pipe2()&lt;/code> (&lt;code>&lt;a href="https://man7.org/linux/man-pages/man2/pipe.2.html" target="_blank" rel="noopener">man 2 pipe&lt;/a>&lt;/code>).&lt;/p>
-&lt;p>You can think of a pipe as a memory buffer with a &lt;strong>byte stream&lt;/strong> API. Thus, by default, there are no messages or strict boundaries. The situation has changed since the Linux kernel 3.4 where the &lt;code>O_DIRECT&lt;/code> flag and the &lt;a href="https://man7.org/linux/man-pages/man2/pipe.2.html" target="_blank" rel="noopener">packet mode&lt;/a> were introduced. We will touch all variant of working with pipes in this chapter.&lt;/p></description></item><item><title>Process groups, jobs and sessions</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/</guid><description>&lt;h1 id="process-groups-jobs-and-sessions">
+ &lt;a class="anchor" href="#pipes"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#how-shells-internally-create-pipes"&gt;How shells internally create pipes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#pipe-and-write-buffer"&gt;Pipe and write buffer&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#sigpipe-signal"&gt;&lt;code&gt;SIGPIPE&lt;/code&gt; signal&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#pipestatus--and-pipefail"&gt;&lt;code&gt;$pipestatus&lt;/code&gt;, &lt;code&gt;$?&lt;/code&gt; and &lt;code&gt;pipefail&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#fifo-or-named-pipes"&gt;FIFO or Named pipes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#pv-tool"&gt;&lt;code&gt;pv&lt;/code&gt; tool&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#pipe-usage"&gt;&lt;code&gt;Pipe usage&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#packets-pipe-mode-o_direct"&gt;Packets pipe mode (&lt;code&gt;O_DIRECT&lt;/code&gt;)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#pipe-nonblocking-io"&gt;Pipe Nonblocking I/O&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#partial-writes-and-syscall-restarts"&gt;Partial writes and syscall restarts&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/2-pipes/#pipe-performance-splice-vmsplice-and-tee"&gt;Pipe performance: &lt;code&gt;splice()&lt;/code&gt;, &lt;code&gt;vmsplice()&lt;/code&gt; and &lt;code&gt;tee()&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;The pipe is a neat feature of the Linux kernel that allows us to build &lt;strong&gt;one-directional communication channels&lt;/strong&gt; between related processes (often a parent and a child).&lt;/p&gt;</description></item><item><title>Process groups, jobs and sessions</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/</guid><description>&lt;h1 id="process-groups-jobs-and-sessions"&gt;
  Process groups, jobs and sessions
- &lt;a class="anchor" href="#process-groups-jobs-and-sessions">#&lt;/a>
-&lt;/h1>
-&lt;p>A new process group is created every time we execute a command or a pipeline of commands in a shell. Inside a shell, a &lt;strong>process group&lt;/strong> is usually called a &lt;strong>job&lt;/strong>. In its turn, each process group belongs to a session. Linux kernel provides a &lt;strong>two-level hierarchy&lt;/strong> for all running processes (look at Image 3 below). As such, a process group is a set of processes, and a session is a set of related process groups. Another important limitation is that a process group and its members can be members of a single session.&lt;/p></description></item><item><title>Terminals and pseudoterminals</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/</guid><description>&lt;h1 id="terminals-and-pseudoterminals">
+ &lt;a class="anchor" href="#process-groups-jobs-and-sessions"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/#process-groups"&gt;Process groups&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/#sessions"&gt;Sessions&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/#controlling-terminal-controlling-process-foreground-and-background-process-groups"&gt;Controlling terminal, controlling process, foreground and background process groups&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/#shell-job-control"&gt;Shell job control&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/#kill-command"&gt;&lt;code&gt;kill&lt;/code&gt; command&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/#terminating-shell"&gt;Terminating shell&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/#nohup-and-disown"&gt;&lt;code&gt;nohup&lt;/code&gt; and &lt;code&gt;disown&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/#daemons"&gt;Daemons&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;A new process group is created every time we execute a command or a pipeline of commands in a shell. Inside a shell, a &lt;strong&gt;process group&lt;/strong&gt; is usually called a &lt;strong&gt;job&lt;/strong&gt;. In its turn, each process group belongs to a session. Linux kernel provides a &lt;strong&gt;two-level hierarchy&lt;/strong&gt; for all running processes (look at figure 3 below). As such, a process group is a set of processes, and a session is a set of related process groups. Another important limitation is that a process group and its members can be members of a single session.&lt;/p&gt;</description></item><item><title>Terminals and pseudoterminals</title><link>https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/</guid><description>&lt;h1 id="terminals-and-pseudoterminals"&gt;
  Terminals and pseudoterminals
- &lt;a class="anchor" href="#terminals-and-pseudoterminals">#&lt;/a>
-&lt;/h1>
-&lt;p>Terminals come to us from the history of &lt;code>UNIX&lt;/code> systems. Basically, terminals provided an API for the console utils (physical ones!) to generalize interaction with users. It includes ways of reading input and writing to it in &lt;strong>two&lt;/strong> modes:&lt;/p>
-&lt;ul>
-&lt;li>the &lt;strong>canonical&lt;/strong> mode (default) – input is buffered line by line and read into after a new line char &lt;code>\n&lt;/code> occurs;&lt;/li>
-&lt;li>the &lt;strong>noncanonical&lt;/strong> mode – an application can read terminal input a character at a time. For example &lt;code>vi&lt;/code>, &lt;code>emacs&lt;/code> and &lt;code>less&lt;/code> use this mode.&lt;/li>
-&lt;/ul>
-&lt;p>Nowadays, with the widespread use of rich graphical UIs, the significance of the terminals are lesser than it was, but still, we use this protocol implicitly every time we start an ssh connection.&lt;/p></description></item></channel></rss>
+ &lt;a class="anchor" href="#terminals-and-pseudoterminals"&gt;#&lt;/a&gt;
+&lt;/h1&gt;
+&lt;p class="updated-right"&gt;
+ &lt;i&gt;
+ &lt;time datetime="2025-10"&gt;Last updated: Oct 2025&lt;/time&gt;
+ &lt;/i&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#pseudoterminal-devpts"&gt;Pseudoterminal (&lt;code&gt;devpts&lt;/code&gt;)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#terminal-settings"&gt;Terminal settings&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#handling-terminal-signals"&gt;Handling Terminal Signals&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#screen-and-tmux"&gt;&lt;code&gt;screen&lt;/code&gt; and &lt;code&gt;tmux&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#pseudoterminal-proxy"&gt;Pseudoterminal proxy&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#changing-a-processs-controlling-terminal"&gt;Changing a process’s controlling terminal&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr/&gt;
+&lt;p&gt;Terminals come to us from the history of &lt;code&gt;UNIX&lt;/code&gt; systems. Basically, terminals provided an API for the console utils (physical ones!) to generalize interaction with users. It includes ways of reading input and writing to it in &lt;strong&gt;two&lt;/strong&gt; modes:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;the &lt;strong&gt;canonical&lt;/strong&gt; mode (default) – input is buffered line by line and read into after a new line char &lt;code&gt;\n&lt;/code&gt; occurs;&lt;/li&gt;
+&lt;li&gt;the &lt;strong&gt;noncanonical&lt;/strong&gt; mode – an application can read terminal input a character at a time. For example &lt;code&gt;vi&lt;/code&gt;, &lt;code&gt;emacs&lt;/code&gt; and &lt;code&gt;less&lt;/code&gt; use this mode.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Nowadays, with the widespread use of rich graphical UIs, the significance of the terminals are lesser than it was, but still, we use this protocol implicitly every time we start an ssh connection.&lt;/p&gt;</description></item></channel></rss>
