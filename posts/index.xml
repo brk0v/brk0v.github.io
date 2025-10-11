@@ -1,1 +1,18 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Viacheslav Biriukov</title><link>https://biriukov.dev/posts/</link><description>Recent content on Viacheslav Biriukov</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://biriukov.dev/posts/index.xml" rel="self" type="application/rss+xml"/></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Viacheslav Biriukov</title>
+    <link>https://biriukov.dev/posts/</link>
+    <description>Recent content on Viacheslav Biriukov</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://biriukov.dev/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Trixter: A Chaos Proxy for Simulating Network Faults</title>
+      <link>https://biriukov.dev/posts/trixter-chaos-proxy/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://biriukov.dev/posts/trixter-chaos-proxy/</guid>
+      <description>&lt;p class=&#34;updated-right&#34;&gt;&#xA;    &lt;i&gt;&#xA;        &lt;time datetime=&#34;2025-10&#34;&gt;Posted: Oct 2025&lt;/time&gt;&#xA;    &lt;/i&gt;&#xA;&lt;/p&gt;&#xA;&lt;p style=&#34;float1:right&#34; class=&#34;text&#34;&gt;&#xA;    &lt;i class=&#34;bi bi-github&#34;&gt;&lt;/i&gt; Github: &lt;a href=&#34;https://github.com/brk0v/trixter&#34;&gt;https://github.com/brk0v/trixter&lt;/a&gt;&#xA;&lt;/p&gt;&#xA;&lt;hr/&gt;&#xA;&lt;p&gt;&lt;strong&gt;Contents&lt;/strong&gt;&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;a href=&#34;posts/trixter-chaos-proxy/#chaos-engineering-and-network-fault-injection&#34;&gt;Chaos Engineering and Network Fault Injection&lt;/a&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://biriukov.dev/posts/trixter-chaos-proxy/#introducing-trixter--a-chaos-monkey-for-tcp&#34;&gt;Introducing Trixter – A Chaos Monkey for TCP&lt;/a&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://biriukov.dev/posts/trixter-chaos-proxy/#why-trixter-vs-gnulinux-tc-netem-kernel-network-emulator&#34;&gt;Why Trixter vs GNU/Linux &lt;code&gt;tc&lt;/code&gt; &lt;code&gt;netem&lt;/code&gt; (Kernel Network Emulator)&lt;/a&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://biriukov.dev/posts/trixter-chaos-proxy/#using-trixter-examples-of-injecting-chaos&#34;&gt;Using Trixter: Examples of Injecting Chaos&lt;/a&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://biriukov.dev/posts/trixter-chaos-proxy/#example-1-adding-latency-and-packet-loss&#34;&gt;Example 1: Adding latency and packet loss&lt;/a&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://biriukov.dev/posts/trixter-chaos-proxy/#example-2-throttling-bandwidth&#34;&gt;Example 2: Throttling bandwidth&lt;/a&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://biriukov.dev/posts/trixter-chaos-proxy/#example-3-running-in-cicd-with-chaos&#34;&gt;Example 3: Running in CI/CD with chaos&lt;/a&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://biriukov.dev/posts/trixter-chaos-proxy/#example-4-control-failures-on-per-connection-in-runtime&#34;&gt;Example 4: Control failures on per connection in runtime&lt;/a&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://biriukov.dev/posts/trixter-chaos-proxy/#documentation-recipes-reference&#34;&gt;Documentation, recipes, reference&lt;/a&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;hr/&gt;&#xA;&lt;blockquote&gt;&#xA;&lt;p&gt;&lt;em&gt;Break your network before production does&lt;/em&gt;&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

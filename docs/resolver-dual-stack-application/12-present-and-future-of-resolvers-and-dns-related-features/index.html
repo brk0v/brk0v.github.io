@@ -1,4 +1,9 @@
-<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="
   12. The Present and the future of resolvers and DNS related features
   #
 
@@ -16,58 +21,672 @@ Contents
 12.5. DNS Push Notifications
 
 
-Let me briefly review some important features and topics related to DNS, stub resolvers, and dual-stack applications. While these are beyond the scope of this series, they are worth mentioning."><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/"><meta property="og:site_name" content="Viacheslav Biriukov"><meta property="og:title" content="The Present and the future of resolvers and DNS related features"><meta property="og:description" content="12. The Present and the future of resolvers and DNS related features # Last updated: Oct 2025 Contents
-12.1 New DNS record: HTTPS 12.2. DNSSEC 12.3 DNS over TLS (DoT), DSN over HTTPS (DoH) and DNS over QUICK (DoQ) 12.4 Oblivious DNS 12.5. DNS Push Notifications Let me briefly review some important features and topics related to DNS, stub resolvers, and dual-stack applications. While these are beyond the scope of this series, they are worth mentioning."><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="docs"><title>The Present and the future of resolvers and DNS related features | Viacheslav Biriukov</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1+E=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script><script defer src=/en.search.min.7e97a0cfe832281a8126c98203712496c0cabeb060b5bfb911edaf36327ad30a.js integrity="sha256-fpegz+gyKBqBJsmCA3EklsDKvrBgtb+5Ee2vNjJ60wo=" crossorigin=anonymous></script><script async src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-599VSLESJL")</script><link rel=stylesheet href=/my_css/cookie.css><link rel=stylesheet href=/my_css/copy-code.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
-<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Viacheslav Biriukov</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li class=book-section-flat><span>DNS resolvers and Dual-Stack applications</span><ul><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>Resolvers and Dual-Stack applications for SRE</a></li><li><a href=/docs/resolver-dual-stack-application/1-what-is-a-stub-resolver/>1. What is a stub resolver?</a></li><li><a href=/docs/resolver-dual-stack-application/2-history-gethostbyname/>2. History: gethostbyname()</a></li><li><a href=/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/>3. getaddrinfo() and POSIX spec</a></li><li><a href=/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/>4. getaddrinfo() from glibc</a></li><li><a href=/docs/resolver-dual-stack-application/5-getaddrinfo-from-musl-libc/>5. getaddrinfo() from musl libc</a></li><li><a href=/docs/resolver-dual-stack-application/6-dual-stack-applications/>6. Dual-Stack applications</a></li><li><a href=/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/>7. C async non-blocking resolvers</a></li><li><a href=/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/>8. Stub resolvers in languages</a></li><li><a href=/docs/resolver-dual-stack-application/9-dual-stack-software-examples/>9. Dual-stack software examples</a></li><li><a href=/docs/resolver-dual-stack-application/10-systemd-resolved/>10. systemd-resolved</a></li><li><a href=/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/>11. Querying Nameservers</a></li><li><a href=/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/ class=active>12. Present and future</a></li><li><a href=/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/>Troubleshooting tools</a></li></ul></li></ul><div style=margin-top:30px;margin-bottom:30px><b>More recent series:</b><ul><li><a href=/rust-tokio-io/>1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px;background-color:#e84118;color:#f0f8ff">new</span></li><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>2. Resolvers and Dual-Stack applications</li><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>3. Linux Page Cache mini book</li><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons>4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li></ul></div><div style=margin-top:30px;margin-bottom:30px><b>Open Source Projects</b><ul><li><a href=https://github.com/brk0v/trixter/tree/main>• trixter chaos proxy</a></li><li><a href=https://crates.io/crates/tokio-netem>• tokio-netem</a></li></ul></div><ul><li><a href=https://twitter.com/brk0v/ target=_blank rel=noopener><i class="bi bi-twitter"></i>
-Twitter</a></li><li><a href=https://www.linkedin.com/in/biriukov/ target=_blank rel=noopener><i class="bi bi-linkedin"></i>
-Linkedin</a></li><li><a href=https://github.com/brk0v/ target=_blank rel=noopener><i class="bi bi-github"></i>
-Github</a></li></ul><div style=margin-top:30px><p xmlns:cc=http://creativecommons.org/ns#>This content is licensed under
-<a href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target=_blank rel="license noopener noreferrer" style=display:inline-block>CC BY-NC 4.0<img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu>
-</label><strong>The Present and the future of resolvers and DNS related features</strong>
-<label for=toc-control></label></div></header><article class="markdown book-article"><h1 id=12-the-present-and-the-future-of-resolvers-and-dns-related-features>12. The Present and the future of resolvers and DNS related features
-<a class=anchor href=#12-the-present-and-the-future-of-resolvers-and-dns-related-features>#</a></h1><p class=updated-right><i><time datetime=2025-10>Last updated: Oct 2025</time></i></p><p><strong>Contents</strong></p><ul><li><a href=/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#121-new-dns-record-https>12.1 New DNS record: HTTPS</a></li><li><a href=/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#122-dnssec>12.2. DNSSEC</a></li><li><a href=/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#123-dns-over-tls-dot--dsn-over-https-doh-and-dns-over-quick-doq>12.3 DNS over TLS (DoT), DSN over HTTPS (DoH) and DNS over QUICK (DoQ)</a></li><li><a href=/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#124-oblivious-dns>12.4 Oblivious DNS</a></li><li><a href=/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#125-dns-push-notifications>12.5. DNS Push Notifications</a></li></ul><hr><p>Let me briefly review some important features and topics related to DNS, stub resolvers, and dual-stack applications. While these are beyond the scope of this series, they are worth mentioning.</p><h2 id=121-new-dns-record-https>12.1 New DNS record: HTTPS
-<a class=anchor href=#121-new-dns-record-https>#</a></h2><p><a href=https://www.rfc-editor.org/rfc/rfc9460.html target=_blank rel=noopener>DNS has introduced</a> a new and interesting resource record called HTTPS. This record addresses problems related to web service clients. Typically, when a client has only a domain name without additional information, it connects using plain text port 80. The server usually redirects to port 443 with HTTPS and sets an <a href=https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security target=_blank rel=noopener>HSTS</a> header. However, this initial plain text request-response has security issues and is vulnerable to Man-in-the-Middle (<a href=https://en.wikipedia.org/wiki/Man-in-the-middle_attack target=_blank rel=noopener>MitM</a>) attacks.</p><p>Another problem is speed: additional redirects are not cheap, and the client often upgrades to HTTP/2 or even HTTP/3 afterward. All of this adds unnecessary latency to the client side.</p><p>To address these issues, the HTTPS record plays a canary role for existing HTTPS services. It provides supported <a href=https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation target=_blank rel=noopener>ALPN</a> protocols (such as HTTP/2 and HTTP/3) and returns <code>A</code> and/or <code>AAAA</code> addresses for connection in one response saving latency and packet rate.</p><p>For example;</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ dig @1.1.1.1 cloudflare.com HTTPS
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>; &lt;&lt;&gt;&gt; DiG 9.18.28-0ubuntu0.24.04.1-Ubuntu &lt;&lt;&gt;&gt; @1.1.1.1 cloudflare.com HTTPS
-</span></span><span style=display:flex><span>; <span style=color:#f92672>(</span><span style=color:#ae81ff>1</span> server found<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>;; global options: +cmd
-</span></span><span style=display:flex><span>;; Got answer:
-</span></span><span style=display:flex><span>;; -&gt;&gt;HEADER<span style=color:#e6db74>&lt;&lt;- opco</span>de: QUERY, status: NOERROR, id: <span style=color:#ae81ff>8180</span>
-</span></span><span style=display:flex><span>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: <span style=color:#ae81ff>1</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>;; OPT PSEUDOSECTION:
-</span></span><span style=display:flex><span>; EDNS: version: 0, flags:; udp: <span style=color:#ae81ff>1232</span>
-</span></span><span style=display:flex><span>;; QUESTION SECTION:
-</span></span><span style=display:flex><span>;cloudflare.com.                        IN      HTTPS
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>;; ANSWER SECTION:
-</span></span><span style=display:flex><span>cloudflare.com.         <span style=color:#ae81ff>51</span>      IN      HTTPS   <span style=color:#ae81ff>1</span> . alpn<span style=color:#f92672>=</span><span style=color:#e6db74>&#34;h3,h2&#34;</span> ipv4hint<span style=color:#f92672>=</span>104.16.132.229,104.16.133.229 ipv6hint<span style=color:#f92672>=</span>2606:4700::6810:84e5,2606:4700::6810:85e5
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>;; Query time: <span style=color:#ae81ff>11</span> msec
-</span></span><span style=display:flex><span>;; SERVER: 1.1.1.1#53<span style=color:#f92672>(</span>1.1.1.1<span style=color:#f92672>)</span> <span style=color:#f92672>(</span>UDP<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>;; WHEN: Fri Aug <span style=color:#ae81ff>02</span> 01:18:53 BST <span style=color:#ae81ff>2024</span>
-</span></span><span style=display:flex><span>;; MSG SIZE  rcvd: <span style=color:#ae81ff>116</span>
-</span></span></code></pre></div><h2 id=122-dnssec>12.2. DNSSEC
-<a class=anchor href=#122-dnssec>#</a></h2><p>The Domain Name System Security Extensions (DNSSEC) is a feature of the Domain Name System (DNS) that authenticates responses to domain name lookups.</p><p>We can <a href=https://www.freedesktop.org/software/systemd/man/latest/resolved.conf.html target=_blank rel=noopener>enable</a> it with systemd-resolved for local stub resolver:</p><blockquote><p>Note that DNSSEC validation requires retrieval of additional DNS data, and thus results in a small DNS lookup time penalty.</p></blockquote><p>To verify and query DNSSEC keys you can continue using <code>dig</code>, but the recommended and more convenient tool is <code>delv</code> (<code><a href=https://manpages.ubuntu.com/manpages/noble/man1/delv.1.html target=_blank rel=noopener>man 1 delv</a></code>).</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ delv @1.1.1.1 microsoft.com
-</span></span><span style=display:flex><span>; unsigned answer
-</span></span><span style=display:flex><span>microsoft.com.          <span style=color:#ae81ff>130</span>     IN      A       20.70.246.20
-</span></span><span style=display:flex><span>microsoft.com.          <span style=color:#ae81ff>130</span>     IN      A       20.76.201.171
-</span></span><span style=display:flex><span>microsoft.com.          <span style=color:#ae81ff>130</span>     IN      A       20.112.250.133
-</span></span><span style=display:flex><span>microsoft.com.          <span style=color:#ae81ff>130</span>     IN      A       20.231.239.246
-</span></span><span style=display:flex><span>microsoft.com.          <span style=color:#ae81ff>130</span>     IN      A       20.236.44.162
-</span></span></code></pre></div><p>For failing test please use:</p><ul><li>dnssec-failed.org</li><li>rhybar.cz</li></ul><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ delv  @1.1.1.1 dnssec-failed.org
-</span></span><span style=display:flex><span>;; resolution failed: SERVFAIL
-</span></span></code></pre></div><p>In <code>systemd-resolved</code> the default for DNSSEC is &ldquo;<code><a href=https://www.freedesktop.org/software/systemd/man/latest/resolved.conf.html target=_blank rel=noopener>allow-downgrade</a></code>&rdquo;, but it could be hardened to <code>yes</code>.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ cat /etc/systemd/resolved.conf
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#f92672>[</span>Resolve<span style=color:#f92672>]</span>
-</span></span><span style=display:flex><span>...
-</span></span><span style=display:flex><span>DNSSEC<span style=color:#f92672>=</span>yes
-</span></span><span style=display:flex><span><span style=color:#75715e># DNSSEC=allow-downgrade</span>
-</span></span><span style=display:flex><span>...
-</span></span></code></pre></div><h2 id=123-dns-over-tls-dot--dsn-over-https-doh-and-dns-over-quick-doq>12.3 DNS over TLS (DoT), DSN over HTTPS (DoH) and DNS over QUICK (DoQ)
-<a class=anchor href=#123-dns-over-tls-dot--dsn-over-https-doh-and-dns-over-quick-doq>#</a></h2><p>DNSSEC provides data integrity and authentication, but the content of requests and responses remains in plain text. To address this issue, <a href=https://datatracker.ietf.org/doc/html/rfc7858 target=_blank rel=noopener>DNS over TLS (DoT)</a> and later <a href=https://datatracker.ietf.org/doc/html/rfc8484 target=_blank rel=noopener>DNS over HTTPS (DoH)</a> were introduced. The main difference between these two is the transport and port used. DoH is more private because it mimics regular HTTPS traffic (using 443 port and https transport), making it harder to detect and block.</p><p>The <a href=https://www.dnscrypt.org/ target=_blank rel=noopener>https://www.dnscrypt.org/</a> is a good starting point.</p><h2 id=124-oblivious-dns>12.4 Oblivious DNS
-<a class=anchor href=#124-oblivious-dns>#</a></h2><p>If we go further and consider privacy with DoT and DoH, there is a concern that a DNS forwarder knows too much about your requests. This led to the development of <a href=https://datatracker.ietf.org/doc/rfc9230/ target=_blank rel=noopener>Oblivious DNS</a> (oDNS), which introduces the concepts of an oDNS relay and an oDNS target. In this system, the client encrypts its request using the public key of the target and then proxies the encrypted request through the relay. Relay sends a request to the target without client identification information. This process helps to hide the client’s identity from the oDNS target and the request content from the oDNS relay.</p><p>For a great client with comprehensive documentation, see <a href=https://github.com/natesales/q target=_blank rel=noopener>https://github.com/natesales/q</a></p><h2 id=125-dns-push-notifications>12.5. DNS Push Notifications
-<a class=anchor href=#125-dns-push-notifications>#</a></h2><p>There is an interesting and reasonable new <a href=https://datatracker.ietf.org/doc/html/rfc8765 target=_blank rel=noopener>RFC 8765 DNS Push Notifications</a>, which suggests keeping an open connection between the DNS server and stub resolver to send push notifications when something changes. This idea could restore DNS as the mechanism for service discovery.</p><a href=/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/ class="book-btn right-button">Read next chapter →</a></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script defer src=/my_js/copy-code.js></script></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div></main><div class=cookie-container><p>This website uses "<b>cookies</b>".
-Using this website means you're OK with this.
-If you are <b>NOT</b>, please close the site page.</p><button class=cookie-btn>
-ACCEPT AND CLOSE</button></div><script src=/my_js/cookie.js></script></body></html>
+Let me briefly review some important features and topics related to DNS, stub resolvers, and dual-stack applications. While these are beyond the scope of this series, they are worth mentioning.">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
+<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/">
+  <meta property="og:site_name" content="Viacheslav Biriukov">
+  <meta property="og:title" content="The Present and the future of resolvers and DNS related features">
+  <meta property="og:description" content="12. The Present and the future of resolvers and DNS related features # Last updated: Oct 2025 Contents
+12.1 New DNS record: HTTPS 12.2. DNSSEC 12.3 DNS over TLS (DoT), DSN over HTTPS (DoH) and DNS over QUICK (DoQ) 12.4 Oblivious DNS 12.5. DNS Push Notifications Let me briefly review some important features and topics related to DNS, stub resolvers, and dual-stack applications. While these are beyond the scope of this series, they are worth mentioning.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="docs">
+<title>The Present and the future of resolvers and DNS related features | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" >
+<link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+<script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"
+></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+
+    gtag("config", "G-599VSLESJL");
+</script>
+
+<link rel="stylesheet" href="/my_css/cookie.css" />
+<link rel="stylesheet" href="/my_css/copy-code.css" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+/>
+
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+
+      
+        
+
+      
+
+      
+        <li class="book-section-flat" >
+          
+  
+  
+
+  
+    <span>DNS resolvers and Dual-Stack applications</span>
+  
+
+          
+  <ul>
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/" class="">
+      
+        Resolvers and Dual-Stack applications for SRE
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/1-what-is-a-stub-resolver/" class="">
+      
+        1. What is a stub resolver?
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/2-history-gethostbyname/" class="">
+      
+        2. History: gethostbyname()
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/" class="">
+      
+        3. getaddrinfo() and POSIX spec
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/" class="">
+      
+        4. getaddrinfo() from glibc
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/5-getaddrinfo-from-musl-libc/" class="">
+      
+        5. getaddrinfo() from musl libc
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/6-dual-stack-applications/" class="">
+      
+        6. Dual-Stack applications
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/" class="">
+      
+        7. C async non-blocking resolvers
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/" class="">
+      
+        8. Stub resolvers in languages
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/9-dual-stack-software-examples/" class="">
+      
+        9. Dual-stack software examples
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/10-systemd-resolved/" class="">
+      
+        10. systemd-resolved
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/" class="">
+      
+        11. Querying Nameservers
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/" class="active">
+      
+        12. Present and future
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/" class="">
+      
+        Troubleshooting tools
+      
+    </a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+
+      
+        
+
+      
+        
+  </ul>
+
+
+
+
+
+
+
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>More recent series:</b>
+  <ul>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
+    <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
+    <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
+  </ul>
+</div>
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Open Source Projects</b>
+  <ul>
+      <li>
+          <a href="/posts/trixter-chaos-proxy/"> • trixter chaos proxy</a>
+      </li>
+      <li><a href="https://crates.io/crates/tokio-netem"> • tokio-netem</a></li>
+  </ul>
+</div>
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-twitter"></i>
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.linkedin.com/in/biriukov/"  target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
+        Linkedin
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-github"></i>
+        Github
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 30px;">
+  <p xmlns:cc="http://creativecommons.org/ns#">
+    This content is licensed under 
+    <a
+      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
+    </a>
+  </p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>The Present and the future of resolvers and DNS related features</strong>
+
+  <label for="toc-control">
+    
+  </label>
+</div>
+
+
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown book-article"><h1 id="12-the-present-and-the-future-of-resolvers-and-dns-related-features">
+  12. The Present and the future of resolvers and DNS related features
+  <a class="anchor" href="#12-the-present-and-the-future-of-resolvers-and-dns-related-features">#</a>
+</h1>
+<p class="updated-right">
+    <i>
+        <time datetime="2025-10">Last updated: Oct 2025</time>
+    </i>
+</p>
+<p><strong>Contents</strong></p>
+<ul>
+<li><a href="/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#121-new-dns-record-https">12.1 New DNS record: HTTPS</a></li>
+<li><a href="/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#122-dnssec">12.2. DNSSEC</a></li>
+<li><a href="/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#123-dns-over-tls-dot--dsn-over-https-doh-and-dns-over-quick-doq">12.3 DNS over TLS (DoT), DSN over HTTPS (DoH) and DNS over QUICK (DoQ)</a></li>
+<li><a href="/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#124-oblivious-dns">12.4 Oblivious DNS</a></li>
+<li><a href="/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/#125-dns-push-notifications">12.5. DNS Push Notifications</a></li>
+</ul>
+<hr/>
+<p>Let me briefly review some important features and topics related to DNS, stub resolvers, and dual-stack applications. While these are beyond the scope of this series, they are worth mentioning.</p>
+<h2 id="121-new-dns-record-https">
+  12.1 New DNS record: HTTPS
+  <a class="anchor" href="#121-new-dns-record-https">#</a>
+</h2>
+<p><a href="https://www.rfc-editor.org/rfc/rfc9460.html" target="_blank" rel="noopener">DNS has introduced</a> a new and interesting resource record called HTTPS. This record addresses problems related to web service clients. Typically, when a client has only a domain name without additional information, it connects using plain text port 80. The server usually redirects to port 443 with HTTPS and sets an <a href="https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security" target="_blank" rel="noopener">HSTS</a> header. However, this initial plain text request-response has security issues and is vulnerable to Man-in-the-Middle (<a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack" target="_blank" rel="noopener">MitM</a>) attacks.</p>
+<p>Another problem is speed: additional redirects are not cheap, and the client often upgrades to HTTP/2 or even HTTP/3 afterward. All of this adds unnecessary latency to the client side.</p>
+<p>To address these issues, the HTTPS record plays a canary role for existing HTTPS services. It provides supported <a href="https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation" target="_blank" rel="noopener">ALPN</a> protocols (such as HTTP/2 and HTTP/3) and returns <code>A</code> and/or <code>AAAA</code> addresses for connection in one response saving latency and packet rate.</p>
+<p>For example;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ dig @1.1.1.1 cloudflare.com HTTPS
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>; &lt;&lt;&gt;&gt; DiG 9.18.28-0ubuntu0.24.04.1-Ubuntu &lt;&lt;&gt;&gt; @1.1.1.1 cloudflare.com HTTPS
+</span></span><span style="display:flex;"><span>; <span style="color:#f92672">(</span><span style="color:#ae81ff">1</span> server found<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>;; global options: +cmd
+</span></span><span style="display:flex;"><span>;; Got answer:
+</span></span><span style="display:flex;"><span>;; -&gt;&gt;HEADER<span style="color:#e6db74">&lt;&lt;- opco</span>de: QUERY, status: NOERROR, id: <span style="color:#ae81ff">8180</span>
+</span></span><span style="display:flex;"><span>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>;; OPT PSEUDOSECTION:
+</span></span><span style="display:flex;"><span>; EDNS: version: 0, flags:; udp: <span style="color:#ae81ff">1232</span>
+</span></span><span style="display:flex;"><span>;; QUESTION SECTION:
+</span></span><span style="display:flex;"><span>;cloudflare.com.                        IN      HTTPS
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>;; ANSWER SECTION:
+</span></span><span style="display:flex;"><span>cloudflare.com.         <span style="color:#ae81ff">51</span>      IN      HTTPS   <span style="color:#ae81ff">1</span> . alpn<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;h3,h2&#34;</span> ipv4hint<span style="color:#f92672">=</span>104.16.132.229,104.16.133.229 ipv6hint<span style="color:#f92672">=</span>2606:4700::6810:84e5,2606:4700::6810:85e5
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>;; Query time: <span style="color:#ae81ff">11</span> msec
+</span></span><span style="display:flex;"><span>;; SERVER: 1.1.1.1#53<span style="color:#f92672">(</span>1.1.1.1<span style="color:#f92672">)</span> <span style="color:#f92672">(</span>UDP<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>;; WHEN: Fri Aug <span style="color:#ae81ff">02</span> 01:18:53 BST <span style="color:#ae81ff">2024</span>
+</span></span><span style="display:flex;"><span>;; MSG SIZE  rcvd: <span style="color:#ae81ff">116</span>
+</span></span></code></pre></div><h2 id="122-dnssec">
+  12.2. DNSSEC
+  <a class="anchor" href="#122-dnssec">#</a>
+</h2>
+<p>The Domain Name System Security Extensions (DNSSEC) is a feature of the Domain Name System (DNS) that authenticates responses to domain name lookups.</p>
+<p>We can <a href="https://www.freedesktop.org/software/systemd/man/latest/resolved.conf.html" target="_blank" rel="noopener">enable</a> it with systemd-resolved for local stub resolver:</p>
+<blockquote>
+<p>Note that DNSSEC validation requires retrieval of additional DNS data, and thus results in a small DNS lookup time penalty.</p></blockquote>
+<p>To verify and query DNSSEC keys you can continue using <code>dig</code>, but the recommended and more convenient tool is <code>delv</code> (<code><a href="https://manpages.ubuntu.com/manpages/noble/man1/delv.1.html" target="_blank" rel="noopener">man 1 delv</a></code>).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ delv @1.1.1.1 microsoft.com
+</span></span><span style="display:flex;"><span>; unsigned answer
+</span></span><span style="display:flex;"><span>microsoft.com.          <span style="color:#ae81ff">130</span>     IN      A       20.70.246.20
+</span></span><span style="display:flex;"><span>microsoft.com.          <span style="color:#ae81ff">130</span>     IN      A       20.76.201.171
+</span></span><span style="display:flex;"><span>microsoft.com.          <span style="color:#ae81ff">130</span>     IN      A       20.112.250.133
+</span></span><span style="display:flex;"><span>microsoft.com.          <span style="color:#ae81ff">130</span>     IN      A       20.231.239.246
+</span></span><span style="display:flex;"><span>microsoft.com.          <span style="color:#ae81ff">130</span>     IN      A       20.236.44.162
+</span></span></code></pre></div><p>For failing test please use:</p>
+<ul>
+<li>dnssec-failed.org</li>
+<li>rhybar.cz</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ delv  @1.1.1.1 dnssec-failed.org
+</span></span><span style="display:flex;"><span>;; resolution failed: SERVFAIL
+</span></span></code></pre></div><p>In <code>systemd-resolved</code> the default for DNSSEC is &ldquo;<code><a href="https://www.freedesktop.org/software/systemd/man/latest/resolved.conf.html" target="_blank" rel="noopener">allow-downgrade</a></code>&rdquo;, but it could be hardened to <code>yes</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ cat /etc/systemd/resolved.conf
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>Resolve<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>DNSSEC<span style="color:#f92672">=</span>yes
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># DNSSEC=allow-downgrade</span>
+</span></span><span style="display:flex;"><span>...
+</span></span></code></pre></div><h2 id="123-dns-over-tls-dot--dsn-over-https-doh-and-dns-over-quick-doq">
+  12.3 DNS over TLS (DoT),  DSN over HTTPS (DoH) and DNS over QUICK (DoQ)
+  <a class="anchor" href="#123-dns-over-tls-dot--dsn-over-https-doh-and-dns-over-quick-doq">#</a>
+</h2>
+<p>DNSSEC provides data integrity and authentication, but the content of requests and responses remains in plain text. To address this issue,  <a href="https://datatracker.ietf.org/doc/html/rfc7858" target="_blank" rel="noopener">DNS over TLS (DoT)</a> and later <a href="https://datatracker.ietf.org/doc/html/rfc8484" target="_blank" rel="noopener">DNS over HTTPS (DoH)</a>  were introduced. The main difference between these two is the transport and port used. DoH is more private because it mimics regular HTTPS traffic (using 443 port and https transport), making it harder to detect and block.</p>
+<p>The <a href="https://www.dnscrypt.org/" target="_blank" rel="noopener">https://www.dnscrypt.org/</a> is a good starting point.</p>
+<h2 id="124-oblivious-dns">
+  12.4 Oblivious DNS
+  <a class="anchor" href="#124-oblivious-dns">#</a>
+</h2>
+<p>If we go further and consider privacy with DoT and DoH, there is a concern that a DNS forwarder knows too much about your requests. This led to the development of <a href="https://datatracker.ietf.org/doc/rfc9230/" target="_blank" rel="noopener">Oblivious DNS</a> (oDNS), which introduces the concepts of an oDNS relay and an oDNS target. In this system, the client encrypts its request using the public key of the target and then proxies the encrypted request through the relay. Relay sends a request to the target without client identification information. This process helps to hide the client’s identity from the oDNS target and the request content from the oDNS relay.</p>
+<p>For a great client with comprehensive documentation, see <a href="https://github.com/natesales/q" target="_blank" rel="noopener">https://github.com/natesales/q</a></p>
+<h2 id="125-dns-push-notifications">
+  12.5. DNS Push Notifications
+  <a class="anchor" href="#125-dns-push-notifications">#</a>
+</h2>
+<p>There is an interesting and reasonable new <a href="https://datatracker.ietf.org/doc/html/rfc8765" target="_blank" rel="noopener">RFC 8765 DNS Push Notifications</a>, which suggests keeping an open connection between the DNS server and stub resolver to send push notifications when something changes. This idea could restore DNS as the mechanism for service discovery.</p>
+
+
+
+
+  
+
+<a  href="/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/"   class="book-btn right-button">
+  Read next chapter →
+</a>
+
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+
+ 
+        <script defer src="/my_js/copy-code.js"></script>
+
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+  </main>
+
+  
+<div class="cookie-container">
+    <p>
+        This website uses "<b>cookies</b>".
+        Using this website means you're OK with this.
+        If you are <b>NOT</b>, please close the site page.
+    </p>
+    <button class="cookie-btn">
+        ACCEPT AND CLOSE
+    </button>
+</div>
+<script src="/my_js/cookie.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

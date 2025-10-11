@@ -1,4 +1,9 @@
-<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="
   SRE deep dive into Linux Page Cache
   #
 
@@ -20,16 +25,535 @@ Direct IO (DIO)
 Advanced Page Cache observability and troubleshooting tools
 
 
-In this series of articles, I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to the following:"><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/"><meta property="og:site_name" content="Viacheslav Biriukov"><meta property="og:title" content="Linux Page Cache for SRE"><meta property="og:description" content="SRE deep dive into Linux Page Cache # Last updated: Oct 2025 Contents
-Prepare environment for experiments Essential Page Cache theory Page Cache and basic file operations Page Cache eviction and page reclaim More about mmap() file access cgroup v2 and Page Cache How much memory my program uses or the tale of working set size Direct IO (DIO) Advanced Page Cache observability and troubleshooting tools In this series of articles, I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to the following:"><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="docs"><title>Linux Page Cache for SRE | Viacheslav Biriukov</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1+E=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script><script defer src=/en.search.min.7e97a0cfe832281a8126c98203712496c0cabeb060b5bfb911edaf36327ad30a.js integrity="sha256-fpegz+gyKBqBJsmCA3EklsDKvrBgtb+5Ee2vNjJ60wo=" crossorigin=anonymous></script><script async src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-599VSLESJL")</script><link rel=stylesheet href=/my_css/cookie.css><link rel=stylesheet href=/my_css/copy-code.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
-<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Viacheslav Biriukov</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li class=book-section-flat><span>Linux Page Cache series</span><ul><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/ class=active>0. Linux Page Cache for SRE</a></li><li><a href=/docs/page-cache/1-prepare-environment-for-experiments/>1. Prepare environments</a></li><li><a href=/docs/page-cache/2-essential-page-cache-theory/>2. Essential theory</a></li><li><a href=/docs/page-cache/3-page-cache-and-basic-file-operations/>3. Basic file operations</a></li><li><a href=/docs/page-cache/4-page-cache-eviction-and-page-reclaim/>4. Eviction and page reclaim</a></li><li><a href=/docs/page-cache/5-more-about-mmap-file-access/>5. More about mmap()</a></li><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/>6. cgroup v2</a></li><li><a href=/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/>7. Unique set and working set</a></li><li><a href=/docs/page-cache/8-direct-io-dio/>8. Direct IO</a></li><li><a href=/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/>9. Advanced tools</a></li></ul></li></ul><div style=margin-top:30px;margin-bottom:30px><b>More recent series:</b><ul><li><a href=/rust-tokio-io/>1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px;background-color:#e84118;color:#f0f8ff">new</span></li><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>2. Resolvers and Dual-Stack applications</li><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>3. Linux Page Cache mini book</li><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons>4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li></ul></div><div style=margin-top:30px;margin-bottom:30px><b>Open Source Projects</b><ul><li><a href=https://github.com/brk0v/trixter/tree/main>• trixter chaos proxy</a></li><li><a href=https://crates.io/crates/tokio-netem>• tokio-netem</a></li></ul></div><ul><li><a href=https://twitter.com/brk0v/ target=_blank rel=noopener><i class="bi bi-twitter"></i>
-Twitter</a></li><li><a href=https://www.linkedin.com/in/biriukov/ target=_blank rel=noopener><i class="bi bi-linkedin"></i>
-Linkedin</a></li><li><a href=https://github.com/brk0v/ target=_blank rel=noopener><i class="bi bi-github"></i>
-Github</a></li></ul><div style=margin-top:30px><p xmlns:cc=http://creativecommons.org/ns#>This content is licensed under
-<a href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target=_blank rel="license noopener noreferrer" style=display:inline-block>CC BY-NC 4.0<img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu>
-</label><strong>Linux Page Cache for SRE</strong>
-<label for=toc-control></label></div></header><article class="markdown book-article"><h1 id=sre-deep-dive-into-linux-page-cache>SRE deep dive into Linux Page Cache
-<a class=anchor href=#sre-deep-dive-into-linux-page-cache>#</a></h1><p class=updated-right><i><time datetime=2025-10>Last updated: Oct 2025</time></i></p><p><strong>Contents</strong></p><ol><li><a href=/docs/page-cache/1-prepare-environment-for-experiments/>Prepare environment for experiments</a></li><li><a href=/docs/page-cache/2-essential-page-cache-theory/>Essential Page Cache theory</a></li><li><a href=/docs/page-cache/3-page-cache-and-basic-file-operations/>Page Cache and basic file operations</a></li><li><a href=/docs/page-cache/4-page-cache-eviction-and-page-reclaim/>Page Cache eviction and page reclaim</a></li><li><a href=/docs/page-cache/5-more-about-mmap-file-access/>More about <code>mmap()</code> file access</a></li><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/>cgroup v2 and Page Cache</a></li><li><a href=/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/>How much memory my program uses or the tale of working set size</a></li><li><a href=/docs/page-cache/8-direct-io-dio/>Direct IO (DIO)</a></li><li><a href=/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/>Advanced Page Cache observability and troubleshooting tools</a></li></ol><hr><p>In this series of articles, I would like to talk about <strong>Linux Page Cache</strong>. I believe that the following knowledge of the theory and tools is <strong>essential and crucial for every SRE</strong>. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to the following:</p><ul><li>more <strong>precise capacity planning</strong> and <strong>container limit calculations</strong>;</li><li>better <strong>debugging and investigation skills</strong> for memory and disk intensive applications such as <strong>database management system</strong> and file sharing <strong>storages</strong>;</li><li>building <strong>safe and predictable runtimes</strong> for memory and/or IO-bound ad-hoc tasks (for instance: backups and restore scripts, <code>rsync</code> one-liners, etc.).</li></ul><p>I’ll display what <strong>utils</strong> you should keep in mind when you&rsquo;re dealing with Page Cache related tasks and problems, how to use them properly <strong>to understand real memory usage</strong>, and how to <strong>reveal issues</strong> with them. I will try to give you some examples of using these tools that are close to real life situations. Here are some of these tools I&rsquo;m talking about below: <code>vmtouch</code>, <code>perf</code>, <code>cgtouch</code>, <code>strace</code> , <code>sar</code> and <code>page-type</code>.</p><p>Also, as the title says, &ldquo;deep dive&rdquo;, <strong>the internals of these utils</strong> will be shown with an emphasis on the <strong>Page Cache</strong> stats, events, syscalls and kernel interfaces. Here are some examples of what I’m touching on in the following post:</p><ul><li><code>procfs</code> files: <code>/proc/PID/smaps</code>, <code>/proc/pid/pagemap</code>, <code>/proc/kpageflags</code>, <code>/proc/kpagecgroup</code> and <code>sysfs</code> file: <code>/sys/kernel/mm/page_idle</code>;</li><li>system calls: <code>mincore()</code>, <code>mmap()</code>, <code>fsync()</code>, <code>msync()</code>, <code>posix_fadvise()</code>, <code>madvise()</code> and others;</li><li>different open and advise flags <code>O_SYNC</code>, <code>FADV_DONTNEED</code>, <code>POSIX_FADV_RANDOM</code>, <code>MADV_DONTNEED</code>, etc.</li></ul><p>I’ll try to be as verbose as possible with simple (almost all the way) code examples in Python, Go and a tiny bit of C.</p><p>And finally, any conversations about modern GNU/Linux systems can’t be fully conducted without touching the <strong><code>cgroup</code></strong> (<code>v2</code> in our case) and the <strong><code>systemd</code></strong> topics. I&rsquo;ll show you <strong>how to leverage them</strong> to get the most out of the systems, build reliable, well-observed, controlled services, and sleep well at night while on-call.</p><p>Readers should be confident if they have middle GNU/Linux knowledge and basic programming skills.</p><p>All code examples larger than 5 lines can be found on github: <a href=https://github.com/brk0v/sre-page-cache-article target=_blank rel=noopener>https://github.com/brk0v/sre-page-cache-article</a>.</p><a href=/docs/page-cache/1-prepare-environment-for-experiments/ class="book-btn right-button">Read next chapter →</a></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script defer src=/my_js/copy-code.js></script></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div></main><div class=cookie-container><p>This website uses "<b>cookies</b>".
-Using this website means you're OK with this.
-If you are <b>NOT</b>, please close the site page.</p><button class=cookie-btn>
-ACCEPT AND CLOSE</button></div><script src=/my_js/cookie.js></script></body></html>
+In this series of articles, I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to the following:">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
+<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/page-cache/0-linux-page-cache-for-sre/">
+  <meta property="og:site_name" content="Viacheslav Biriukov">
+  <meta property="og:title" content="Linux Page Cache for SRE">
+  <meta property="og:description" content="SRE deep dive into Linux Page Cache # Last updated: Oct 2025 Contents
+Prepare environment for experiments Essential Page Cache theory Page Cache and basic file operations Page Cache eviction and page reclaim More about mmap() file access cgroup v2 and Page Cache How much memory my program uses or the tale of working set size Direct IO (DIO) Advanced Page Cache observability and troubleshooting tools In this series of articles, I would like to talk about Linux Page Cache. I believe that the following knowledge of the theory and tools is essential and crucial for every SRE. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to the following:">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="docs">
+<title>Linux Page Cache for SRE | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" >
+<link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+<script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"
+></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+
+    gtag("config", "G-599VSLESJL");
+</script>
+
+<link rel="stylesheet" href="/my_css/cookie.css" />
+<link rel="stylesheet" href="/my_css/copy-code.css" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+/>
+
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+
+      
+        
+
+      
+        
+
+      
+        
+
+      
+
+      
+        <li class="book-section-flat" >
+          
+  
+  
+
+  
+    <span>Linux Page Cache series</span>
+  
+
+          
+  <ul>
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/0-linux-page-cache-for-sre/" class="active">
+      
+        0. Linux Page Cache for SRE
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/1-prepare-environment-for-experiments/" class="">
+      
+        1. Prepare environments
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/2-essential-page-cache-theory/" class="">
+      
+        2. Essential theory
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/3-page-cache-and-basic-file-operations/" class="">
+      
+        3. Basic file operations
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" class="">
+      
+        4. Eviction and page reclaim
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/5-more-about-mmap-file-access/" class="">
+      
+        5. More about mmap()
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/6-cgroup-v2-and-page-cache/" class="">
+      
+        6. cgroup v2
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class="">
+      
+        7. Unique set and working set
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/8-direct-io-dio/" class="">
+      
+        8. Direct IO
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/" class="">
+      
+        9. Advanced tools
+      
+    </a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>More recent series:</b>
+  <ul>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
+    <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
+    <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
+  </ul>
+</div>
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Open Source Projects</b>
+  <ul>
+      <li>
+          <a href="/posts/trixter-chaos-proxy/"> • trixter chaos proxy</a>
+      </li>
+      <li><a href="https://crates.io/crates/tokio-netem"> • tokio-netem</a></li>
+  </ul>
+</div>
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-twitter"></i>
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.linkedin.com/in/biriukov/"  target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
+        Linkedin
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-github"></i>
+        Github
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 30px;">
+  <p xmlns:cc="http://creativecommons.org/ns#">
+    This content is licensed under 
+    <a
+      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
+    </a>
+  </p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Linux Page Cache for SRE</strong>
+
+  <label for="toc-control">
+    
+  </label>
+</div>
+
+
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown book-article"><h1 id="sre-deep-dive-into-linux-page-cache">
+  SRE deep dive into Linux Page Cache
+  <a class="anchor" href="#sre-deep-dive-into-linux-page-cache">#</a>
+</h1>
+<p class="updated-right">
+    <i>
+        <time datetime="2025-10">Last updated: Oct 2025</time>
+    </i>
+</p>
+<p><strong>Contents</strong></p>
+<ol>
+<li><a href="/docs/page-cache/1-prepare-environment-for-experiments/">Prepare environment for experiments</a></li>
+<li><a href="/docs/page-cache/2-essential-page-cache-theory/">Essential Page Cache theory</a></li>
+<li><a href="/docs/page-cache/3-page-cache-and-basic-file-operations/">Page Cache and basic file operations</a></li>
+<li><a href="/docs/page-cache/4-page-cache-eviction-and-page-reclaim/">Page Cache eviction and page reclaim</a></li>
+<li><a href="/docs/page-cache/5-more-about-mmap-file-access/">More about <code>mmap()</code> file access</a></li>
+<li><a href="/docs/page-cache/6-cgroup-v2-and-page-cache/">cgroup v2 and Page Cache</a></li>
+<li><a href="/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/">How much memory my program uses or the tale of working set size</a></li>
+<li><a href="/docs/page-cache/8-direct-io-dio/">Direct IO (DIO)</a></li>
+<li><a href="/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/">Advanced Page Cache observability and troubleshooting tools</a></li>
+</ol>
+<hr/>
+<p>In this series of articles, I would like to talk about <strong>Linux Page Cache</strong>. I believe that the following knowledge of the theory and tools is <strong>essential and crucial for every SRE</strong>. This understanding can help both in usual and routine everyday DevOps-like tasks and in emergency debugging and firefighting. Page Cache is often left unattended, and its better understanding leads to the following:</p>
+<ul>
+<li>more <strong>precise capacity planning</strong> and <strong>container limit calculations</strong>;</li>
+<li>better <strong>debugging and investigation skills</strong> for memory and disk intensive applications such as <strong>database management system</strong> and file sharing <strong>storages</strong>;</li>
+<li>building <strong>safe and predictable runtimes</strong> for memory and/or IO-bound ad-hoc tasks (for instance: backups and restore scripts, <code>rsync</code> one-liners, etc.).</li>
+</ul>
+<p>I’ll display what <strong>utils</strong> you should keep in mind when you&rsquo;re dealing with Page Cache related tasks and problems, how to use them properly <strong>to understand real memory usage</strong>, and how to <strong>reveal issues</strong> with them. I will try to give you some examples of using these tools that are close to real life situations. Here are some of these tools I&rsquo;m talking about below: <code>vmtouch</code>, <code>perf</code>, <code>cgtouch</code>, <code>strace</code> , <code>sar</code> and <code>page-type</code>.</p>
+<p>Also, as the title says, &ldquo;deep dive&rdquo;,  <strong>the internals of these utils</strong> will be shown with an emphasis on the <strong>Page Cache</strong> stats, events, syscalls and kernel interfaces. Here are some examples of what I’m touching on in the following post:</p>
+<ul>
+<li><code>procfs</code> files: <code>/proc/PID/smaps</code>, <code>/proc/pid/pagemap</code>, <code>/proc/kpageflags</code>, <code>/proc/kpagecgroup</code> and  <code>sysfs</code> file: <code>/sys/kernel/mm/page_idle</code>;</li>
+<li>system calls: <code>mincore()</code>, <code>mmap()</code>, <code>fsync()</code>, <code>msync()</code>, <code>posix_fadvise()</code>, <code>madvise()</code> and others;</li>
+<li>different open and advise flags <code>O_SYNC</code>, <code>FADV_DONTNEED</code>, <code>POSIX_FADV_RANDOM</code>, <code>MADV_DONTNEED</code>, etc.</li>
+</ul>
+<p>I’ll try to be as verbose as possible with simple (almost all the way) code examples in Python, Go and a tiny bit of C.</p>
+<p>And finally, any conversations about modern GNU/Linux systems can’t be fully conducted without touching the <strong><code>cgroup</code></strong> (<code>v2</code> in our case) and the <strong><code>systemd</code></strong> topics. I&rsquo;ll show you <strong>how to leverage them</strong> to get the most out of the systems, build reliable, well-observed, controlled services, and sleep well at night while on-call.</p>
+<p>Readers should be confident if they have middle GNU/Linux knowledge and basic programming skills.</p>
+<p>All code examples larger than 5 lines can be found on github: <a href="https://github.com/brk0v/sre-page-cache-article" target="_blank" rel="noopener">https://github.com/brk0v/sre-page-cache-article</a>.</p>
+
+
+
+
+  
+
+<a  href="/docs/page-cache/1-prepare-environment-for-experiments/"   class="book-btn right-button">
+  Read next chapter →
+</a>
+
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+
+ 
+        <script defer src="/my_js/copy-code.js"></script>
+
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+  </main>
+
+  
+<div class="cookie-container">
+    <p>
+        This website uses "<b>cookies</b>".
+        Using this website means you're OK with this.
+        If you are <b>NOT</b>, please close the site page.
+    </p>
+    <button class="cookie-btn">
+        ACCEPT AND CLOSE
+    </button>
+</div>
+<script src="/my_js/cookie.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

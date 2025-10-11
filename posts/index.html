@@ -1,11 +1,312 @@
-<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://biriukov.dev/posts/"><meta property="og:site_name" content="Viacheslav Biriukov"><meta property="og:title" content="Viacheslav Biriukov"><meta property="og:locale" content="en_us"><meta property="og:type" content="website"><title>Posts | Viacheslav Biriukov</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1+E=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script><script defer src=/en.search.min.7e97a0cfe832281a8126c98203712496c0cabeb060b5bfb911edaf36327ad30a.js integrity="sha256-fpegz+gyKBqBJsmCA3EklsDKvrBgtb+5Ee2vNjJ60wo=" crossorigin=anonymous></script><link rel=alternate type=application/rss+xml href=https://biriukov.dev/posts/index.xml title="Viacheslav Biriukov"><script async src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-599VSLESJL")</script><link rel=stylesheet href=/my_css/cookie.css><link rel=stylesheet href=/my_css/copy-code.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
-<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Viacheslav Biriukov</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul></ul><div style=margin-top:30px;margin-bottom:30px><b>More recent series:</b><ul><li><a href=/rust-tokio-io/>1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px;background-color:#e84118;color:#f0f8ff">new</span></li><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>2. Resolvers and Dual-Stack applications</li><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>3. Linux Page Cache mini book</li><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons>4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li></ul></div><div style=margin-top:30px;margin-bottom:30px><b>Open Source Projects</b><ul><li><a href=https://github.com/brk0v/trixter/tree/main>• trixter chaos proxy</a></li><li><a href=https://crates.io/crates/tokio-netem>• tokio-netem</a></li></ul></div><ul><li><a href=https://twitter.com/brk0v/ target=_blank rel=noopener><i class="bi bi-twitter"></i>
-Twitter</a></li><li><a href=https://www.linkedin.com/in/biriukov/ target=_blank rel=noopener><i class="bi bi-linkedin"></i>
-Linkedin</a></li><li><a href=https://github.com/brk0v/ target=_blank rel=noopener><i class="bi bi-github"></i>
-Github</a></li></ul><div style=margin-top:30px><p xmlns:cc=http://creativecommons.org/ns#>This content is licensed under
-<a href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target=_blank rel="license noopener noreferrer" style=display:inline-block>CC BY-NC 4.0<img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu>
-</label><strong>Posts</strong>
-<label for=toc-control><img src=/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav><ul><li class=book-section-flat><strong>Categories</strong><ul></ul></li><li class=book-section-flat><strong>Tags</strong><ul></ul></li></ul></nav></aside></header><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script defer src=/my_js/copy-code.js></script></footer><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav><ul><li class=book-section-flat><strong>Categories</strong><ul></ul></li><li class=book-section-flat><strong>Tags</strong><ul></ul></li></ul></nav></div></aside></main><div class=cookie-container><p>This website uses "<b>cookies</b>".
-Using this website means you're OK with this.
-If you are <b>NOT</b>, please close the site page.</p><button class=cookie-btn>
-ACCEPT AND CLOSE</button></div><script src=/my_js/cookie.js></script></body></html>
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
+<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://biriukov.dev/posts/">
+  <meta property="og:site_name" content="Viacheslav Biriukov">
+  <meta property="og:title" content="Viacheslav Biriukov">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="website">
+<title>Posts | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" >
+<link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+<link rel="alternate" type="application/rss+xml" href="https://biriukov.dev/posts/index.xml" title="Viacheslav Biriukov" />
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+<script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"
+></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+
+    gtag("config", "G-599VSLESJL");
+</script>
+
+<link rel="stylesheet" href="/my_css/cookie.css" />
+<link rel="stylesheet" href="/my_css/copy-code.css" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+/>
+
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+
+      
+        
+
+      
+        
+
+      
+        
+
+      
+        
+  </ul>
+
+
+
+
+
+
+
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>More recent series:</b>
+  <ul>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
+    <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
+    <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
+  </ul>
+</div>
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Open Source Projects</b>
+  <ul>
+      <li>
+          <a href="/posts/trixter-chaos-proxy/"> • trixter chaos proxy</a>
+      </li>
+      <li><a href="https://crates.io/crates/tokio-netem"> • tokio-netem</a></li>
+  </ul>
+</div>
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-twitter"></i>
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.linkedin.com/in/biriukov/"  target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
+        Linkedin
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-github"></i>
+        Github
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 30px;">
+  <p xmlns:cc="http://creativecommons.org/ns#">
+    This content is licensed under 
+    <a
+      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
+    </a>
+  </p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Posts</strong>
+
+  <label for="toc-control">
+    
+  </label>
+</div>
+
+
+  
+ 
+      </header>
+
+      
+      
+  
+  <article class="markdown book-post">
+    <h2>
+      <a href="/posts/trixter-chaos-proxy/">Trixter: A Chaos Proxy for Simulating Network Faults</a>
+    </h2>
+    
+
+
+  
+
+  
+
+
+
+
+    <p><p class="updated-right">
+    <i>
+        <time datetime="2025-10">Posted: Oct 2025</time>
+    </i>
+</p>
+<p style="float1:right" class="text">
+    <i class="bi bi-github"></i> Github: <a href="https://github.com/brk0v/trixter">https://github.com/brk0v/trixter</a>
+</p>
+<hr/>
+<p><strong>Contents</strong></p>
+<ul>
+<li><a href="posts/trixter-chaos-proxy/#chaos-engineering-and-network-fault-injection">Chaos Engineering and Network Fault Injection</a></li>
+<li><a href="/posts/trixter-chaos-proxy/#introducing-trixter--a-chaos-monkey-for-tcp">Introducing Trixter – A Chaos Monkey for TCP</a></li>
+<li><a href="/posts/trixter-chaos-proxy/#why-trixter-vs-gnulinux-tc-netem-kernel-network-emulator">Why Trixter vs GNU/Linux <code>tc</code> <code>netem</code> (Kernel Network Emulator)</a></li>
+<li><a href="/posts/trixter-chaos-proxy/#using-trixter-examples-of-injecting-chaos">Using Trixter: Examples of Injecting Chaos</a>
+<ul>
+<li><a href="/posts/trixter-chaos-proxy/#example-1-adding-latency-and-packet-loss">Example 1: Adding latency and packet loss</a></li>
+<li><a href="/posts/trixter-chaos-proxy/#example-2-throttling-bandwidth">Example 2: Throttling bandwidth</a></li>
+<li><a href="/posts/trixter-chaos-proxy/#example-3-running-in-cicd-with-chaos">Example 3: Running in CI/CD with chaos</a></li>
+<li><a href="/posts/trixter-chaos-proxy/#example-4-control-failures-on-per-connection-in-runtime">Example 4: Control failures on per connection in runtime</a></li>
+</ul>
+</li>
+<li><a href="/posts/trixter-chaos-proxy/#documentation-recipes-reference">Documentation, recipes, reference</a></li>
+</ul>
+<hr/>
+<blockquote>
+<p><em>Break your network before production does</em></p>
+        <a href="/posts/trixter-chaos-proxy/">...</a>
+      
+    </p>
+  </article>
+  
+
+  
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+
+ 
+        <script defer src="/my_js/copy-code.js"></script>
+
+      </footer>
+
+      
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+  </main>
+
+  
+<div class="cookie-container">
+    <p>
+        This website uses "<b>cookies</b>".
+        Using this website means you're OK with this.
+        If you are <b>NOT</b>, please close the site page.
+    </p>
+    <button class="cookie-btn">
+        ACCEPT AND CLOSE
+    </button>
+</div>
+<script src="/my_js/cookie.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,9 @@
-<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="
   I/O loop
   #
 
@@ -22,49 +27,468 @@ Retain concurrency: other work (e.g., cancellation, timeouts) should make progre
   Backpressure propagation
   #
 
-To address the first issue we could flip the perspective: instead of eagerly pulling from the rx channel, wait until the writer proves it has capacity. Some async primitives support this. For example, tokio::sync::mpsc::Sender offers reserve(), which awaits for a slot to become available to write. When the permission is granted, we can dequeue the message from our rx channel. But one important note here is that mpsc is slot-based, and not byte-sized, which is not what we usually need when working with I/O streams."><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/async-rust-tokio-io/2-io-loop/"><meta property="og:site_name" content="Viacheslav Biriukov"><meta property="og:title" content="I/O loop"><meta property="og:description" content="I/O loop # Last updated: Oct 2025 Contents
+To address the first issue we could flip the perspective: instead of eagerly pulling from the rx channel, wait until the writer proves it has capacity. Some async primitives support this. For example, tokio::sync::mpsc::Sender offers reserve(), which awaits for a slot to become available to write. When the permission is granted, we can dequeue the message from our rx channel. But one important note here is that mpsc is slot-based, and not byte-sized, which is not what we usually need when working with I/O streams.">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
+<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/async-rust-tokio-io/2-io-loop/">
+  <meta property="og:site_name" content="Viacheslav Biriukov">
+  <meta property="og:title" content="I/O loop">
+  <meta property="og:description" content="I/O loop # Last updated: Oct 2025 Contents
 Backpressure propagation Concurrency Before changing the code, let’s outline our goals for I/O loops:
-Preserve backpressure propagation: blocked writes should slow down the local producer over the rx channel. Retain concurrency: other work (e.g., cancellation, timeouts) should make progress while reads/writes are pending. Reads and writes should not block each other. Backpressure propagation # To address the first issue we could flip the perspective: instead of eagerly pulling from the rx channel, wait until the writer proves it has capacity. Some async primitives support this. For example, tokio::sync::mpsc::Sender offers reserve(), which awaits for a slot to become available to write. When the permission is granted, we can dequeue the message from our rx channel. But one important note here is that mpsc is slot-based, and not byte-sized, which is not what we usually need when working with I/O streams."><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="docs"><title>I/O loop | Viacheslav Biriukov</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1+E=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script><script defer src=/en.search.min.7e97a0cfe832281a8126c98203712496c0cabeb060b5bfb911edaf36327ad30a.js integrity="sha256-fpegz+gyKBqBJsmCA3EklsDKvrBgtb+5Ee2vNjJ60wo=" crossorigin=anonymous></script><script async src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-599VSLESJL")</script><link rel=stylesheet href=/my_css/cookie.css><link rel=stylesheet href=/my_css/copy-code.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
-<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Viacheslav Biriukov</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li class=book-section-flat><span>Async Rust & Tokio I/O Streams</span><ul><li><a href=/docs/async-rust-tokio-io/1-async-rust-with-tokio-io-streams-backpressure-concurrency-and-ergonomics/>1. Backpressure and Concurrency</a></li><li><a href=/docs/async-rust-tokio-io/2-io-loop/ class=active>2. I/O loop</a></li><li><a href=/docs/async-rust-tokio-io/3-tokio-io-patterns/>3. Tokio I/O patterns</a></li></ul></li></ul><div style=margin-top:30px;margin-bottom:30px><b>More recent series:</b><ul><li><a href=/rust-tokio-io/>1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px;background-color:#e84118;color:#f0f8ff">new</span></li><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>2. Resolvers and Dual-Stack applications</li><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>3. Linux Page Cache mini book</li><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons>4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li></ul></div><div style=margin-top:30px;margin-bottom:30px><b>Open Source Projects</b><ul><li><a href=https://github.com/brk0v/trixter/tree/main>• trixter chaos proxy</a></li><li><a href=https://crates.io/crates/tokio-netem>• tokio-netem</a></li></ul></div><ul><li><a href=https://twitter.com/brk0v/ target=_blank rel=noopener><i class="bi bi-twitter"></i>
-Twitter</a></li><li><a href=https://www.linkedin.com/in/biriukov/ target=_blank rel=noopener><i class="bi bi-linkedin"></i>
-Linkedin</a></li><li><a href=https://github.com/brk0v/ target=_blank rel=noopener><i class="bi bi-github"></i>
-Github</a></li></ul><div style=margin-top:30px><p xmlns:cc=http://creativecommons.org/ns#>This content is licensed under
-<a href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target=_blank rel="license noopener noreferrer" style=display:inline-block>CC BY-NC 4.0<img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu>
-</label><strong>I/O loop</strong>
-<label for=toc-control></label></div></header><article class="markdown book-article"><h1 id=io-loop>I/O loop
-<a class=anchor href=#io-loop>#</a></h1><p class=updated-right><i><time datetime=2025-10>Last updated: Oct 2025</time></i></p><p><strong>Contents</strong></p><ul><li><a href=/docs/async-rust-tokio-io/2-io-loop/#backpressure-propagation>Backpressure propagation</a></li><li><a href=/docs/async-rust-tokio-io/2-io-loop/#concurrency>Concurrency</a></li></ul><hr><p>Before changing the code, let&rsquo;s outline our goals for I/O loops:</p><ol><li><strong>Preserve backpressure propagation</strong>: blocked writes should slow down the local producer over the <code>rx</code> channel.</li><li><strong>Retain concurrency</strong>: other work (e.g., cancellation, timeouts) should make progress while reads/writes are pending. Reads and writes should not block each other.</li></ol><h2 id=backpressure-propagation>Backpressure propagation
-<a class=anchor href=#backpressure-propagation>#</a></h2><p>To address the first issue we could flip the perspective: instead of eagerly pulling from the <code>rx</code> channel, <strong>wait until the writer proves it has capacity</strong>. Some async primitives support this. For example, <code><a href=https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Sender.html target=_blank rel=noopener>tokio::sync::mpsc::Sender</a></code> offers <code><a href=https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Sender.html#method.reserve target=_blank rel=noopener>reserve()</a></code>, which <code>await</code>s for a slot to become available to write. When the permission is granted, we can dequeue the message from our <code>rx</code> channel. But one important note here is that <code>mpsc</code> is slot-based, and not byte-sized, which is not what we usually need when working with I/O streams.</p><p>Tokio&rsquo;s TCP stream provides something closer to the <code>reserve()</code> – the <code><a href=https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html#method.writable target=_blank rel=noopener>writable()</a></code> method, which uses <code><a href=https://man7.org/linux/man-pages/man7/epoll.7.html target=_blank rel=noopener>epoll</a></code> and <code><a href=https://man7.org/linux/man-pages/man2/epoll_ctl.2.html target=_blank rel=noopener>EPOLLOUT</a></code> internally to notify when the socket can accept writes.</p><p>You can reasonably ask: how much capacity does &ldquo;writable&rdquo; guarantee? On Linux, there is <code><a href=https://man7.org/linux/man-pages/man7/socket.7.html target=_blank rel=noopener>SO_SNDLOWAT</a></code>, and it is effectively fixed at one byte for TCP and cannot be tuned, so readiness alone isn&rsquo;t a full solution.</p><p>You can for sure build I/O loops using this signal, but it&rsquo;s usually not optimal because:</p><ol><li>As you can see from the documentation and the <a href=https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html#examples-12 target=_blank rel=noopener>example</a>, the writability doesn&rsquo;t always mean that the send finishes successfully.</li><li>Readiness doesn&rsquo;t provide an available size, which could be less than the size of the encoded message to send. Additional logic is required to handle partial writes. There is a way to query this size, but it&rsquo;s a syscall which is expensive to make.</li><li>The API is TCP-specific and will not work out of the box for a generic Tokio stream I/O, which is typically bound to the <a href=https://docs.rs/tokio/latest/tokio/io/index.html#asyncread-and-asyncwrite target=_blank rel=noopener>AsyncRead+AsyncWrite</a> traits.</li></ol><p>Another idea is to use a smart write buffer that wraps around the stream I/O writer. It should be able to report when it&rsquo;s ready to write, and expose an async readiness-like call you can <code>await</code>. Its &ldquo;ready to write&rdquo; signal effectively triggers a data flush and propagates <strong>backpressure</strong>. This is exactly how the <a href=https://docs.rs/futures/latest/futures/sink/trait.Sink.html target=_blank rel=noopener>Sink</a> trait is designed, with its <a href=https://docs.rs/futures/latest/futures/sink/trait.Sink.html#tymethod.poll_ready target=_blank rel=noopener>poll_ready()</a> and <a href=https://docs.rs/futures/latest/futures/sink/trait.Sink.html#tymethod.start_send target=_blank rel=noopener>start_send()</a> methods.
-Tokio already provides several implementations of this pattern, some of which we&rsquo;ll use later when discussing <strong>Framed I/O</strong>.</p><p>Another approach (which we are not going to use) is to handle backpressure on the consumer&rsquo;s side. In this model, the consumer explicitly requests <em>N</em> records or bytes by pulling them from the producer. For example, the Java <a href=https://github.com/apple/servicetalk target=_blank rel=noopener>Apple ServiceTalk</a> framework uses this pattern. Another example is HTTP/2 streams, where the consumer dictates how much data it wants to receive with <a href=https://datatracker.ietf.org/doc/html/rfc9113#name-window_update target=_blank rel=noopener>WINDOW_UPDATE</a> frames. However, this approach is not available for plain TCP streams or generic I/O streams, so we will not cover it further.</p><h2 id=concurrency>Concurrency
-<a class=anchor href=#concurrency>#</a></h2><p>The concurrency feature might look like low-hanging fruit since we&rsquo;re already using the Tokio framework. But the reality is harsher. Rust&rsquo;s ownership model and borrow checker prevent us from writing a simple, naïve fix:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>loop</span> {
-</span></span><span style=display:flex><span>    tokio::<span style=color:#a6e22e>select!</span> {
-</span></span><span style=display:flex><span>        Some(msg) <span style=color:#f92672>=</span> rx.recv() <span style=color:#f92672>=&gt;</span> {
-</span></span><span style=display:flex><span>            tokio::<span style=color:#a6e22e>select!</span> {                           <span style=color:#75715e>// &lt; --------- change
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>                res <span style=color:#f92672>=</span> stream.write_all(<span style=color:#f92672>&amp;</span>msg) <span style=color:#f92672>=&gt;</span> {<span style=color:#f92672>..</span>.},
-</span></span><span style=display:flex><span>                res <span style=color:#f92672>=</span> stream.read(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> read_buf) <span style=color:#f92672>=&gt;</span> {<span style=color:#f92672>..</span>.},
-</span></span><span style=display:flex><span>            }
-</span></span><span style=display:flex><span>            stream.flush().<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>            <span style=color:#a6e22e>println!</span>(<span style=color:#e6db74>&#34;client&#39;s written&#34;</span>);
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        res <span style=color:#f92672>=</span> stream.read(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> read_buf) <span style=color:#f92672>=&gt;</span> {
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>let</span> n <span style=color:#f92672>=</span> res<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> n <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> {
-</span></span><span style=display:flex><span>                <span style=color:#75715e>// EOF - server closed connection
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>                <span style=color:#a6e22e>eprintln!</span>(<span style=color:#e6db74>&#34;Server closed the connection.&#34;</span>);
-</span></span><span style=display:flex><span>                <span style=color:#66d9ef>break</span>; <span style=color:#75715e>//exit
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>            }
-</span></span><span style=display:flex><span>            <span style=color:#a6e22e>print!</span>(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, String::from_utf8_lossy(<span style=color:#f92672>&amp;</span>read_buf[<span style=color:#f92672>..</span>n]));
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>else</span> <span style=color:#f92672>=&gt;</span> <span style=color:#66d9ef>break</span>
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><p>The compiler error:</p><blockquote class="book-hint danger">cannot borrow stream as mutable more than once at a time
-second mutable borrow occurs here (<a href=https://doc.rust-lang.org/error_codes/E0499.html target=_blank rel=noopener>rustc E0499</a>)</blockquote><p>The <code><a href=https://docs.rs/tokio/latest/tokio/io/trait.AsyncRead.html target=_blank rel=noopener>AsyncRead</a></code> and <code><a href=https://docs.rs/tokio/latest/tokio/io/trait.AsyncWrite.html target=_blank rel=noopener>AsyncWrite</a></code> trait methods require a mutable reference to <code>self</code> (more precisely, <code>Pin&&lt;&amp;mut Self></code>, though <code>Pin</code>/<code>Unpin</code> is out of scope for this post). We can&rsquo;t place both operations in <code>select!</code> expressions and await them concurrently, because that would require borrowing the same value mutably <strong>twice</strong>. So we need a different approach that satisfies the Rust compiler.</p><p>An additional interesting question is what <strong>concurrency</strong> actually means for our network application.</p><p>A high-load network application, such as a web server or a network proxy, that must handle thousands of simultaneous connections (<a href=https://en.wikipedia.org/wiki/C10k_problem target=_blank rel=noopener>the C10k problem</a>) has not many practical options and usully use an event loop (for example, <code>epoll</code> on Linux).</p><blockquote class="book-hint info"><p><strong>Note:</strong></p><p>There is also an <a href=https://en.wikipedia.org/wiki/Io_uring target=_blank rel=noopener><code>io_uring</code></a> approach, but the current Tokio version offers only limited support for it.</p></blockquote><p>As a rule of thumb, there is typically one event loop per CPU core, and the application maps sockets to these threads according to its scheduling strategy.</p><p>The implications of such a design are:</p><ul><li><strong>Parallelism is bounded by the number of <code>epoll</code> threads.</strong>
-True parallel execution cannot exceed the number of event-loop threads available.</li><li><strong>Developers must decide how to handle socket I/O.</strong>
-The read and write halves can run <em>concurrently</em> on the same thread, or in <em>true parallel</em> fashion, where two independent threads operate on the same socket.</li></ul><p>The answer to the latter is not obvious. While parallel execution may appear superior, it introduces several overheads and limitations:</p><ul><li><strong>Cross-thread synchronization overhead</strong> at the system level</li><li><strong>Asynchronous task-scheduler overhead</strong> (e.g., the Tokio runtime)</li><li><strong>CPU cache effects</strong>, including misses and <a href=https://en.wikipedia.org/wiki/CPU_cache target=_blank rel=noopener>cache-line contention</a></li></ul><p>For an I/O-intensive application, it is often more efficient to keep both halves of a socket within a single scheduled task (thread).
+Preserve backpressure propagation: blocked writes should slow down the local producer over the rx channel. Retain concurrency: other work (e.g., cancellation, timeouts) should make progress while reads/writes are pending. Reads and writes should not block each other. Backpressure propagation # To address the first issue we could flip the perspective: instead of eagerly pulling from the rx channel, wait until the writer proves it has capacity. Some async primitives support this. For example, tokio::sync::mpsc::Sender offers reserve(), which awaits for a slot to become available to write. When the permission is granted, we can dequeue the message from our rx channel. But one important note here is that mpsc is slot-based, and not byte-sized, which is not what we usually need when working with I/O streams.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="docs">
+<title>I/O loop | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" >
+<link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+<script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"
+></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+
+    gtag("config", "G-599VSLESJL");
+</script>
+
+<link rel="stylesheet" href="/my_css/cookie.css" />
+<link rel="stylesheet" href="/my_css/copy-code.css" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+/>
+
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+
+      
+
+      
+        <li class="book-section-flat" >
+          
+  
+  
+
+  
+    <span>Async Rust &amp; Tokio I/O Streams</span>
+  
+
+          
+  <ul>
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/async-rust-tokio-io/1-async-rust-with-tokio-io-streams-backpressure-concurrency-and-ergonomics/" class="">
+      
+        1. Backpressure and Concurrency
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/async-rust-tokio-io/2-io-loop/" class="active">
+      
+        2. I/O loop
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/async-rust-tokio-io/3-tokio-io-patterns/" class="">
+      
+        3. Tokio I/O patterns
+      
+    </a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+
+      
+        
+
+      
+        
+
+      
+        
+  </ul>
+
+
+
+
+
+
+
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>More recent series:</b>
+  <ul>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
+    <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
+    <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
+  </ul>
+</div>
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Open Source Projects</b>
+  <ul>
+      <li>
+          <a href="/posts/trixter-chaos-proxy/"> • trixter chaos proxy</a>
+      </li>
+      <li><a href="https://crates.io/crates/tokio-netem"> • tokio-netem</a></li>
+  </ul>
+</div>
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-twitter"></i>
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.linkedin.com/in/biriukov/"  target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
+        Linkedin
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-github"></i>
+        Github
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 30px;">
+  <p xmlns:cc="http://creativecommons.org/ns#">
+    This content is licensed under 
+    <a
+      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
+    </a>
+  </p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>I/O loop</strong>
+
+  <label for="toc-control">
+    
+  </label>
+</div>
+
+
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown book-article"><h1 id="io-loop">
+  I/O loop
+  <a class="anchor" href="#io-loop">#</a>
+</h1>
+<p class="updated-right">
+    <i>
+        <time datetime="2025-10">Last updated: Oct 2025</time>
+    </i>
+</p>
+<p><strong>Contents</strong></p>
+<ul>
+<li><a href="/docs/async-rust-tokio-io/2-io-loop/#backpressure-propagation">Backpressure propagation</a></li>
+<li><a href="/docs/async-rust-tokio-io/2-io-loop/#concurrency">Concurrency</a></li>
+</ul>
+<hr/>
+<p>Before changing the code, let&rsquo;s outline our goals for I/O loops:</p>
+<ol>
+<li><strong>Preserve backpressure propagation</strong>: blocked writes should slow down the local producer over the <code>rx</code> channel.</li>
+<li><strong>Retain concurrency</strong>: other work (e.g., cancellation, timeouts) should make progress while reads/writes are pending. Reads and writes should not block each other.</li>
+</ol>
+<h2 id="backpressure-propagation">
+  Backpressure propagation
+  <a class="anchor" href="#backpressure-propagation">#</a>
+</h2>
+<p>To address the first issue we could flip the perspective: instead of eagerly pulling from the <code>rx</code> channel, <strong>wait until the writer proves it has capacity</strong>. Some async primitives support this. For example, <code><a href="https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Sender.html" target="_blank" rel="noopener">tokio::sync::mpsc::Sender</a></code> offers <code><a href="https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Sender.html#method.reserve" target="_blank" rel="noopener">reserve()</a></code>, which <code>await</code>s for a slot to become available to write. When the permission is granted, we can dequeue the message from our <code>rx</code> channel. But one important note here is that <code>mpsc</code> is slot-based, and not byte-sized, which is not what we usually need when working with I/O streams.</p>
+<p>Tokio&rsquo;s TCP stream provides something closer to the <code>reserve()</code> – the <code><a href="https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html#method.writable" target="_blank" rel="noopener">writable()</a></code> method, which uses <code><a href="https://man7.org/linux/man-pages/man7/epoll.7.html" target="_blank" rel="noopener">epoll</a></code> and <code><a href="https://man7.org/linux/man-pages/man2/epoll_ctl.2.html" target="_blank" rel="noopener">EPOLLOUT</a></code> internally to notify when the socket can accept writes.</p>
+<p>You can reasonably ask: how much capacity does &ldquo;writable&rdquo; guarantee? On Linux, there is <code><a href="https://man7.org/linux/man-pages/man7/socket.7.html" target="_blank" rel="noopener">SO_SNDLOWAT</a></code>, and it is effectively fixed at one byte for TCP and cannot be tuned, so readiness alone isn&rsquo;t a full solution.</p>
+<p>You can for sure build I/O loops using this signal, but it&rsquo;s usually not optimal because:</p>
+<ol>
+<li>As you can see from the documentation and the <a href="https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html#examples-12" target="_blank" rel="noopener">example</a>, the writability doesn&rsquo;t always mean that the send finishes successfully.</li>
+<li>Readiness doesn&rsquo;t provide an available size, which could be less than the size of the encoded message to send. Additional logic is required to handle partial writes. There is a way to query this size, but it&rsquo;s a syscall which is expensive to make.</li>
+<li>The API is TCP-specific and will not work out of the box for a generic Tokio stream I/O, which is typically bound to the <a href="https://docs.rs/tokio/latest/tokio/io/index.html#asyncread-and-asyncwrite" target="_blank" rel="noopener">AsyncRead+AsyncWrite</a> traits.</li>
+</ol>
+<p>Another idea is to use a smart write buffer that wraps around the stream I/O writer. It should be able to report when it&rsquo;s ready to write, and expose an async readiness-like call you can <code>await</code>. Its &ldquo;ready to write&rdquo; signal effectively triggers a data flush and propagates <strong>backpressure</strong>. This is exactly how the <a href="https://docs.rs/futures/latest/futures/sink/trait.Sink.html" target="_blank" rel="noopener">Sink</a> trait is designed, with its <a href="https://docs.rs/futures/latest/futures/sink/trait.Sink.html#tymethod.poll_ready" target="_blank" rel="noopener">poll_ready()</a> and <a href="https://docs.rs/futures/latest/futures/sink/trait.Sink.html#tymethod.start_send" target="_blank" rel="noopener">start_send()</a> methods.
+Tokio already provides several implementations of this pattern, some of which we&rsquo;ll use later when discussing <strong>Framed I/O</strong>.</p>
+<p>Another approach (which we are not going to use) is to handle backpressure on the consumer&rsquo;s side. In this model, the consumer explicitly requests <em>N</em> records or bytes by pulling them from the producer. For example, the Java <a href="https://github.com/apple/servicetalk" target="_blank" rel="noopener">Apple ServiceTalk</a> framework uses this pattern. Another example is HTTP/2 streams, where the consumer dictates how much data it wants to receive with <a href="https://datatracker.ietf.org/doc/html/rfc9113#name-window_update" target="_blank" rel="noopener">WINDOW_UPDATE</a> frames. However, this approach is not available for plain TCP streams or generic I/O streams, so we will not cover it further.</p>
+<h2 id="concurrency">
+  Concurrency
+  <a class="anchor" href="#concurrency">#</a>
+</h2>
+<p>The concurrency feature might look like low-hanging fruit since we&rsquo;re already using the Tokio framework. But the reality is harsher. Rust&rsquo;s ownership model and borrow checker prevent us from writing a simple, naïve fix:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>    tokio::<span style="color:#a6e22e">select!</span> {
+</span></span><span style="display:flex;"><span>        Some(msg) <span style="color:#f92672">=</span> rx.recv() <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>            tokio::<span style="color:#a6e22e">select!</span> {                           <span style="color:#75715e">// &lt; --------- change
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                res <span style="color:#f92672">=</span> stream.write_all(<span style="color:#f92672">&amp;</span>msg) <span style="color:#f92672">=&gt;</span> {<span style="color:#f92672">..</span>.},
+</span></span><span style="display:flex;"><span>                res <span style="color:#f92672">=</span> stream.read(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> read_buf) <span style="color:#f92672">=&gt;</span> {<span style="color:#f92672">..</span>.},
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            stream.flush().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;client&#39;s written&#34;</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        res <span style="color:#f92672">=</span> stream.read(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> read_buf) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> n <span style="color:#f92672">=</span> res<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> n <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// EOF - server closed connection
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                <span style="color:#a6e22e">eprintln!</span>(<span style="color:#e6db74">&#34;Server closed the connection.&#34;</span>);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">break</span>; <span style="color:#75715e">//exit
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">print!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, String::from_utf8_lossy(<span style="color:#f92672">&amp;</span>read_buf[<span style="color:#f92672">..</span>n]));
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span> <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The compiler error:</p>
+<blockquote class="book-hint danger">
+  cannot borrow stream as mutable more than once at a time
+second mutable borrow occurs here (<a href="https://doc.rust-lang.org/error_codes/E0499.html" target="_blank" rel="noopener">rustc E0499</a>)
+</blockquote>
+
+<p>The <code><a href="https://docs.rs/tokio/latest/tokio/io/trait.AsyncRead.html" target="_blank" rel="noopener">AsyncRead</a></code> and <code><a href="https://docs.rs/tokio/latest/tokio/io/trait.AsyncWrite.html" target="_blank" rel="noopener">AsyncWrite</a></code> trait methods require a mutable reference to <code>self</code> (more precisely, <code>Pin&amp;&lt;&amp;mut Self&gt;</code>, though <code>Pin</code>/<code>Unpin</code> is out of scope for this post). We can&rsquo;t place both operations in <code>select!</code> expressions and await them concurrently, because that would require borrowing the same value mutably <strong>twice</strong>. So we need a different approach that satisfies the Rust compiler.</p>
+<p>An additional interesting question is what <strong>concurrency</strong> actually means for our network application.</p>
+<p>A high-load network application, such as a web server or a network proxy, that must handle thousands of simultaneous connections (<a href="https://en.wikipedia.org/wiki/C10k_problem" target="_blank" rel="noopener">the C10k problem</a>) has not many practical options and usully use an event loop (for example, <code>epoll</code> on Linux).</p>
+<blockquote class="book-hint info">
+  <p><strong>Note:</strong></p>
+<p>There is also an <a href="https://en.wikipedia.org/wiki/Io_uring" target="_blank" rel="noopener"><code>io_uring</code></a> approach, but the current Tokio version offers only limited support for it.</p>
+
+</blockquote>
+
+<p>As a rule of thumb, there is typically one event loop per CPU core, and the application maps sockets to these threads according to its scheduling strategy.</p>
+<p>The implications of such a design are:</p>
+<ul>
+<li><strong>Parallelism is bounded by the number of <code>epoll</code> threads.</strong>
+True parallel execution cannot exceed the number of event-loop threads available.</li>
+<li><strong>Developers must decide how to handle socket I/O.</strong>
+The read and write halves can run <em>concurrently</em> on the same thread, or in <em>true parallel</em> fashion, where two independent threads operate on the same socket.</li>
+</ul>
+<p>The answer to the latter is not obvious. While parallel execution may appear superior, it introduces several overheads and limitations:</p>
+<ul>
+<li><strong>Cross-thread synchronization overhead</strong> at the system level</li>
+<li><strong>Asynchronous task-scheduler overhead</strong> (e.g., the Tokio runtime)</li>
+<li><strong>CPU cache effects</strong>, including misses and <a href="https://en.wikipedia.org/wiki/CPU_cache" target="_blank" rel="noopener">cache-line contention</a></li>
+</ul>
+<p>For an I/O-intensive application, it is often more efficient to keep both halves of a socket within a single scheduled task (thread).
 This is the default approach recommended by both the Rust Tokio runtime (as we saw earlier with the <code>select!</code> macro) and Go.
-In practice, stream I/O is typically handled inside a single <a href=https://en.wikipedia.org/wiki/Actor_model target=_blank rel=noopener>actor</a>, which then communicates with other parts of the application through asynchronous channels or other low-overhead synchronization primitives.</p><p>Let&rsquo;s take a quick look at some concurrency primitives Tokio provides:</p><ul><li><code><a href=https://docs.rs/tokio/latest/tokio/macro.select.html target=_blank rel=noopener>select!</a></code> macro;</li><li><code><a href=https://docs.rs/tokio/latest/tokio/macro.join.html target=_blank rel=noopener>join!</a></code> and <code><a href=https://docs.rs/tokio/latest/tokio/macro.try_join.html target=_blank rel=noopener>try_join!</a></code> macros;</li><li><code><a href=https://docs.rs/tokio/latest/tokio/task/fn.spawn.html target=_blank rel=noopener>spawn()</a></code> function.</li></ul><blockquote class="book-hint info"><p><strong>Note:</strong></p><p><code><a href=https://docs.rs/futures/latest/futures/stream/struct.FuturesUnordered.html target=_blank rel=noopener>futures::stream::FuturesUnordered</a></code> can be very useful too, but it&rsquo;s out of scope here.</p></blockquote><p>Key distinction: <code>spawn()</code> launches a future on the runtime&rsquo;s thread pool (Tokio task). The other primitives run futures in the <strong>current Tokio task concurrently</strong>.</p><p>One more thing to note before we start is that <code>try_join!</code>, like all <code>try_</code>-prefixed macros, operates on a <a href=https://doc.rust-lang.org/std/result/ target=_blank rel=noopener><code>Result</code></a> and returns as soon as the first error occurs, signalling the remaining child futures to stop. This behavior is useful for implementing short-circuit logic.</p><a href=/docs/async-rust-tokio-io/3-tokio-io-patterns/ class=book-btn>Read next chapter →</a></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script defer src=/my_js/copy-code.js></script></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div></main><div class=cookie-container><p>This website uses "<b>cookies</b>".
-Using this website means you're OK with this.
-If you are <b>NOT</b>, please close the site page.</p><button class=cookie-btn>
-ACCEPT AND CLOSE</button></div><script src=/my_js/cookie.js></script></body></html>
+In practice, stream I/O is typically handled inside a single <a href="https://en.wikipedia.org/wiki/Actor_model" target="_blank" rel="noopener">actor</a>, which then communicates with other parts of the application through asynchronous channels or other low-overhead synchronization primitives.</p>
+<p>Let&rsquo;s take a quick look at some concurrency primitives Tokio provides:</p>
+<ul>
+<li><code><a href="https://docs.rs/tokio/latest/tokio/macro.select.html" target="_blank" rel="noopener">select!</a></code> macro;</li>
+<li><code><a href="https://docs.rs/tokio/latest/tokio/macro.join.html" target="_blank" rel="noopener">join!</a></code> and <code><a href="https://docs.rs/tokio/latest/tokio/macro.try_join.html" target="_blank" rel="noopener">try_join!</a></code> macros;</li>
+<li><code><a href="https://docs.rs/tokio/latest/tokio/task/fn.spawn.html" target="_blank" rel="noopener">spawn()</a></code> function.</li>
+</ul>
+<blockquote class="book-hint info">
+  <p><strong>Note:</strong></p>
+<p><code><a href="https://docs.rs/futures/latest/futures/stream/struct.FuturesUnordered.html" target="_blank" rel="noopener">futures::stream::FuturesUnordered</a></code> can be very useful too, but it&rsquo;s out of scope here.</p>
+
+</blockquote>
+
+<p>Key distinction: <code>spawn()</code> launches a future on the runtime&rsquo;s thread pool (Tokio task). The other primitives run futures in the <strong>current Tokio task concurrently</strong>.</p>
+<p>One more thing to note before we start is that <code>try_join!</code>, like all <code>try_</code>-prefixed macros, operates on a <a href="https://doc.rust-lang.org/std/result/" target="_blank" rel="noopener"><code>Result</code></a> and returns as soon as the first error occurs, signalling the remaining child futures to stop. This behavior is useful for implementing short-circuit logic.</p>
+
+
+
+
+  
+
+<a  href="/docs/async-rust-tokio-io/3-tokio-io-patterns/"   class="book-btn">
+  Read next chapter →
+</a>
+
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+
+ 
+        <script defer src="/my_js/copy-code.js"></script>
+
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+  </main>
+
+  
+<div class="cookie-container">
+    <p>
+        This website uses "<b>cookies</b>".
+        Using this website means you're OK with this.
+        If you are <b>NOT</b>, please close the site page.
+    </p>
+    <button class="cookie-btn">
+        ACCEPT AND CLOSE
+    </button>
+</div>
+<script src="/my_js/cookie.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

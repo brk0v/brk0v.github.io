@@ -1,4 +1,9 @@
-<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="
   Terminals and pseudoterminals
   #
 
@@ -22,214 +27,724 @@ Terminals come to us from the history of UNIX systems. Basically, terminals prov
 the canonical mode (default) – input is buffered line by line and read into after a new line char \n occurs;
 the noncanonical mode –  an application can read terminal input a character at a time. For example vi, emacs and less use this mode.
 
-Nowadays, with the widespread use of rich graphical UIs, the significance of the terminals are lesser than it was, but still, we use this protocol implicitly every time we start an ssh connection."><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/"><meta property="og:site_name" content="Viacheslav Biriukov"><meta property="og:title" content="Terminals and pseudoterminals"><meta property="og:description" content="Terminals and pseudoterminals # Last updated: Oct 2025 Contents
+Nowadays, with the widespread use of rich graphical UIs, the significance of the terminals are lesser than it was, but still, we use this protocol implicitly every time we start an ssh connection.">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
+<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/">
+  <meta property="og:site_name" content="Viacheslav Biriukov">
+  <meta property="og:title" content="Terminals and pseudoterminals">
+  <meta property="og:description" content="Terminals and pseudoterminals # Last updated: Oct 2025 Contents
 Pseudoterminal (devpts) Terminal settings Handling Terminal Signals screen and tmux Pseudoterminal proxy Changing a process’s controlling terminal Terminals come to us from the history of UNIX systems. Basically, terminals provided an API for the console utils (physical ones!) to generalize interaction with users. It includes ways of reading input and writing to it in two modes:
-the canonical mode (default) – input is buffered line by line and read into after a new line char \n occurs; the noncanonical mode – an application can read terminal input a character at a time. For example vi, emacs and less use this mode. Nowadays, with the widespread use of rich graphical UIs, the significance of the terminals are lesser than it was, but still, we use this protocol implicitly every time we start an ssh connection."><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="docs"><title>Terminals and pseudoterminals | Viacheslav Biriukov</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1+E=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script><script defer src=/en.search.min.7e97a0cfe832281a8126c98203712496c0cabeb060b5bfb911edaf36327ad30a.js integrity="sha256-fpegz+gyKBqBJsmCA3EklsDKvrBgtb+5Ee2vNjJ60wo=" crossorigin=anonymous></script><script async src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-599VSLESJL")</script><link rel=stylesheet href=/my_css/cookie.css><link rel=stylesheet href=/my_css/copy-code.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
-<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Viacheslav Biriukov</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li class=book-section-flat><span>GNU/Linux shell related internals</span><ul><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons/>0. GNU/Linux shell related internals for SRE</a></li><li><a href=/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/>1. File descriptor and open file description</a></li><li><a href=/docs/fd-pipe-session-terminal/2-pipes/>2. Pipes</a></li><li><a href=/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/>3. Process groups, jobs and sessions</a></li><li><a href=/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/ class=active>4. Terminals and pseudoterminals</a></li></ul></li></ul><div style=margin-top:30px;margin-bottom:30px><b>More recent series:</b><ul><li><a href=/rust-tokio-io/>1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px;background-color:#e84118;color:#f0f8ff">new</span></li><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>2. Resolvers and Dual-Stack applications</li><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>3. Linux Page Cache mini book</li><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons>4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li></ul></div><div style=margin-top:30px;margin-bottom:30px><b>Open Source Projects</b><ul><li><a href=https://github.com/brk0v/trixter/tree/main>• trixter chaos proxy</a></li><li><a href=https://crates.io/crates/tokio-netem>• tokio-netem</a></li></ul></div><ul><li><a href=https://twitter.com/brk0v/ target=_blank rel=noopener><i class="bi bi-twitter"></i>
-Twitter</a></li><li><a href=https://www.linkedin.com/in/biriukov/ target=_blank rel=noopener><i class="bi bi-linkedin"></i>
-Linkedin</a></li><li><a href=https://github.com/brk0v/ target=_blank rel=noopener><i class="bi bi-github"></i>
-Github</a></li></ul><div style=margin-top:30px><p xmlns:cc=http://creativecommons.org/ns#>This content is licensed under
-<a href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target=_blank rel="license noopener noreferrer" style=display:inline-block>CC BY-NC 4.0<img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu>
-</label><strong>Terminals and pseudoterminals</strong>
-<label for=toc-control></label></div></header><article class="markdown book-article"><h1 id=terminals-and-pseudoterminals>Terminals and pseudoterminals
-<a class=anchor href=#terminals-and-pseudoterminals>#</a></h1><p class=updated-right><i><time datetime=2025-10>Last updated: Oct 2025</time></i></p><p><strong>Contents</strong></p><ul><li><a href=/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#pseudoterminal-devpts>Pseudoterminal (<code>devpts</code>)</a></li><li><a href=/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#terminal-settings>Terminal settings</a></li><li><a href=/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#handling-terminal-signals>Handling Terminal Signals</a></li><li><a href=/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#screen-and-tmux><code>screen</code> and <code>tmux</code></a></li><li><a href=/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#pseudoterminal-proxy>Pseudoterminal proxy</a></li><li><a href=/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#changing-a-processs-controlling-terminal>Changing a process’s controlling terminal</a></li></ul><hr><p>Terminals come to us from the history of <code>UNIX</code> systems. Basically, terminals provided an API for the console utils (physical ones!) to generalize interaction with users. It includes ways of reading input and writing to it in <strong>two</strong> modes:</p><ul><li>the <strong>canonical</strong> mode (default) – input is buffered line by line and read into after a new line char <code>\n</code> occurs;</li><li>the <strong>noncanonical</strong> mode – an application can read terminal input a character at a time. For example <code>vi</code>, <code>emacs</code> and <code>less</code> use this mode.</li></ul><p>Nowadays, with the widespread use of rich graphical UIs, the significance of the terminals are lesser than it was, but still, we use this protocol implicitly every time we start an ssh connection.</p><p>The are a bunch of files under <code>/dev/</code> directory that represents different types of terminals:</p><ul><li><code>/dev/tty*</code> – physical consoles;</li><li><code>/dev/ttyS*</code> – serial connections;</li><li><code>/dev/pts/*</code> – pseudoterminals.</li></ul><p>Also, the <code>/proc/tty/drivers</code> file contains other supported drivers.</p><p>So, in order to determine what terminal file the current shell session is using, we have a <code>tty</code> cli tool (<code><a href=https://man7.org/linux/man-pages/man1/tty.1.html target=_blank rel=noopener>man 1 tty</a></code>).</p><p>On my remote ssh connection:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ tty
-</span></span><span style=display:flex><span>/dev/pts/0
-</span></span></code></pre></div><p>For a physical console:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ tty
-</span></span><span style=display:flex><span>/dev/tty1
-</span></span></code></pre></div><p>We can also open a virtual device <code>/dev/tty</code> to get a <code>fd</code> of the controlling terminal if it exists for the current process.</p><h2 id=pseudoterminal-devpts>Pseudoterminal (<code>devpts</code>)
-<a class=anchor href=#pseudoterminal-devpts>#</a></h2><p>In order to make it possible to use a terminal remotely, the Linux kernel provides a feature called pseudoterminal or <code>devpts</code> (<a href=https://www.kernel.org/doc/html/latest/filesystems/devpts.html%29 target=_blank rel=noopener>https://www.kernel.org/doc/html/latest/filesystems/devpts.html)</a>.</p><p>It allows us to build terminal emulators and use them instead of a real terminal, where an application expects a terminal device. Using pseudoterminals we can build terminal proxies, record screen sessions and mock user input. You can think about pseudoterminal like as a special type of Inter-process communication (IPC). It&rsquo;s a bidirectional communication channel. All operations that can be applied to a terminal device can also be applied to a <code>pts</code> device end, including something that doesn&rsquo;t make sense. For example: changing the speed of connection transforms into a no-op internally.</p><p>Pseudoterminal consists of 2 parts:</p><ol><li>A <code>ptmx</code> part which is a leader for the pseudoterminal. This end is used to emulate the user input and read back the program output.</li><li>A <code>pts</code> is a secondary end. This part is given to an application that needs a terminal.</li></ol><p>The following image shows how an ssh client uses pseudoterminals to establish remote access.</p><img alt="ssh client, sshd server and two pairs of pseudoterminals" src=../images/sshd-pseudo-terminal.png class=img-center width=80%><div class=text-center>Figure 4. – <code>ssh</code> client, <code>sshd</code> server and two pairs of pseudoterminals</div><ul><li>❶ – We usually have a graphical UI on our local host and use some kind of <code>xterm</code> to run a local console. The UI subsystem receives all keyboard inputs, so it opens a pseudoterminal and redirects it into its <code>ptmx</code> device. The other side of the terminal is what an <code>xterm</code> emulator sees.</li><li>❷ – The local <code>bash</code> process creates a new foreground process group (job). It&rsquo;s running in the foreground, so a <code>ssh</code> gets full control of the terminal. <code>ssh</code> client is a special terminal program that leverages the full power of terminals. It sets the terminal into the raw mode. Thus, the future <code>CTRL-C</code> and <code>CTRL-Z</code> combinations do not affect the local ssh process. Instead, all such commands will be sent to the remote side of the ssh connection and interpreted there. When the <code>ssh</code> client exits, it returns all settings back.</li><li>❸, ❼ – The communication between the <code>ptmx</code> and <code>pts</code> happens in the kernel and is hidden from our eyes.</li><li>❹ – <code>sshd</code> server is listening to new connections. It makes a <code>fork</code> for each connected user and checks their credentials.</li><li>❺ – The <code>sshd</code> process creates a new pseudoterminal pair. It basically connects the <code>ptmx</code> side and the client tcp socket.</li><li>❻ – Then the <code>sshd</code> process makes a <code>fork()</code>, opens a corresponding new <code>pts</code>, starts a new session (<code>setsid()</code>), opens our <code>pts</code> making it the controlling terminal of the session and duplicates standard file descriptors 0,1 and 2 with the <code>pts</code> descriptor. Now it’s ready to call <code>execve()</code> to start <code>bash</code> shell.</li></ul><p>Let’s emulate the above with a small example. We are creating a new session with a new pseudoterminal pair and write the <code>stdin</code> into a file on disk.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-py data-lang=py><span style=display:flex><span><span style=color:#f92672>import</span> os
-</span></span><span style=display:flex><span><span style=color:#f92672>import</span> time
-</span></span><span style=display:flex><span><span style=color:#f92672>import</span> sys
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#34;parent: </span><span style=color:#e6db74>{</span>os<span style=color:#f92672>.</span>getpid()<span style=color:#e6db74>}</span><span style=color:#e6db74>&#34;</span>)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>ptmx, secondary <span style=color:#f92672>=</span> os<span style=color:#f92672>.</span>openpty()
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>pid <span style=color:#f92672>=</span> os<span style=color:#f92672>.</span>fork()
-</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> pid:
-</span></span><span style=display:flex><span>	print(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#34;child: </span><span style=color:#e6db74>{</span>os<span style=color:#f92672>.</span>getpid()<span style=color:#e6db74>}</span><span style=color:#e6db74>&#34;</span>)
-</span></span><span style=display:flex><span>	os<span style=color:#f92672>.</span>close(ptmx)
-</span></span><span style=display:flex><span>	os<span style=color:#f92672>.</span>setsid()
-</span></span><span style=display:flex><span>	name <span style=color:#f92672>=</span> os<span style=color:#f92672>.</span>ttyname(secondary)
-</span></span><span style=display:flex><span>	print(name)
-</span></span><span style=display:flex><span>	s <span style=color:#f92672>=</span> os<span style=color:#f92672>.</span>open(name, os<span style=color:#f92672>.</span>O_RDWR)
-</span></span><span style=display:flex><span>	os<span style=color:#f92672>.</span>dup2(s, <span style=color:#ae81ff>0</span>)
-</span></span><span style=display:flex><span>	os<span style=color:#f92672>.</span>dup2(s, <span style=color:#ae81ff>1</span>)
-</span></span><span style=display:flex><span>	os<span style=color:#f92672>.</span>dup2(s, <span style=color:#ae81ff>2</span>)
-</span></span><span style=display:flex><span>	os<span style=color:#f92672>.</span>close(secondary)
-</span></span><span style=display:flex><span>	os<span style=color:#f92672>.</span>close(s)
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>with</span> open(<span style=color:#e6db74>&#39;/tmp/file.txt&#39;</span>, <span style=color:#e6db74>&#34;w&#34;</span>) <span style=color:#66d9ef>as</span> f:
-</span></span><span style=display:flex><span>    	<span style=color:#66d9ef>for</span> l <span style=color:#f92672>in</span> sys<span style=color:#f92672>.</span>stdin:
-</span></span><span style=display:flex><span>        	f<span style=color:#f92672>.</span>write(l)
-</span></span><span style=display:flex><span>        	f<span style=color:#f92672>.</span>flush()
-</span></span><span style=display:flex><span>	time<span style=color:#f92672>.</span>sleep(<span style=color:#ae81ff>999999</span>)
-</span></span><span style=display:flex><span><span style=color:#66d9ef>else</span>:
-</span></span><span style=display:flex><span>	os<span style=color:#f92672>.</span>close(secondary)
-</span></span><span style=display:flex><span>	os<span style=color:#f92672>.</span>write(ptmx, <span style=color:#e6db74>b</span><span style=color:#e6db74>&#34;text</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>)
-</span></span><span style=display:flex><span>	os<span style=color:#f92672>.</span>waitpid(<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>,<span style=color:#ae81ff>0</span>)
-</span></span></code></pre></div><p>Run it:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ python3 ./terminal.py
-</span></span><span style=display:flex><span>parent: <span style=color:#ae81ff>8776</span>
-</span></span><span style=display:flex><span>child: <span style=color:#ae81ff>8777</span>
-</span></span><span style=display:flex><span>/dev/pts/3
-</span></span></code></pre></div><p>Check the file:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ cat /tmp/file.txt
-</span></span><span style=display:flex><span>text
-</span></span></code></pre></div><p>File descriptors show that all is good:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ ls -l  /proc/8776/fd
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>12</span> 21:45 <span style=color:#ae81ff>0</span> -&gt; /dev/pts/0
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>12</span> 21:45 <span style=color:#ae81ff>1</span> -&gt; /dev/pts/0
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>12</span> 21:45 <span style=color:#ae81ff>2</span> -&gt; /dev/pts/0
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>12</span> 21:45 <span style=color:#ae81ff>3</span> -&gt; /dev/ptmx
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ ls -l  /proc/8777/fd
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>12</span> 21:45 <span style=color:#ae81ff>0</span> -&gt; /dev/pts/3
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>12</span> 21:45 <span style=color:#ae81ff>1</span> -&gt; /dev/pts/3
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>12</span> 21:45 <span style=color:#ae81ff>2</span> -&gt; /dev/pts/3
-</span></span><span style=display:flex><span>l-wx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>12</span> 21:45 <span style=color:#ae81ff>3</span> -&gt; /tmp/file.txt
-</span></span></code></pre></div><h2 id=terminal-settings>Terminal settings
-<a class=anchor href=#terminal-settings>#</a></h2><p>The <code>ptmx</code> and <code>pts</code> devices share terminal attributes (<code>termios</code>) and window size (<code>winsize</code>) structures.</p><p>The current setting of a terminal can be obtained and updated by the <code>stty</code> command:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ stty -a
-</span></span></code></pre></div><p>As we discussed earlier, the background jobs can print to the <code>stdout</code> by default. However, we can change it by setting <code>TOSTOP</code> flag for the terminal. If we do that, the background process group will receive a <code>SIGTTOU</code> signal from the kernel. The default handler for this signal is stop.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ stty tostop
-</span></span></code></pre></div><p>And run some background job:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ yes | grep y &amp;
-</span></span><span style=display:flex><span><span style=color:#f92672>[</span>1<span style=color:#f92672>]</span> <span style=color:#ae81ff>10694</span>
-</span></span><span style=display:flex><span><span style=color:#f92672>[</span>vagrant@archlinux post2<span style=color:#f92672>]</span>$ jobs -l
-</span></span><span style=display:flex><span><span style=color:#f92672>[</span>1<span style=color:#f92672>]</span>+ <span style=color:#ae81ff>10693</span> Stopped <span style=color:#f92672>(</span>tty output<span style=color:#f92672>)</span>	yes
-</span></span><span style=display:flex><span> 	<span style=color:#ae81ff>10694</span>                   	| grep y
-</span></span></code></pre></div><p>And return it back:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ stty -tostop
-</span></span></code></pre></div><p>We also can return back to the default setting by using the &ldquo;sane&rdquo; parameter:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ stty sane
-</span></span></code></pre></div><h2 id=handling-terminal-signals>Handling Terminal Signals
-<a class=anchor href=#handling-terminal-signals>#</a></h2><p>As we discussed, the kernel can send some terminal signals to foreground and background processes. Some of them we already touched:</p><ul><li><code>SIGTTIN</code> – a background process tried to read from a terminal.</li><li><code>SIGTTOU</code> – a background process tries to write to a terminal when the <code>tostop</code> flag is set or a background process asks to send it to the foreground.</li><li><code>SIGTSTP</code> – a default response to a <code>CTRL-Z</code> pressed combination.</li></ul><p>The noncanonical programs such as <code>vi</code>, <code>emacs</code> and <code>less</code>, need to handle all the above signals in order to reset terminal settings back and forth, redraw a terminal content and place the cursor in the right place.</p><p>Another interesting terminal signal we haven’t seen is the <code>SIGWINCH</code> signal. A foreground process receives it when size of a terminal window has changed. Usually, a program uses <code>ioctl()</code> with the <code>TIOCGWINSZ</code> operation to get the current size in its signal handler. For example:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-py data-lang=py><span style=display:flex><span><span style=color:#f92672>import</span> time
-</span></span><span style=display:flex><span><span style=color:#f92672>import</span> signal
-</span></span><span style=display:flex><span><span style=color:#f92672>import</span> termios
-</span></span><span style=display:flex><span><span style=color:#f92672>import</span> fcntl
-</span></span><span style=display:flex><span><span style=color:#f92672>import</span> struct
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>def</span> <span style=color:#a6e22e>signal_handler</span>(signum, frame):
-</span></span><span style=display:flex><span>   packed <span style=color:#f92672>=</span> fcntl<span style=color:#f92672>.</span>ioctl(<span style=color:#ae81ff>0</span>, termios<span style=color:#f92672>.</span>TIOCGWINSZ, struct<span style=color:#f92672>.</span>pack(<span style=color:#e6db74>&#39;HHHH&#39;</span>, <span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>0</span>))
-</span></span><span style=display:flex><span>   rows, cols, h_pixels, v_pixels <span style=color:#f92672>=</span> struct<span style=color:#f92672>.</span>unpack(<span style=color:#e6db74>&#39;HHHH&#39;</span>, packed)
-</span></span><span style=display:flex><span>   print(rows, cols, h_pixels, v_pixels)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>signal<span style=color:#f92672>.</span>signal(signal<span style=color:#f92672>.</span>SIGWINCH, signal_handler)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>time<span style=color:#f92672>.</span>sleep(<span style=color:#ae81ff>9999</span>)
-</span></span></code></pre></div><p>And if you start it and play with size of terminal window:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ python3 ./size.py
-</span></span><span style=display:flex><span><span style=color:#ae81ff>32</span> <span style=color:#ae81ff>85</span> <span style=color:#ae81ff>1360</span> <span style=color:#ae81ff>1280</span>
-</span></span><span style=display:flex><span><span style=color:#ae81ff>32</span> <span style=color:#ae81ff>72</span> <span style=color:#ae81ff>1152</span> <span style=color:#ae81ff>1280</span>
-</span></span><span style=display:flex><span><span style=color:#ae81ff>32</span> <span style=color:#ae81ff>74</span> <span style=color:#ae81ff>1184</span> <span style=color:#ae81ff>1280</span>
-</span></span><span style=display:flex><span><span style=color:#ae81ff>32</span> <span style=color:#ae81ff>86</span> <span style=color:#ae81ff>1376</span> <span style=color:#ae81ff>1280</span>
-</span></span><span style=display:flex><span><span style=color:#ae81ff>32</span> <span style=color:#ae81ff>83</span> <span style=color:#ae81ff>1328</span> <span style=color:#ae81ff>1280</span>
-</span></span><span style=display:flex><span><span style=color:#ae81ff>33</span> <span style=color:#ae81ff>73</span> <span style=color:#ae81ff>1168</span> <span style=color:#ae81ff>1320</span>
-</span></span></code></pre></div><h2 id=screen-and-tmux><code>screen</code> and <code>tmux</code>
-<a class=anchor href=#screen-and-tmux>#</a></h2><p><code>screen</code> (<code><a href=https://man7.org/linux/man-pages/man1/screen.1.html target=_blank rel=noopener>man 1 screen</a></code>) and <code>tmux</code> (<code><a href=https://man7.org/linux/man-pages/man1/tmux.1.html target=_blank rel=noopener>man 1 tmux</a></code>) are usually used for protecting shell sessions between connections. It is also widely used for long-running jobs and better ssh user client experience. Both use pseudoterminals to multiplex a single physical terminal (or terminal window) between multiple processes (multiple shell sessions). In this section, we will talk about <code>tmux</code>, but the <code>screen</code> is almost the same in all discussed topics here.</p><p>On the first start, <code>tmux</code> starts a server with a set of <code>ptmx</code> corresponding to its panes. Clients of <code>tmux</code> (<code>tmux attach</code>) use a default unix socket to find and connect to the server:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ ls -lad /tmp/tmux-1000/default
-</span></span><span style=display:flex><span>srwxrwx--- <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>0</span> Jul <span style=color:#ae81ff>14</span> 12:57 /tmp/tmux-1000/default
-</span></span></code></pre></div><p>where <code>1000</code> is a user id <code>UID</code>.</p><p><code>tmux</code> doesn&rsquo;t do any <code>tcsetpgrp()</code> calls, because any panel or window creates a new pair of terminals.</p><p>So let’s demonstrate it. After we <code>ssh</code> to a box, we have our bash with <code>PID</code> 11761 :</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ echo $$
-</span></span><span style=display:flex><span><span style=color:#ae81ff>11761</span>
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ ls -la /proc/$$/fd
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:08 <span style=color:#ae81ff>0</span> -&gt; /dev/pts/0
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:08 <span style=color:#ae81ff>1</span> -&gt; /dev/pts/0
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:08 <span style=color:#ae81ff>2</span> -&gt; /dev/pts/0
-</span></span></code></pre></div><p>Let assume, that we already have a working <code>tmux</code> session on the server. So if we check the <code>ps</code> command, we can see it with <code>PID</code> 11781.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>...
-</span></span><span style=display:flex><span>├─sshd<span style=color:#f92672>(</span>11619<span style=color:#f92672>)</span>───sshd<span style=color:#f92672>(</span>11749<span style=color:#f92672>)</span>───sshd<span style=color:#f92672>(</span>11760<span style=color:#f92672>)</span>───bash<span style=color:#f92672>(</span>11761<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>...
-</span></span><span style=display:flex><span>└─tmux: server<span style=color:#f92672>(</span>11780<span style=color:#f92672>)</span>───bash<span style=color:#f92672>(</span>11781<span style=color:#f92672>)</span>
-</span></span></code></pre></div><p>Now let’s attach to the <code>tmux</code> session:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ tmux attach
-</span></span></code></pre></div><p>We get a new bash <code>PID</code> from the above <code>ps</code> output and a new pseudoterminal:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ echo $$
-</span></span><span style=display:flex><span><span style=color:#ae81ff>11781</span>
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ ls -la /proc/$$/fd
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:10 <span style=color:#ae81ff>0</span> -&gt; /dev/pts/1
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:10 <span style=color:#ae81ff>1</span> -&gt; /dev/pts/1
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:10 <span style=color:#ae81ff>2</span> -&gt; /dev/pts/1
-</span></span></code></pre></div><p>If we check the pseudoterminal <code>devpts</code> folder <code>/dev/pts/</code>:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ ls -la /dev/pts/
-</span></span><span style=display:flex><span>crw--w----  <span style=color:#ae81ff>1</span> vagrant tty  136, <span style=color:#ae81ff>0</span> Jul <span style=color:#ae81ff>14</span> 12:11 <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>crw--w----  <span style=color:#ae81ff>1</span> vagrant tty  136, <span style=color:#ae81ff>1</span> Jul <span style=color:#ae81ff>14</span> 12:11 <span style=color:#ae81ff>1</span>
-</span></span><span style=display:flex><span>c---------  <span style=color:#ae81ff>1</span> root	root   5, <span style=color:#ae81ff>2</span> Jul  <span style=color:#ae81ff>9</span> 21:14 ptmx
-</span></span></code></pre></div><p>we can see that there are 2 pseudoterminals, one is our ssh client, and the other is our <code>tmux</code>.</p><p>Let’s observe the <code>tmux</code> server’s file descriptors:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ ls -la /proc/11780/fd
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>0</span> -&gt; /dev/null
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>1</span> -&gt; /dev/null
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>2</span> -&gt; /dev/null
-</span></span><span style=display:flex><span>…
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>5</span> -&gt; /dev/pts/0
-</span></span><span style=display:flex><span>…
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>8</span> -&gt; /dev/ptmx
-</span></span></code></pre></div><p>We see it has an open <code>/dev/ptmx</code> to control the terminal on <code>/dev/pts/1</code>, and a <code>/dev/pts/0</code> to read our input and write output back to our ssh connection.</p><p>Now, if we detach, we can still see the bash process in the ps output:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ pstree -p
-</span></span><span style=display:flex><span>tmux: server<span style=color:#f92672>(</span>11780<span style=color:#f92672>)</span>───bash<span style=color:#f92672>(</span>11781<span style=color:#f92672>)</span>
-</span></span></code></pre></div><p>It’s left there and is waiting for us. Talkinh about the <code>tmux</code> server, it closed <code>/dev/pts/0</code> because we returned back control of the ssh terminal and it doesn&rsquo;t need to read and write to it anymore:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ ls -la /proc/11780/fd
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>0</span> -&gt; /dev/null
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>1</span> -&gt; /dev/null
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>2</span> -&gt; /dev/null
-</span></span><span style=display:flex><span>…
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>8</span> -&gt; /dev/ptmx
-</span></span></code></pre></div><p>Also, if we take a look the <code>procfs</code>, we will find out that <code>tmux</code> server has its own session and process group. It makes sense, it should not depend on any of the active terminal connections.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ cat /proc/11780/stat | cut -d <span style=color:#e6db74>&#34; &#34;</span> -f 1,5,6,7,8,9 | tr <span style=color:#e6db74>&#39; &#39;</span> <span style=color:#e6db74>&#39;\n&#39;</span> | paste &lt;<span style=color:#f92672>(</span>echo -ne <span style=color:#e6db74>&#34;pid\nppid\npgid\nsid\ntty\ntpgid\n&#34;</span><span style=color:#f92672>)</span> -
-</span></span><span style=display:flex><span>pid    <span style=color:#ae81ff>11780</span>
-</span></span><span style=display:flex><span>ppid   <span style=color:#ae81ff>1</span>
-</span></span><span style=display:flex><span>pgid   <span style=color:#ae81ff>11780</span>
-</span></span><span style=display:flex><span>sid    <span style=color:#ae81ff>11780</span>
-</span></span><span style=display:flex><span>tty    <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>tpgid   -1
-</span></span></code></pre></div><p>If we open one more session, we will see one more shell process:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>└─tmux: server<span style=color:#f92672>(</span>11780<span style=color:#f92672>)</span>─┬─bash<span style=color:#f92672>(</span>11781<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>                      └─bash<span style=color:#f92672>(</span>11846<span style=color:#f92672>)</span>
-</span></span></code></pre></div><p>And open file descriptors of the server:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ ls -la /proc/11780/fd
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>0</span> -&gt; /dev/null
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>1</span> -&gt; /dev/null
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:18 <span style=color:#ae81ff>10</span> -&gt; /dev/pts/2
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:20 <span style=color:#ae81ff>11</span> -&gt; /dev/ptmx
-</span></span><span style=display:flex><span>...
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>7</span> -&gt; /dev/pts/0
-</span></span><span style=display:flex><span>lrwx------ <span style=color:#ae81ff>1</span> vagrant vagrant <span style=color:#ae81ff>64</span> Jul <span style=color:#ae81ff>14</span> 12:09 <span style=color:#ae81ff>8</span> -&gt; /dev/ptmx
-</span></span></code></pre></div><p>The overall schema described above could be presented in the below figure 5:</p><img alt="tmux client-server architecture" src=../images/tmux-sshd-ssh-client-pseudoterminal.png class=img-center width=70%><div class=text-center>Figure 5. – <code>tmux</code> client-server architecture</div><p><code>tmux</code> server opens as many pseudoterminals as needed, but none of them is a controlling terminal. It is possible to do it in several ways, and the most simple one is to open a <code>/dev/pts/ptmx</code> with the <code>O_NOCTTY</code> open flag (<code><a href=https://man7.org/linux/man-pages/man2/open.2.html target=_blank rel=noopener>man 2 open</a></code>).</p><p>In order to set a demonize, the <code>tmux</code> server <a href=https://github.com/tmux/tmux/blob/6c2bf0e22119804022c8038563b9865999f5a026/compat/daemon.c#L44 target=_blank rel=noopener>made a single <code>fork()</code></a> and <code>setsid()</code>:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=display:flex><span><span style=color:#66d9ef>int</span>
-</span></span><span style=display:flex><span><span style=color:#a6e22e>daemon</span>(<span style=color:#66d9ef>int</span> nochdir, <span style=color:#66d9ef>int</span> noclose)
-</span></span><span style=display:flex><span>{
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>int</span> fd;
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>switch</span> (<span style=color:#a6e22e>fork</span>()) {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>case</span> <span style=color:#f92672>-</span><span style=color:#ae81ff>1</span><span style=color:#f92672>:</span>
-</span></span><span style=display:flex><span>   	 <span style=color:#66d9ef>return</span> (<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>);
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>case</span> <span style=color:#ae81ff>0</span><span style=color:#f92672>:</span>
-</span></span><span style=display:flex><span>   	 <span style=color:#66d9ef>break</span>;
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>default</span><span style=color:#f92672>:</span>
-</span></span><span style=display:flex><span>   	 <span style=color:#a6e22e>_exit</span>(<span style=color:#ae81ff>0</span>);
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#a6e22e>setsid</span>() <span style=color:#f92672>==</span> <span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>)
-</span></span><span style=display:flex><span>   	 <span style=color:#66d9ef>return</span> (<span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>);
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span>nochdir)
-</span></span><span style=display:flex><span>   	 (<span style=color:#66d9ef>void</span>)<span style=color:#a6e22e>chdir</span>(<span style=color:#e6db74>&#34;/&#34;</span>);
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> (<span style=color:#f92672>!</span>noclose <span style=color:#f92672>&amp;&amp;</span> (fd <span style=color:#f92672>=</span> <span style=color:#a6e22e>open</span>(_PATH_DEVNULL, O_RDWR, <span style=color:#ae81ff>0</span>)) <span style=color:#f92672>!=</span> <span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>) {
-</span></span><span style=display:flex><span>   	 (<span style=color:#66d9ef>void</span>)<span style=color:#a6e22e>dup2</span>(fd, STDIN_FILENO);
-</span></span><span style=display:flex><span>   	 (<span style=color:#66d9ef>void</span>)<span style=color:#a6e22e>dup2</span>(fd, STDOUT_FILENO);
-</span></span><span style=display:flex><span>   	 (<span style=color:#66d9ef>void</span>)<span style=color:#a6e22e>dup2</span>(fd, STDERR_FILENO);
-</span></span><span style=display:flex><span>   	 <span style=color:#66d9ef>if</span> (fd <span style=color:#f92672>&gt;</span> <span style=color:#ae81ff>2</span>)
-</span></span><span style=display:flex><span>   		 (<span style=color:#66d9ef>void</span>)<span style=color:#a6e22e>close</span> (fd);
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#75715e>#ifdef __APPLE__
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#a6e22e>daemon_darwin</span>();
-</span></span><span style=display:flex><span><span style=color:#75715e>#endif
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>return</span> (<span style=color:#ae81ff>0</span>);
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><p>It makes the <code>tmux</code> server immune to terminal terminations and signals logic I described earlier.</p><h2 id=pseudoterminal-proxy>Pseudoterminal proxy
-<a class=anchor href=#pseudoterminal-proxy>#</a></h2><p>As I mentioned earlier, we could think about pseudoterminals as a proxy. The reasonable question is can we leverage them in our day-to-day scripting routines? The answer, as you can guess, is yes. There are two incredible tools: <code>expect</code> (<code><a href=https://man7.org/linux/man-pages/man1/expect.1.html target=_blank rel=noopener>man 1 expect</a></code>) and <code>script</code> (<code><a href=https://man7.org/linux/man-pages/man1/script.1.html target=_blank rel=noopener>man 1 script</a></code>) that uses pseudoterminals in the proxy mode and are super helpful in writing basic automation.</p><h3 id=expect><code>expect</code>
-<a class=anchor href=#expect>#</a></h3><p>The <code>expect</code> program uses a pseudoterminal to allow an interactive terminal-oriented program to be driven from a script file. Let’s assume we need to automate an <code>ssh</code> connection in a shell script. We want to insert username and password when the <code>ssh</code> client asks for them. We can easily achieve this with <code>expect</code>:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e>#!/usr/bin/expect
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
-</span></span><span style=display:flex><span>set timeout <span style=color:#ae81ff>20</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>set host <span style=color:#f92672>[</span>lindex $argv 0<span style=color:#f92672>]</span>
-</span></span><span style=display:flex><span>set username <span style=color:#f92672>[</span>lindex $argv 1<span style=color:#f92672>]</span>
-</span></span><span style=display:flex><span>set password <span style=color:#f92672>[</span>lindex $argv 2<span style=color:#f92672>]</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>spawn ssh <span style=color:#e6db74>&#34;</span>$username<span style=color:#e6db74>\@</span>$host<span style=color:#e6db74>&#34;</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>expect <span style=color:#e6db74>&#34;password:&#34;</span>
-</span></span><span style=display:flex><span>send <span style=color:#e6db74>&#34;</span>$password<span style=color:#e6db74>\r&#34;</span>;
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>interact
-</span></span></code></pre></div><p>And test it:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#f92672>[</span>local ~<span style=color:#f92672>]</span> $ ./ssh.exp 192.168.0.1 vagrant vagrant
-</span></span><span style=display:flex><span>spawn ssh vagrant@192.168.0.1
-</span></span><span style=display:flex><span>vagrant@192.168.0.1<span style=color:#960050;background-color:#1e0010>&#39;</span>s password:
-</span></span><span style=display:flex><span><span style=color:#f92672>[</span>remote ~<span style=color:#f92672>]</span>$
-</span></span></code></pre></div><p>where &ldquo;<code>vagrant</code>&rdquo; is our username and password.</p><h3 id=script><code>script</code>
-<a class=anchor href=#script>#</a></h3><p>Another task is to record a terminal session. The pseudoterminals are used in the <code>script</code> program, which records all of the input and output that occurs during a shell session.</p><p>Record to file:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ script --timing<span style=color:#f92672>=</span>time.txt script.log
-</span></span></code></pre></div><p>Replay:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ scriptreplay --timing<span style=color:#f92672>=</span>time.txt script.log
-</span></span></code></pre></div><h2 id=changing-a-processs-controlling-terminal>Changing a process&rsquo;s controlling terminal
-<a class=anchor href=#changing-a-processs-controlling-terminal>#</a></h2><p>And lastly, I want to show you one more fascinating tool <code>reptyr</code> <a href=https://github.com/nelhage/reptyr target=_blank rel=noopener>https://github.com/nelhage/reptyr</a>. Imagine, you forgot to start a <code>screen</code> or <code>tmux</code> session and have run a long-running script. Using <code>reptyr</code> you can move it under a <code>screen</code> or <code>tmux</code> session without a restart!</p><p>It uses <code>ptrace</code> systemcall to change the session id of the running process.</p><blockquote><p>We use <code>ptrace</code> to attach to a target process and force it to execute code of our own choosing in order to open the new terminal, and <code>dup2</code> it over stdout and stderr.</p></blockquote><p>More info about it could be found in the detailed author’s blog post:</p><p><a href=https://blog.nelhage.com/2011/02/changing-ctty/ target=_blank rel=noopener>https://blog.nelhage.com/2011/02/changing-ctty/</a></p><p>How it works tl;dr:</p><blockquote><p>While we have <code>mutt</code> captured with <code>ptrace</code>, we can make it <code>fork</code> a dummy child, and start tracing that child, too. We’ll make the child <code>setpgid</code> to make it into its own process group, and then get mutt to <code>setpgid</code> itself into the child’s process group. mutt can then <code>setsid</code>, moving into a new session, and now, as a session leader, we can finally <code>ioctl(TIOCSCTTY)</code> on the new terminal, and we win.</p></blockquote></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script defer src=/my_js/copy-code.js></script></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div></main><div class=cookie-container><p>This website uses "<b>cookies</b>".
-Using this website means you're OK with this.
-If you are <b>NOT</b>, please close the site page.</p><button class=cookie-btn>
-ACCEPT AND CLOSE</button></div><script src=/my_js/cookie.js></script></body></html>
+the canonical mode (default) – input is buffered line by line and read into after a new line char \n occurs; the noncanonical mode – an application can read terminal input a character at a time. For example vi, emacs and less use this mode. Nowadays, with the widespread use of rich graphical UIs, the significance of the terminals are lesser than it was, but still, we use this protocol implicitly every time we start an ssh connection.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="docs">
+<title>Terminals and pseudoterminals | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" >
+<link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+<script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"
+></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+
+    gtag("config", "G-599VSLESJL");
+</script>
+
+<link rel="stylesheet" href="/my_css/cookie.css" />
+<link rel="stylesheet" href="/my_css/copy-code.css" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+/>
+
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+
+      
+        
+
+      
+        
+
+      
+
+      
+        <li class="book-section-flat" >
+          
+  
+  
+
+  
+    <span>GNU/Linux shell related internals</span>
+  
+
+          
+  <ul>
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons/" class="">
+      
+        0. GNU/Linux shell related internals for SRE
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/fd-pipe-session-terminal/1-file-descriptor-and-open-file-description/" class="">
+      
+        1. File descriptor and open file description
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/fd-pipe-session-terminal/2-pipes/" class="">
+      
+        2. Pipes
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/fd-pipe-session-terminal/3-process-groups-jobs-and-sessions/" class="">
+      
+        3. Process groups, jobs and sessions
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/" class="active">
+      
+        4. Terminals and pseudoterminals
+      
+    </a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+
+      
+        
+  </ul>
+
+
+
+
+
+
+
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>More recent series:</b>
+  <ul>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
+    <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
+    <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
+  </ul>
+</div>
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Open Source Projects</b>
+  <ul>
+      <li>
+          <a href="/posts/trixter-chaos-proxy/"> • trixter chaos proxy</a>
+      </li>
+      <li><a href="https://crates.io/crates/tokio-netem"> • tokio-netem</a></li>
+  </ul>
+</div>
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-twitter"></i>
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.linkedin.com/in/biriukov/"  target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
+        Linkedin
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-github"></i>
+        Github
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 30px;">
+  <p xmlns:cc="http://creativecommons.org/ns#">
+    This content is licensed under 
+    <a
+      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
+    </a>
+  </p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Terminals and pseudoterminals</strong>
+
+  <label for="toc-control">
+    
+  </label>
+</div>
+
+
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown book-article"><h1 id="terminals-and-pseudoterminals">
+  Terminals and pseudoterminals
+  <a class="anchor" href="#terminals-and-pseudoterminals">#</a>
+</h1>
+<p class="updated-right">
+    <i>
+        <time datetime="2025-10">Last updated: Oct 2025</time>
+    </i>
+</p>
+<p><strong>Contents</strong></p>
+<ul>
+<li><a href="/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#pseudoterminal-devpts">Pseudoterminal (<code>devpts</code>)</a></li>
+<li><a href="/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#terminal-settings">Terminal settings</a></li>
+<li><a href="/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#handling-terminal-signals">Handling Terminal Signals</a></li>
+<li><a href="/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#screen-and-tmux"><code>screen</code> and <code>tmux</code></a></li>
+<li><a href="/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#pseudoterminal-proxy">Pseudoterminal proxy</a></li>
+<li><a href="/docs/fd-pipe-session-terminal/4-terminals-and-pseudoterminals/#changing-a-processs-controlling-terminal">Changing a process’s controlling terminal</a></li>
+</ul>
+<hr/>
+<p>Terminals come to us from the history of <code>UNIX</code> systems. Basically, terminals provided an API for the console utils (physical ones!) to generalize interaction with users. It includes ways of reading input and writing to it in <strong>two</strong> modes:</p>
+<ul>
+<li>the <strong>canonical</strong> mode (default) – input is buffered line by line and read into after a new line char <code>\n</code> occurs;</li>
+<li>the <strong>noncanonical</strong> mode –  an application can read terminal input a character at a time. For example <code>vi</code>, <code>emacs</code> and <code>less</code> use this mode.</li>
+</ul>
+<p>Nowadays, with the widespread use of rich graphical UIs, the significance of the terminals are lesser than it was, but still, we use this protocol implicitly every time we start an ssh connection.</p>
+<p>The are a bunch of files under <code>/dev/</code> directory that represents different types of terminals:</p>
+<ul>
+<li><code>/dev/tty*</code> – physical consoles;</li>
+<li><code>/dev/ttyS*</code> – serial connections;</li>
+<li><code>/dev/pts/*</code> – pseudoterminals.</li>
+</ul>
+<p>Also, the <code>/proc/tty/drivers</code> file contains other supported drivers.</p>
+<p>So, in order to determine what terminal file the current shell session is using, we have a  <code>tty</code> cli tool  (<code><a href="https://man7.org/linux/man-pages/man1/tty.1.html" target="_blank" rel="noopener">man 1 tty</a></code>).</p>
+<p>On my remote ssh connection:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ tty
+</span></span><span style="display:flex;"><span>/dev/pts/0
+</span></span></code></pre></div><p>For a physical console:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ tty
+</span></span><span style="display:flex;"><span>/dev/tty1
+</span></span></code></pre></div><p>We can also open a virtual device <code>/dev/tty</code> to get a <code>fd</code> of the controlling terminal if it exists for the current process.</p>
+<h2 id="pseudoterminal-devpts">
+  Pseudoterminal (<code>devpts</code>)
+  <a class="anchor" href="#pseudoterminal-devpts">#</a>
+</h2>
+<p>In order to make it possible to use a terminal remotely, the Linux kernel provides a feature called pseudoterminal or <code>devpts</code> (<a href="https://www.kernel.org/doc/html/latest/filesystems/devpts.html%29" target="_blank" rel="noopener">https://www.kernel.org/doc/html/latest/filesystems/devpts.html)</a>.</p>
+<p>It allows us to build terminal emulators and use them instead of a real terminal, where an application expects a terminal device. Using pseudoterminals we can build terminal proxies, record screen sessions and mock user input. You can think about pseudoterminal like as a special type of Inter-process communication (IPC). It&rsquo;s a bidirectional communication channel. All operations that can be applied to a terminal device can also be applied to a <code>pts</code> device end, including something that doesn&rsquo;t make sense. For example: changing the speed of connection transforms into a no-op internally.</p>
+<p>Pseudoterminal consists of 2 parts:</p>
+<ol>
+<li>A <code>ptmx</code> part which is a leader for the pseudoterminal. This end is used to emulate the user input and read back the program output.</li>
+<li>A <code>pts</code> is a secondary end. This part is given to an application that needs a terminal.</li>
+</ol>
+<p>The following image shows how an ssh client uses pseudoterminals to establish remote access.</p>
+<img alt="ssh client, sshd server and two pairs of pseudoterminals" src="../images/sshd-pseudo-terminal.png" class="img-center" width="80%">
+<div class="text-center">
+Figure 4. – <code>ssh</code> client, <code>sshd</code> server and two pairs of pseudoterminals
+</div>
+<ul>
+<li>❶ – We usually have a graphical UI on our local host and use some kind of <code>xterm</code> to run a local console. The UI subsystem receives all keyboard inputs, so it opens a pseudoterminal and redirects it into its <code>ptmx</code> device. The other side of the terminal is what an <code>xterm</code> emulator sees.</li>
+<li>❷ – The local <code>bash</code> process creates a new foreground process group (job). It&rsquo;s running in the foreground, so a <code>ssh</code> gets full control of the terminal. <code>ssh</code> client is a special terminal program that leverages the full power of terminals. It sets the terminal into the raw mode. Thus, the future <code>CTRL-C</code> and <code>CTRL-Z</code> combinations do not affect the local ssh process. Instead, all such commands will be sent to the remote side of the ssh connection and interpreted there. When the <code>ssh</code> client exits, it returns all settings back.</li>
+<li>❸, ❼ – The communication between the <code>ptmx</code> and <code>pts</code> happens in the kernel and is hidden from our eyes.</li>
+<li>❹ – <code>sshd</code> server is listening to new connections. It makes a <code>fork</code> for each connected user and checks their credentials.</li>
+<li>❺ – The <code>sshd</code> process creates a new pseudoterminal pair. It basically connects the <code>ptmx</code> side and the client tcp socket.</li>
+<li>❻ – Then the <code>sshd</code> process makes a <code>fork()</code>, opens a corresponding new <code>pts</code>, starts a new session (<code>setsid()</code>), opens our <code>pts</code> making it the controlling terminal of the session and duplicates standard file descriptors 0,1 and 2 with the <code>pts</code> descriptor.  Now it’s ready to call <code>execve()</code> to start <code>bash</code> shell.</li>
+</ul>
+<p>Let’s emulate the above with a small example. We are creating a new session with a new pseudoterminal pair and write the <code>stdin</code> into a file on disk.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-py" data-lang="py"><span style="display:flex;"><span><span style="color:#f92672">import</span> os
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> time
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> sys
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;parent: </span><span style="color:#e6db74">{</span>os<span style="color:#f92672">.</span>getpid()<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ptmx, secondary <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>openpty()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>pid <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>fork()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> pid:
+</span></span><span style="display:flex;"><span>	print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;child: </span><span style="color:#e6db74">{</span>os<span style="color:#f92672">.</span>getpid()<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>	os<span style="color:#f92672">.</span>close(ptmx)
+</span></span><span style="display:flex;"><span>	os<span style="color:#f92672">.</span>setsid()
+</span></span><span style="display:flex;"><span>	name <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>ttyname(secondary)
+</span></span><span style="display:flex;"><span>	print(name)
+</span></span><span style="display:flex;"><span>	s <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>open(name, os<span style="color:#f92672">.</span>O_RDWR)
+</span></span><span style="display:flex;"><span>	os<span style="color:#f92672">.</span>dup2(s, <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>	os<span style="color:#f92672">.</span>dup2(s, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	os<span style="color:#f92672">.</span>dup2(s, <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>	os<span style="color:#f92672">.</span>close(secondary)
+</span></span><span style="display:flex;"><span>	os<span style="color:#f92672">.</span>close(s)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#39;/tmp/file.txt&#39;</span>, <span style="color:#e6db74">&#34;w&#34;</span>) <span style="color:#66d9ef">as</span> f:
+</span></span><span style="display:flex;"><span>    	<span style="color:#66d9ef">for</span> l <span style="color:#f92672">in</span> sys<span style="color:#f92672">.</span>stdin:
+</span></span><span style="display:flex;"><span>        	f<span style="color:#f92672">.</span>write(l)
+</span></span><span style="display:flex;"><span>        	f<span style="color:#f92672">.</span>flush()
+</span></span><span style="display:flex;"><span>	time<span style="color:#f92672">.</span>sleep(<span style="color:#ae81ff">999999</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>	os<span style="color:#f92672">.</span>close(secondary)
+</span></span><span style="display:flex;"><span>	os<span style="color:#f92672">.</span>write(ptmx, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;text</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>	os<span style="color:#f92672">.</span>waitpid(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><p>Run it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ python3 ./terminal.py
+</span></span><span style="display:flex;"><span>parent: <span style="color:#ae81ff">8776</span>
+</span></span><span style="display:flex;"><span>child: <span style="color:#ae81ff">8777</span>
+</span></span><span style="display:flex;"><span>/dev/pts/3
+</span></span></code></pre></div><p>Check the file:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ cat /tmp/file.txt
+</span></span><span style="display:flex;"><span>text
+</span></span></code></pre></div><p>File descriptors show that all is good:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -l  /proc/8776/fd
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">12</span> 21:45 <span style="color:#ae81ff">0</span> -&gt; /dev/pts/0
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">12</span> 21:45 <span style="color:#ae81ff">1</span> -&gt; /dev/pts/0
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">12</span> 21:45 <span style="color:#ae81ff">2</span> -&gt; /dev/pts/0
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">12</span> 21:45 <span style="color:#ae81ff">3</span> -&gt; /dev/ptmx
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -l  /proc/8777/fd
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">12</span> 21:45 <span style="color:#ae81ff">0</span> -&gt; /dev/pts/3
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">12</span> 21:45 <span style="color:#ae81ff">1</span> -&gt; /dev/pts/3
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">12</span> 21:45 <span style="color:#ae81ff">2</span> -&gt; /dev/pts/3
+</span></span><span style="display:flex;"><span>l-wx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">12</span> 21:45 <span style="color:#ae81ff">3</span> -&gt; /tmp/file.txt
+</span></span></code></pre></div><h2 id="terminal-settings">
+  Terminal settings
+  <a class="anchor" href="#terminal-settings">#</a>
+</h2>
+<p>The <code>ptmx</code> and <code>pts</code> devices share terminal attributes (<code>termios</code>) and window size (<code>winsize</code>) structures.</p>
+<p>The current setting of a terminal can be obtained and updated by the <code>stty</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ stty -a
+</span></span></code></pre></div><p>As we discussed earlier, the background jobs can print to the <code>stdout</code> by default. However, we can change it by setting <code>TOSTOP</code> flag for the terminal. If we do that, the background process group will receive a <code>SIGTTOU</code> signal from the kernel. The default handler for this signal is stop.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ stty tostop
+</span></span></code></pre></div><p>And run some background job:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ yes | grep y &amp;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>1<span style="color:#f92672">]</span> <span style="color:#ae81ff">10694</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>vagrant@archlinux post2<span style="color:#f92672">]</span>$ jobs -l
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>1<span style="color:#f92672">]</span>+ <span style="color:#ae81ff">10693</span> Stopped <span style="color:#f92672">(</span>tty output<span style="color:#f92672">)</span>	yes
+</span></span><span style="display:flex;"><span> 	<span style="color:#ae81ff">10694</span>                   	| grep y
+</span></span></code></pre></div><p>And return it back:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ stty -tostop
+</span></span></code></pre></div><p>We also can return back to the default setting by using the &ldquo;sane&rdquo; parameter:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ stty sane
+</span></span></code></pre></div><h2 id="handling-terminal-signals">
+  Handling Terminal Signals
+  <a class="anchor" href="#handling-terminal-signals">#</a>
+</h2>
+<p>As we discussed, the kernel can send some terminal signals to foreground and background processes. Some of them we already touched:</p>
+<ul>
+<li><code>SIGTTIN</code> – a background process tried to read from a terminal.</li>
+<li><code>SIGTTOU</code> – a background process tries to write to a terminal when the <code>tostop</code> flag is set or a background process asks to send it to the foreground.</li>
+<li><code>SIGTSTP</code> – a default response to a <code>CTRL-Z</code> pressed combination.</li>
+</ul>
+<p>The noncanonical programs such as <code>vi</code>, <code>emacs</code> and <code>less</code>, need to handle all the above signals in order to reset terminal settings back and forth, redraw a terminal content and place the cursor in the right place.</p>
+<p>Another interesting terminal signal we haven’t seen is the <code>SIGWINCH</code> signal. A foreground process receives it when size of a terminal window has changed. Usually, a program uses <code>ioctl()</code> with the <code>TIOCGWINSZ</code> operation to get the current size in its signal handler. For example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-py" data-lang="py"><span style="display:flex;"><span><span style="color:#f92672">import</span> time
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> signal
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> termios
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> fcntl
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> struct
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">signal_handler</span>(signum, frame):
+</span></span><span style="display:flex;"><span>   packed <span style="color:#f92672">=</span> fcntl<span style="color:#f92672">.</span>ioctl(<span style="color:#ae81ff">0</span>, termios<span style="color:#f92672">.</span>TIOCGWINSZ, struct<span style="color:#f92672">.</span>pack(<span style="color:#e6db74">&#39;HHHH&#39;</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>))
+</span></span><span style="display:flex;"><span>   rows, cols, h_pixels, v_pixels <span style="color:#f92672">=</span> struct<span style="color:#f92672">.</span>unpack(<span style="color:#e6db74">&#39;HHHH&#39;</span>, packed)
+</span></span><span style="display:flex;"><span>   print(rows, cols, h_pixels, v_pixels)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>signal<span style="color:#f92672">.</span>signal(signal<span style="color:#f92672">.</span>SIGWINCH, signal_handler)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>time<span style="color:#f92672">.</span>sleep(<span style="color:#ae81ff">9999</span>)
+</span></span></code></pre></div><p>And if you start it and play with size of terminal window:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ python3 ./size.py
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">32</span> <span style="color:#ae81ff">85</span> <span style="color:#ae81ff">1360</span> <span style="color:#ae81ff">1280</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">32</span> <span style="color:#ae81ff">72</span> <span style="color:#ae81ff">1152</span> <span style="color:#ae81ff">1280</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">32</span> <span style="color:#ae81ff">74</span> <span style="color:#ae81ff">1184</span> <span style="color:#ae81ff">1280</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">32</span> <span style="color:#ae81ff">86</span> <span style="color:#ae81ff">1376</span> <span style="color:#ae81ff">1280</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">32</span> <span style="color:#ae81ff">83</span> <span style="color:#ae81ff">1328</span> <span style="color:#ae81ff">1280</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">33</span> <span style="color:#ae81ff">73</span> <span style="color:#ae81ff">1168</span> <span style="color:#ae81ff">1320</span>
+</span></span></code></pre></div><h2 id="screen-and-tmux">
+  <code>screen</code> and <code>tmux</code>
+  <a class="anchor" href="#screen-and-tmux">#</a>
+</h2>
+<p><code>screen</code> (<code><a href="https://man7.org/linux/man-pages/man1/screen.1.html" target="_blank" rel="noopener">man 1 screen</a></code>) and <code>tmux</code> (<code><a href="https://man7.org/linux/man-pages/man1/tmux.1.html" target="_blank" rel="noopener">man 1 tmux</a></code>) are usually used for protecting shell sessions between connections. It is also widely used for long-running jobs and better ssh user client experience. Both use pseudoterminals to multiplex a single physical terminal (or terminal window) between multiple processes (multiple shell sessions). In this section, we will talk about <code>tmux</code>, but the <code>screen</code> is almost the same in all discussed topics here.</p>
+<p>On the first start, <code>tmux</code> starts a server with a set of <code>ptmx</code> corresponding to its panes. Clients of <code>tmux</code> (<code>tmux attach</code>) use a default unix socket to find and connect to the server:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -lad /tmp/tmux-1000/default
+</span></span><span style="display:flex;"><span>srwxrwx--- <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">0</span> Jul <span style="color:#ae81ff">14</span> 12:57 /tmp/tmux-1000/default
+</span></span></code></pre></div><p>where <code>1000</code> is a user id <code>UID</code>.</p>
+<p><code>tmux</code> doesn&rsquo;t do any <code>tcsetpgrp()</code> calls, because any panel or window creates a new pair of terminals.</p>
+<p>So let’s demonstrate it. After we <code>ssh</code> to a box, we have our bash with <code>PID</code> 11761 :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ echo $$
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">11761</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -la /proc/$$/fd
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:08 <span style="color:#ae81ff">0</span> -&gt; /dev/pts/0
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:08 <span style="color:#ae81ff">1</span> -&gt; /dev/pts/0
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:08 <span style="color:#ae81ff">2</span> -&gt; /dev/pts/0
+</span></span></code></pre></div><p>Let assume, that we already have a working <code>tmux</code> session on the server. So if we check the <code>ps</code> command, we can see it with <code>PID</code> 11781.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>├─sshd<span style="color:#f92672">(</span>11619<span style="color:#f92672">)</span>───sshd<span style="color:#f92672">(</span>11749<span style="color:#f92672">)</span>───sshd<span style="color:#f92672">(</span>11760<span style="color:#f92672">)</span>───bash<span style="color:#f92672">(</span>11761<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>└─tmux: server<span style="color:#f92672">(</span>11780<span style="color:#f92672">)</span>───bash<span style="color:#f92672">(</span>11781<span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>Now let’s attach to the <code>tmux</code> session:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ tmux attach
+</span></span></code></pre></div><p>We get a new bash <code>PID</code> from the above <code>ps</code> output  and a new pseudoterminal:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ echo $$
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">11781</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -la /proc/$$/fd
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:10 <span style="color:#ae81ff">0</span> -&gt; /dev/pts/1
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:10 <span style="color:#ae81ff">1</span> -&gt; /dev/pts/1
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:10 <span style="color:#ae81ff">2</span> -&gt; /dev/pts/1
+</span></span></code></pre></div><p>If we check the pseudoterminal <code>devpts</code> folder <code>/dev/pts/</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -la /dev/pts/
+</span></span><span style="display:flex;"><span>crw--w----  <span style="color:#ae81ff">1</span> vagrant tty  136, <span style="color:#ae81ff">0</span> Jul <span style="color:#ae81ff">14</span> 12:11 <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>crw--w----  <span style="color:#ae81ff">1</span> vagrant tty  136, <span style="color:#ae81ff">1</span> Jul <span style="color:#ae81ff">14</span> 12:11 <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>c---------  <span style="color:#ae81ff">1</span> root	root   5, <span style="color:#ae81ff">2</span> Jul  <span style="color:#ae81ff">9</span> 21:14 ptmx
+</span></span></code></pre></div><p>we can see that there are 2 pseudoterminals, one is our ssh client, and the other is our <code>tmux</code>.</p>
+<p>Let’s observe the <code>tmux</code> server’s file descriptors:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -la /proc/11780/fd
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">0</span> -&gt; /dev/null
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">1</span> -&gt; /dev/null
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">2</span> -&gt; /dev/null
+</span></span><span style="display:flex;"><span>…
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">5</span> -&gt; /dev/pts/0
+</span></span><span style="display:flex;"><span>…
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">8</span> -&gt; /dev/ptmx
+</span></span></code></pre></div><p>We see it has an open <code>/dev/ptmx</code> to control the terminal on <code>/dev/pts/1</code>, and a <code>/dev/pts/0</code> to read our input and write output back to our ssh connection.</p>
+<p>Now, if  we detach, we can still see the bash process in the ps output:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ pstree -p
+</span></span><span style="display:flex;"><span>tmux: server<span style="color:#f92672">(</span>11780<span style="color:#f92672">)</span>───bash<span style="color:#f92672">(</span>11781<span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>It’s left there and is waiting for us. Talkinh about the <code>tmux</code> server, it closed <code>/dev/pts/0</code> because we returned back control of the ssh terminal and it doesn&rsquo;t need to read and write to it anymore:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -la /proc/11780/fd
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">0</span> -&gt; /dev/null
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">1</span> -&gt; /dev/null
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">2</span> -&gt; /dev/null
+</span></span><span style="display:flex;"><span>…
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">8</span> -&gt; /dev/ptmx
+</span></span></code></pre></div><p>Also, if we take a look the <code>procfs</code>, we will find out that <code>tmux</code> server has its own session and process group. It makes sense, it should not depend on any of the active terminal connections.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ cat /proc/11780/stat | cut -d <span style="color:#e6db74">&#34; &#34;</span> -f 1,5,6,7,8,9 | tr <span style="color:#e6db74">&#39; &#39;</span> <span style="color:#e6db74">&#39;\n&#39;</span> | paste &lt;<span style="color:#f92672">(</span>echo -ne <span style="color:#e6db74">&#34;pid\nppid\npgid\nsid\ntty\ntpgid\n&#34;</span><span style="color:#f92672">)</span> -
+</span></span><span style="display:flex;"><span>pid    <span style="color:#ae81ff">11780</span>
+</span></span><span style="display:flex;"><span>ppid   <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>pgid   <span style="color:#ae81ff">11780</span>
+</span></span><span style="display:flex;"><span>sid    <span style="color:#ae81ff">11780</span>
+</span></span><span style="display:flex;"><span>tty    <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>tpgid   -1
+</span></span></code></pre></div><p>If we open one more session, we will see one more shell process:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>└─tmux: server<span style="color:#f92672">(</span>11780<span style="color:#f92672">)</span>─┬─bash<span style="color:#f92672">(</span>11781<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>                      └─bash<span style="color:#f92672">(</span>11846<span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>And open file descriptors of the server:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -la /proc/11780/fd
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">0</span> -&gt; /dev/null
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">1</span> -&gt; /dev/null
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:18 <span style="color:#ae81ff">10</span> -&gt; /dev/pts/2
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:20 <span style="color:#ae81ff">11</span> -&gt; /dev/ptmx
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">7</span> -&gt; /dev/pts/0
+</span></span><span style="display:flex;"><span>lrwx------ <span style="color:#ae81ff">1</span> vagrant vagrant <span style="color:#ae81ff">64</span> Jul <span style="color:#ae81ff">14</span> 12:09 <span style="color:#ae81ff">8</span> -&gt; /dev/ptmx
+</span></span></code></pre></div><p>The overall schema described above could be presented in the below figure 5:</p>
+<img alt="tmux client-server architecture" src="../images/tmux-sshd-ssh-client-pseudoterminal.png" class="img-center" width="70%">
+<div class="text-center">
+Figure 5. – <code>tmux</code> client-server architecture
+</div>
+<p><code>tmux</code> server opens as many pseudoterminals as needed, but none of them is a controlling terminal. It is possible to do it in several ways, and the most simple one is to open a <code>/dev/pts/ptmx</code> with the <code>O_NOCTTY</code> open flag (<code><a href="https://man7.org/linux/man-pages/man2/open.2.html" target="_blank" rel="noopener">man 2 open</a></code>).</p>
+<p>In order to set a demonize, the <code>tmux</code> server <a href="https://github.com/tmux/tmux/blob/6c2bf0e22119804022c8038563b9865999f5a026/compat/daemon.c#L44" target="_blank" rel="noopener">made a single <code>fork()</code></a> and <code>setsid()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">daemon</span>(<span style="color:#66d9ef">int</span> nochdir, <span style="color:#66d9ef">int</span> noclose)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> fd;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">switch</span> (<span style="color:#a6e22e">fork</span>()) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">case</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>   	 <span style="color:#66d9ef">return</span> (<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">case</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>   	 <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">default</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>   	 <span style="color:#a6e22e">_exit</span>(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">setsid</span>() <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>   	 <span style="color:#66d9ef">return</span> (<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>nochdir)
+</span></span><span style="display:flex;"><span>   	 (<span style="color:#66d9ef">void</span>)<span style="color:#a6e22e">chdir</span>(<span style="color:#e6db74">&#34;/&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>noclose <span style="color:#f92672">&amp;&amp;</span> (fd <span style="color:#f92672">=</span> <span style="color:#a6e22e">open</span>(_PATH_DEVNULL, O_RDWR, <span style="color:#ae81ff">0</span>)) <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+</span></span><span style="display:flex;"><span>   	 (<span style="color:#66d9ef">void</span>)<span style="color:#a6e22e">dup2</span>(fd, STDIN_FILENO);
+</span></span><span style="display:flex;"><span>   	 (<span style="color:#66d9ef">void</span>)<span style="color:#a6e22e">dup2</span>(fd, STDOUT_FILENO);
+</span></span><span style="display:flex;"><span>   	 (<span style="color:#66d9ef">void</span>)<span style="color:#a6e22e">dup2</span>(fd, STDERR_FILENO);
+</span></span><span style="display:flex;"><span>   	 <span style="color:#66d9ef">if</span> (fd <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>   		 (<span style="color:#66d9ef">void</span>)<span style="color:#a6e22e">close</span> (fd);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#ifdef __APPLE__
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">daemon_darwin</span>();
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#endif
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> (<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>It makes the <code>tmux</code> server immune to terminal terminations and signals logic I described earlier.</p>
+<h2 id="pseudoterminal-proxy">
+  Pseudoterminal proxy
+  <a class="anchor" href="#pseudoterminal-proxy">#</a>
+</h2>
+<p>As I mentioned earlier, we could think about pseudoterminals as a proxy. The reasonable question is can we leverage them in our day-to-day scripting routines? The answer, as you can guess, is yes. There are two incredible tools: <code>expect</code> (<code><a href="https://man7.org/linux/man-pages/man1/expect.1.html" target="_blank" rel="noopener">man 1 expect</a></code>) and <code>script</code> (<code><a href="https://man7.org/linux/man-pages/man1/script.1.html" target="_blank" rel="noopener">man 1 script</a></code>) that uses pseudoterminals in the proxy mode and are super helpful in writing basic automation.</p>
+<h3 id="expect">
+  <code>expect</code>
+  <a class="anchor" href="#expect">#</a>
+</h3>
+<p>The <code>expect</code> program uses a pseudoterminal to allow an interactive terminal-oriented program to be driven from a script file. Let’s assume we need to automate an <code>ssh</code> connection in a shell script. We want to insert username and password when the <code>ssh</code> client asks for them.  We can easily achieve this with <code>expect</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/expect
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>set timeout <span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>set host <span style="color:#f92672">[</span>lindex $argv 0<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>set username <span style="color:#f92672">[</span>lindex $argv 1<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>set password <span style="color:#f92672">[</span>lindex $argv 2<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>spawn ssh <span style="color:#e6db74">&#34;</span>$username<span style="color:#e6db74">\@</span>$host<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>expect <span style="color:#e6db74">&#34;password:&#34;</span>
+</span></span><span style="display:flex;"><span>send <span style="color:#e6db74">&#34;</span>$password<span style="color:#e6db74">\r&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>interact
+</span></span></code></pre></div><p>And test it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#f92672">[</span>local ~<span style="color:#f92672">]</span> $ ./ssh.exp 192.168.0.1 vagrant vagrant
+</span></span><span style="display:flex;"><span>spawn ssh vagrant@192.168.0.1
+</span></span><span style="display:flex;"><span>vagrant@192.168.0.1<span style="color:#960050;background-color:#1e0010">&#39;</span>s password:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>remote ~<span style="color:#f92672">]</span>$
+</span></span></code></pre></div><p>where &ldquo;<code>vagrant</code>&rdquo; is our username and password.</p>
+<h3 id="script">
+  <code>script</code>
+  <a class="anchor" href="#script">#</a>
+</h3>
+<p>Another task is to record a terminal session. The pseudoterminals are used in the <code>script</code> program, which records all of the input and output that occurs during a shell session.</p>
+<p>Record to file:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ script --timing<span style="color:#f92672">=</span>time.txt script.log
+</span></span></code></pre></div><p>Replay:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ scriptreplay --timing<span style="color:#f92672">=</span>time.txt script.log
+</span></span></code></pre></div><h2 id="changing-a-processs-controlling-terminal">
+  Changing a process&rsquo;s controlling terminal
+  <a class="anchor" href="#changing-a-processs-controlling-terminal">#</a>
+</h2>
+<p>And lastly, I want to show you one more fascinating tool <code>reptyr</code> <a href="https://github.com/nelhage/reptyr" target="_blank" rel="noopener">https://github.com/nelhage/reptyr</a>. Imagine, you forgot to start a <code>screen</code> or <code>tmux</code> session and have run a long-running script. Using <code>reptyr</code> you can move it under a <code>screen</code> or <code>tmux</code> session without a restart!</p>
+<p>It uses <code>ptrace</code> systemcall to change the session id of the running process.</p>
+<blockquote>
+<p>We use <code>ptrace</code> to attach to a target process and force it to execute code of our own choosing in order to open the new terminal, and <code>dup2</code> it over stdout and stderr.</p></blockquote>
+<p>More info about it could be found in the detailed author’s blog post:</p>
+<p><a href="https://blog.nelhage.com/2011/02/changing-ctty/" target="_blank" rel="noopener">https://blog.nelhage.com/2011/02/changing-ctty/</a></p>
+<p>How it works tl;dr:</p>
+<blockquote>
+<p>While we have <code>mutt</code> captured with <code>ptrace</code>, we can make it <code>fork</code> a dummy child, and start tracing that child, too. We’ll make the child <code>setpgid</code> to make it into its own process group, and then get mutt to <code>setpgid</code> itself into the child’s process group. mutt can then <code>setsid</code>, moving into a new session, and now, as a session leader, we can finally <code>ioctl(TIOCSCTTY)</code> on the new terminal, and we win.</p></blockquote>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+
+ 
+        <script defer src="/my_js/copy-code.js"></script>
+
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+  </main>
+
+  
+<div class="cookie-container">
+    <p>
+        This website uses "<b>cookies</b>".
+        Using this website means you're OK with this.
+        If you are <b>NOT</b>, please close the site page.
+    </p>
+    <button class="cookie-btn">
+        ACCEPT AND CLOSE
+    </button>
+</div>
+<script src="/my_js/cookie.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

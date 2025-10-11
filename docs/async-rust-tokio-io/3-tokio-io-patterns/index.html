@@ -1,4 +1,9 @@
-<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="
   Tokio I/O Patterns
   #
 
@@ -10,7 +15,7 @@
 Contents
 
 TCP split stream
-Split generic AsyncRead+AsyncWrite stream
+Split generic AsyncRead&#43;AsyncWrite stream
 Bidirectional driver for I/O without split
 
 Backpressure
@@ -26,345 +31,825 @@ Now let&rsquo;s look at the possible solutions and weigh their pros and cons.
   TCP split stream
   #
 
-The first obvious solution, suggested by the documentation, is to split the TCP stream into two parts: a reader and a writer."><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/async-rust-tokio-io/3-tokio-io-patterns/"><meta property="og:site_name" content="Viacheslav Biriukov"><meta property="og:title" content="Tokio I/O patterns"><meta property="og:description" content="Tokio I/O Patterns # Last updated: Oct 2025 Contents
-TCP split stream Split generic AsyncRead+AsyncWrite stream Bidirectional driver for I/O without split Backpressure Cancellation Framed I/O Bidirectional driver for framed I/O Now let’s look at the possible solutions and weigh their pros and cons.
-TCP split stream # The first obvious solution, suggested by the documentation, is to split the TCP stream into two parts: a reader and a writer."><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="docs"><title>Tokio I/O patterns | Viacheslav Biriukov</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1+E=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script><script defer src=/en.search.min.7e97a0cfe832281a8126c98203712496c0cabeb060b5bfb911edaf36327ad30a.js integrity="sha256-fpegz+gyKBqBJsmCA3EklsDKvrBgtb+5Ee2vNjJ60wo=" crossorigin=anonymous></script><script async src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-599VSLESJL")</script><link rel=stylesheet href=/my_css/cookie.css><link rel=stylesheet href=/my_css/copy-code.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
-<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Viacheslav Biriukov</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li class=book-section-flat><span>Async Rust & Tokio I/O Streams</span><ul><li><a href=/docs/async-rust-tokio-io/1-async-rust-with-tokio-io-streams-backpressure-concurrency-and-ergonomics/>1. Backpressure and Concurrency</a></li><li><a href=/docs/async-rust-tokio-io/2-io-loop/>2. I/O loop</a></li><li><a href=/docs/async-rust-tokio-io/3-tokio-io-patterns/ class=active>3. Tokio I/O patterns</a></li></ul></li></ul><div style=margin-top:30px;margin-bottom:30px><b>More recent series:</b><ul><li><a href=/rust-tokio-io/>1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px;background-color:#e84118;color:#f0f8ff">new</span></li><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>2. Resolvers and Dual-Stack applications</li><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>3. Linux Page Cache mini book</li><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons>4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li></ul></div><div style=margin-top:30px;margin-bottom:30px><b>Open Source Projects</b><ul><li><a href=https://github.com/brk0v/trixter/tree/main>• trixter chaos proxy</a></li><li><a href=https://crates.io/crates/tokio-netem>• tokio-netem</a></li></ul></div><ul><li><a href=https://twitter.com/brk0v/ target=_blank rel=noopener><i class="bi bi-twitter"></i>
-Twitter</a></li><li><a href=https://www.linkedin.com/in/biriukov/ target=_blank rel=noopener><i class="bi bi-linkedin"></i>
-Linkedin</a></li><li><a href=https://github.com/brk0v/ target=_blank rel=noopener><i class="bi bi-github"></i>
-Github</a></li></ul><div style=margin-top:30px><p xmlns:cc=http://creativecommons.org/ns#>This content is licensed under
-<a href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target=_blank rel="license noopener noreferrer" style=display:inline-block>CC BY-NC 4.0<img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu>
-</label><strong>Tokio I/O patterns</strong>
-<label for=toc-control></label></div></header><article class="markdown book-article"><h1 id=tokio-io-patterns>Tokio I/O Patterns
-<a class=anchor href=#tokio-io-patterns>#</a></h1><p class=updated-right><i><time datetime=2025-10>Last updated: Oct 2025</time></i></p><p><strong>Contents</strong></p><ul><li><a href=/docs/async-rust-tokio-io/3-tokio-io-patterns/#tcp-split-stream>TCP split stream</a></li><li><a href=/docs/async-rust-tokio-io/3-tokio-io-patterns/#split-generic-asyncreadasyncwrite-stream>Split generic <code>AsyncRead+AsyncWrite</code> stream</a></li><li><a href=/docs/async-rust-tokio-io/3-tokio-io-patterns/#bidirectional-driver-for-io-without-split>Bidirectional driver for I/O without split</a><ul><li><a href=/docs/async-rust-tokio-io/3-tokio-io-patterns/#backpressure>Backpressure</a></li><li><a href=/docs/async-rust-tokio-io/3-tokio-io-patterns/#cancellation>Cancellation</a></li></ul></li><li><a href=/docs/async-rust-tokio-io/3-tokio-io-patterns/#framed-io>Framed I/O</a></li><li><a href=/docs/async-rust-tokio-io/3-tokio-io-patterns/#35-bidirectional-driver-for-framed-io>Bidirectional driver for framed I/O</a></li></ul><hr><p>Now let&rsquo;s look at the possible solutions and weigh their pros and cons.</p><h2 id=tcp-split-stream>TCP split stream
-<a class=anchor href=#tcp-split-stream>#</a></h2><p>The first obvious solution, suggested by the documentation, is to split the TCP stream into two parts: a reader and a writer.</p><p>The Tokio <code><a href=https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html target=_blank rel=noopener>TcpStream</a></code> API provides <code><a href=https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html#method.split target=_blank rel=noopener>split()</a></code> and <code><a href=https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html#method.into_split target=_blank rel=noopener>into_split()</a></code>. They differ in ownership and allocations. Because we stay in one Tokio task, the borrowing <code>split()</code> variant is cheaper.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> stream <span style=color:#f92672>=</span> TcpStream::connect(<span style=color:#f92672>&amp;</span>addr).<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span><span style=color:#66d9ef>let</span> (<span style=color:#66d9ef>mut</span> r, <span style=color:#66d9ef>mut</span> w) <span style=color:#f92672>=</span> stream.split();
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>let</span> reader <span style=color:#f92672>=</span> <span style=color:#66d9ef>async</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>loop</span> {
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> n <span style=color:#f92672>=</span> r.read(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> read_buf).<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> n <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> {
-</span></span><span style=display:flex><span>            <span style=color:#75715e>// EOF - server closed connection
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>            <span style=color:#a6e22e>eprintln!</span>(<span style=color:#e6db74>&#34;Server closed the connection.&#34;</span>);
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>break</span>;
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>        <span style=color:#a6e22e>print!</span>(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, String::from_utf8_lossy(<span style=color:#f92672>&amp;</span>read_buf[<span style=color:#f92672>..</span>n]));
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    Ok::<span style=color:#f92672>&lt;</span>_, io::Error<span style=color:#f92672>&gt;</span>(())
-</span></span><span style=display:flex><span>};
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>let</span> writer <span style=color:#f92672>=</span> <span style=color:#66d9ef>async</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(msg) <span style=color:#f92672>=</span> rx.recv().<span style=color:#66d9ef>await</span> {
-</span></span><span style=display:flex><span>        w.write_all(<span style=color:#f92672>&amp;</span>msg).<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>        w.flush().<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>        <span style=color:#a6e22e>println!</span>(<span style=color:#e6db74>&#34;client&#39;s written&#34;</span>);
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    Ok::<span style=color:#f92672>&lt;</span>_, io::Error<span style=color:#f92672>&gt;</span>(())
-</span></span><span style=display:flex><span>};
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>tokio::<span style=color:#a6e22e>try_join!</span>(reader, writer)<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>Ok(())
-</span></span></code></pre></div><p>The code creates two futures: reader and writer, and runs them concurrently with <code>try_join!</code>.</p><p>Backpressure on writes occurs naturally in a blocking manner. Each message is first read from <code>rx</code> channel, then written in its own child future, so the reader future itself remains unblocked by it.</p><p>Let&rsquo;s add cancellation that works even under backpressure without contorting the existing futures.</p><p>We can leverage <code>try_join!</code>&rsquo;s short-circuiting by introducing a dedicated cancellation future. If the cancel future errors, <code>try_join!</code> returns immediately and the other tasks stop:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span>tokio::<span style=color:#a6e22e>try_join!</span>(reader, writer, cancel)<span style=color:#f92672>?</span>;
-</span></span></code></pre></div><p>where <code>cancel</code> is:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>let</span> cancel <span style=color:#f92672>=</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
-</span></span><span style=display:flex><span>        tokio::<span style=color:#a6e22e>select!</span> {
-</span></span><span style=display:flex><span>            _ <span style=color:#f92672>=</span> cancel_token.cancelled() <span style=color:#f92672>=&gt;</span> Err(cancel_err),
-</span></span><span style=display:flex><span>            _ <span style=color:#f92672>=</span> finish_rx.recv() <span style=color:#f92672>=&gt;</span> Ok(()),
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>};
-</span></span></code></pre></div><p>and where:</p><ul><li><code>cancel_token</code> – is <code>Tokio</code> <code><a href=https://docs.rs/tokio-util/latest/tokio_util/sync/struct.CancellationToken.html target=_blank rel=noopener>CancellationToken</a></code> useful for signalling a cancellation request to one or more tasks.</li><li><code>finish_rx</code> – is a way to exit the <code>cancel</code> future without short-circuiting the <code>try_join!</code>.</li></ul><p>The reader and the writer need to close (drop) their parts of the <code>finish_tx</code> channel on exit (no matter on success or on error).</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>let</span> (finish_tx, <span style=color:#66d9ef>mut</span> finish_rx) <span style=color:#f92672>=</span> mpsc::channel::<span style=color:#f92672>&lt;</span>()<span style=color:#f92672>&gt;</span>(<span style=color:#ae81ff>1</span>);
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>let</span> _guard <span style=color:#f92672>=</span> finish_tx.clone();
-</span></span><span style=display:flex><span><span style=color:#66d9ef>let</span> reader <span style=color:#f92672>=</span> <span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> _guard <span style=color:#f92672>=</span> _guard;
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>loop</span> {
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> n <span style=color:#f92672>=</span> r.read(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> read_buf).<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> n <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> {
-</span></span><span style=display:flex><span>            <span style=color:#75715e>// EOF - server closed connection
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>            <span style=color:#a6e22e>eprintln!</span>(<span style=color:#e6db74>&#34;Server closed the connection.&#34;</span>);
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>break</span>;
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>        <span style=color:#a6e22e>print!</span>(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, String::from_utf8_lossy(<span style=color:#f92672>&amp;</span>read_buf[<span style=color:#f92672>..</span>n]));
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    Ok::<span style=color:#f92672>&lt;</span>_, io::Error<span style=color:#f92672>&gt;</span>(())
-</span></span><span style=display:flex><span>};
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>let</span> _guard <span style=color:#f92672>=</span> finish_tx.clone();
-</span></span><span style=display:flex><span><span style=color:#66d9ef>let</span> writer <span style=color:#f92672>=</span> <span style=color:#66d9ef>async</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> _guard <span style=color:#f92672>=</span> _guard;
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(msg) <span style=color:#f92672>=</span> rx.recv().<span style=color:#66d9ef>await</span> {
-</span></span><span style=display:flex><span>        w.write_all(<span style=color:#f92672>&amp;</span>msg).<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>        w.flush().<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    Ok::<span style=color:#f92672>&lt;</span>_, io::Error<span style=color:#f92672>&gt;</span>(())
-</span></span><span style=display:flex><span>};
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>drop(finish_tx); <span style=color:#75715e>// drop the origin
-</span></span></span></code></pre></div><p>The full code could be found on <a href=https://github.com/brk0v/blog-async-rust-tokio-io/tree/main/src target=_blank rel=noopener>github</a></p><p>The above code works, but before pushing it to prod, consider the following improvement and limitations:</p><ul><li>Think about <strong>Cancellation safety</strong>. It&rsquo;s not a simple topic overall, but in our case the message dequeued from the <code>rx</code> channel might be lost during cancelation in backpressure situation. More info <a href=https://docs.rs/tokio/latest/tokio/macro.select.html#cancellation-safety target=_blank rel=noopener>here</a> and a lot of examples <a href=https://rfd.shared.oxide.computer/rfd/400 target=_blank rel=noopener>here</a>.</li><li>On cancellation or write error – drain the reader buffer until an error or EOF. This can be useful to:<ul><li>Continue reading the response on a best-effort basis. For example, you might try to read the HTTP header from the buffer for debugging or to forward a truncated response.</li><li>Reuse the underlying TCP/TLS connection.</li></ul></li><li>Trigger custom cleanup logic when cancellation occurs.</li></ul><p>I leave this refinement to the reader.</p><h2 id=split-generic-asyncreadasyncwrite-stream>Split generic <code>AsyncRead+AsyncWrite</code> stream
-<a class=anchor href=#split-generic-asyncreadasyncwrite-stream>#</a></h2><p>The split approach works for <code>TcpStream</code> and other basic types from <code>tokio::io</code>. But the real applications ususally favor generics instead: most adapters accept <code>AsyncRead+AsyncWrite</code> so they compose well. For instance:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>handle</span><span style=color:#f92672>&lt;</span><span style=color:#66d9ef>IO</span>: <span style=color:#a6e22e>AsyncRead</span> <span style=color:#f92672>+</span> AsyncWrite<span style=color:#f92672>&gt;</span>(stream: <span style=color:#a6e22e>IO</span>) -&gt; <span style=color:#a6e22e>io</span>::Result<span style=color:#f92672>&lt;</span>()<span style=color:#f92672>&gt;</span> {
-</span></span><span style=display:flex><span>    <span style=color:#f92672>..</span>.
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><p>You can still split such a stream with <code><a href=https://docs.rs/tokio/latest/tokio/io/fn.split.html target=_blank rel=noopener>tokio::io::split()</a></code>. The example becomes:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>handle</span><span style=color:#f92672>&lt;</span><span style=color:#66d9ef>IO</span>: <span style=color:#a6e22e>AsyncRead</span> <span style=color:#f92672>+</span> AsyncWrite <span style=color:#f92672>+</span> Unpin<span style=color:#f92672>&gt;</span>(
-</span></span><span style=display:flex><span>    stream: <span style=color:#a6e22e>IO</span>,
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>mut</span> rx: <span style=color:#a6e22e>mpsc</span>::Receiver<span style=color:#f92672>&lt;</span>Bytes<span style=color:#f92672>&gt;</span>,
-</span></span><span style=display:flex><span>) -&gt; <span style=color:#a6e22e>io</span>::Result<span style=color:#f92672>&lt;</span>()<span style=color:#f92672>&gt;</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> read_buf <span style=color:#f92672>=</span> <span style=color:#a6e22e>vec!</span>[<span style=color:#ae81ff>0</span><span style=color:#66d9ef>u8</span>; <span style=color:#ae81ff>8192</span>];
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> (<span style=color:#66d9ef>mut</span> r, <span style=color:#66d9ef>mut</span> w) <span style=color:#f92672>=</span> tokio::io::split(stream);
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> reader <span style=color:#f92672>=</span> <span style=color:#66d9ef>async</span> {
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>loop</span> {
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>let</span> n <span style=color:#f92672>=</span> r.read(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> read_buf).<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> n <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> {
-</span></span><span style=display:flex><span>                <span style=color:#75715e>// EOF - server closed connection
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>                <span style=color:#a6e22e>eprintln!</span>(<span style=color:#e6db74>&#34;Server closed the connection.&#34;</span>);
-</span></span><span style=display:flex><span>                <span style=color:#66d9ef>break</span>;
-</span></span><span style=display:flex><span>            }
-</span></span><span style=display:flex><span>            <span style=color:#a6e22e>print!</span>(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, String::from_utf8_lossy(<span style=color:#f92672>&amp;</span>read_buf[<span style=color:#f92672>..</span>n]));
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        Ok::<span style=color:#f92672>&lt;</span>_, io::Error<span style=color:#f92672>&gt;</span>(())
-</span></span><span style=display:flex><span>    };
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> writer <span style=color:#f92672>=</span> <span style=color:#66d9ef>async</span> {
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(msg) <span style=color:#f92672>=</span> rx.recv().<span style=color:#66d9ef>await</span> {
-</span></span><span style=display:flex><span>            w.write_all(<span style=color:#f92672>&amp;</span>msg).<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>            w.flush().<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>            <span style=color:#a6e22e>println!</span>(<span style=color:#e6db74>&#34;client&#39;s written&#34;</span>);
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        Ok::<span style=color:#f92672>&lt;</span>_, io::Error<span style=color:#f92672>&gt;</span>(())
-</span></span><span style=display:flex><span>    };
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    tokio::<span style=color:#a6e22e>try_join!</span>(reader, writer)<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>    Ok(())
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><p>It looks almost the same (omitting cancellation). But there is one caveat: <code>tokio::io::split()</code> uses an internal mutex. However if we try to evaluate the possible contention of this mutex, we can see that, as long as both halves remain in the same task (i.e., you don&rsquo;t <code>spawn()</code>), contention is negligible and the overhead remains minimal.</p><p>The cancellation case mirrors the TCP-specific version.</p><h2 id=bidirectional-driver-for-io-without-split>Bidirectional driver for I/O without split
-<a class=anchor href=#bidirectional-driver-for-io-without-split>#</a></h2><p>One important caveat of <code>tokio::io::split()</code>: splitting is not always safe for every stream implementation. The full story is covered in this <a href=https://github.com/tokio-rs/tls/issues/40 target=_blank rel=noopener>GitHub issue</a>, but the TL;DR is:</p><ul><li><p>Some streams (<code>AsyncRead+AsyncWrite</code>), including TLS transports, do not keep reads and writes independent. A read may need to trigger a write (alerts, key updates, etc.), and vice versa.</p></li><li><p>Because of that coupling, simply splitting into separate read and write tasks can lead to deadlocks, &ldquo;stuck&rdquo; futures, or missed wakeups (i.e. the read half might block waiting on a write event that never gets woken, etc.).</p></li></ul><p>Even though this issue is specific to Tokio tasks and does not affect concurrent child futures (there is a single <a href=https://tokio.rs/tokio/tutorial/async#wakers target=_blank rel=noopener>waker</a> per task, so concurrent readers and writers are fine), you might still want to build a lock-free, fully controlled, and highly performant communication layer. In such cases, using <code>io::split()</code> can be unnecessary, or even overkill. For example, the <a href=https://github.com/hyperium/h2 target=_blank rel=noopener>h2 HTTP/2</a> and the <a href=https://github.com/hyperium/hyper/tree/master/src/proto/h1 target=_blank rel=noopener>Hyper HTTP/1</a> crates do not rely on <code>io::split()</code> at all, and instead, they adopt a connection-driver approach.</p><p>The connection-driver approach (sometimes called a connection task or connection future) is a pattern where instead of splitting <code>AsyncRead/AsyncWrite</code> and work with its halves, the single <code>Connection</code> future is created that drives the entire protocol state machine. It&rsquo;s called a driver because polling it drives the connection forward.</p><p>Let&rsquo;s write our own concurrent connection-driver.</p><p>First, remember that if we keep the stream&rsquo;s read and write halves in one task, the I/O is multiplexed on readiness and run one after another. This simple model works well for I/O-bound workloads where the time between events is much longer than the processing time.</p><p>Second, we can&rsquo;t directly use concurrent helpers because the stream implements both <code>AsyncRead</code> and <code>AsyncWrite</code>, and borrowing it twice would violate Rust&rsquo;s rules. So instead, we need to implement a custom made future that owns the I/O, makes reads/writes manually, and proxies messages to/from an actor-like interface.</p><p>Tokio&rsquo;s <code><a href=https://docs.rs/tokio/latest/tokio/io/fn.copy_bidirectional.html target=_blank rel=noopener>tokio::io::copy_bidirectional</a></code> is a great example: it copies between two streams by juggling buffers and states, preserving backpressure: no mutexes or helper macros are used, just raw async primitives.</p><p>Another example is the <code><a href=https://github.com/linkerd/linkerd2-proxy target=_blank rel=noopener>linkerd2</a></code> proxy&rsquo;s <a href=https://github.com/linkerd/linkerd2-proxy/blob/main/linkerd/duplex/src/lib.rs target=_blank rel=noopener>duplex copy</a>, which follows similar design ideas.</p><p>Thus let&rsquo;s reproduce the logic for our own use case with one additional feature. So the recap of our driver is:</p><ul><li>The driver acts as an actor around an I/O stream.</li><li>It should provide a channel to feed outbound messages and another channel to collect ready-to-consume reads.</li><li>As a bonus, expose a <a href=https://en.wikipedia.org/wiki/Write_barrier target=_blank rel=noopener>write barrier</a> command that guarantees all previous writes are flushed.</li></ul><p>The user API:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>let</span> stream <span style=color:#f92672>=</span> TcpStream::connect(<span style=color:#e6db74>&#34;127.0.0.1:8080&#34;</span>).<span style=color:#66d9ef>await</span><span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span><span style=color:#66d9ef>let</span> stream <span style=color:#f92672>=</span> BufStream::new(stream);
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>let</span> (conn, tx, <span style=color:#66d9ef>mut</span> rx) <span style=color:#f92672>=</span> Connection::new(stream)<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>tokio::spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#66d9ef>let</span> Err(err) <span style=color:#f92672>=</span> conn.<span style=color:#66d9ef>await</span> {
-</span></span><span style=display:flex><span>        <span style=color:#a6e22e>panic!</span>(<span style=color:#e6db74>&#34;err: </span><span style=color:#e6db74>{err}</span><span style=color:#e6db74>&#34;</span>);
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>});
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>tx.send(message).<span style=color:#66d9ef>await</span>.unwrap();
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(buf) <span style=color:#f92672>=</span> rx.recv().<span style=color:#66d9ef>await</span> {
-</span></span><span style=display:flex><span>    <span style=color:#a6e22e>println!</span>(<span style=color:#e6db74>&#34;recv from server: </span><span style=color:#e6db74>{:?}</span><span style=color:#e6db74>&#34;</span>, buf);
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><p>where the <code>message</code> is a tuple of a Bytes buffer and an optional callback – to trigger a flush call:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>type</span> <span style=color:#a6e22e>Ack</span> <span style=color:#f92672>=</span> oneshot::Sender<span style=color:#f92672>&lt;</span>()<span style=color:#f92672>&gt;</span>;
-</span></span><span style=display:flex><span><span style=color:#66d9ef>type</span> <span style=color:#a6e22e>Outgoing</span> <span style=color:#f92672>=</span> (Bytes, Option<span style=color:#f92672>&lt;</span>Ack<span style=color:#f92672>&gt;</span>);
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#f92672>..</span>.
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>let</span> (ack_tx, ack_rx) <span style=color:#f92672>=</span> oneshot::channel();
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>message: <span style=color:#a6e22e>Outgoing</span> <span style=color:#f92672>=</span> (Bytes::from_static(<span style=color:#e6db74>b</span><span style=color:#e6db74>&#34;message&#34;</span>), Some(ack_tx));
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>tx.send(message).<span style=color:#66d9ef>await</span>.unwrap();
-</span></span><span style=display:flex><span>_ <span style=color:#f92672>=</span> ack_rx.<span style=color:#66d9ef>await</span>.unwrap(); <span style=color:#75715e>// &lt;--------- barrier
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
-</span></span><span style=display:flex><span><span style=color:#f92672>..</span>.
-</span></span></code></pre></div><p>The full code can be found on <a href=https://github.com/brk0v/blog-async-rust-tokio-io/tree/main/src target=_blank rel=noopener>github</a>. But here I just want to show some important parts.</p><p>The main structure of the <code>Connection</code> with buffers and states:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>pub</span> <span style=color:#66d9ef>struct</span> <span style=color:#a6e22e>Connection</span><span style=color:#f92672>&lt;</span>T<span style=color:#f92672>&gt;</span> {
-</span></span><span style=display:flex><span>    stream: <span style=color:#a6e22e>T</span>,
-</span></span><span style=display:flex><span>    read_buf: <span style=color:#a6e22e>BytesMut</span>, <span style=color:#75715e>// reusable buffer for read IO calls
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
-</span></span><span style=display:flex><span>    <span style=color:#75715e>// read from IO
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    inbound_buf: Option<span style=color:#f92672>&lt;</span>Bytes<span style=color:#f92672>&gt;</span>,
-</span></span><span style=display:flex><span>    tx: <span style=color:#a6e22e>PollSender</span><span style=color:#f92672>&lt;</span>Bytes<span style=color:#f92672>&gt;</span>,
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#75715e>// write to IO
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    outbound_buf: Option<span style=color:#f92672>&lt;</span>Outgoing<span style=color:#f92672>&gt;</span>,
-</span></span><span style=display:flex><span>    rx: <span style=color:#a6e22e>mpsc</span>::Receiver<span style=color:#f92672>&lt;</span>Outgoing<span style=color:#f92672>&gt;</span>,
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    read_state: <span style=color:#a6e22e>ReadState</span>,
-</span></span><span style=display:flex><span>    write_state: <span style=color:#a6e22e>WriteState</span>,
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><p>The core of the driver lies in its implementation of the <a href=https://doc.rust-lang.org/std/future/trait.Future.html target=_blank rel=noopener><code>Future</code></a> trait:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>impl</span><span style=color:#f92672>&lt;</span>T<span style=color:#f92672>&gt;</span> Future <span style=color:#66d9ef>for</span> Connection<span style=color:#f92672>&lt;</span>T<span style=color:#f92672>&gt;</span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>where</span>
-</span></span><span style=display:flex><span>    T: <span style=color:#a6e22e>AsyncRead</span> <span style=color:#f92672>+</span> AsyncWrite <span style=color:#f92672>+</span> Unpin,
-</span></span><span style=display:flex><span>{
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>type</span> <span style=color:#a6e22e>Output</span> <span style=color:#f92672>=</span> Result<span style=color:#f92672>&lt;</span>(), io::Error<span style=color:#f92672>&gt;</span>;
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>poll</span>(<span style=color:#66d9ef>mut</span> self: <span style=color:#a6e22e>Pin</span><span style=color:#f92672>&lt;&amp;</span><span style=color:#66d9ef>mut</span> Self<span style=color:#f92672>&gt;</span>, cx: <span style=color:#66d9ef>&amp;</span><span style=color:#a6e22e>mut</span> Context<span style=color:#f92672>&lt;</span>&#39;_<span style=color:#f92672>&gt;</span>) -&gt; <span style=color:#a6e22e>Poll</span><span style=color:#f92672>&lt;</span>Self::Output<span style=color:#f92672>&gt;</span> {
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>matches!</span>(self.read_state, ReadState::Reading) {
-</span></span><span style=display:flex><span>            _ <span style=color:#f92672>=</span> self.poll_read(cx)<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>matches!</span>(self.write_state, WriteState::Writing) {
-</span></span><span style=display:flex><span>            _ <span style=color:#f92672>=</span> self.poll_write(cx)<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>matches!</span>(self.write_state, WriteState::Flushing(_)) {
-</span></span><span style=display:flex><span>            _ <span style=color:#f92672>=</span> self.poll_flush(cx)<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>matches!</span>(self.write_state, WriteState::ShuttingDown) {
-</span></span><span style=display:flex><span>            _ <span style=color:#f92672>=</span> self.poll_shutdown(cx)<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>matches!</span>(self.read_state, ReadState::Done)
-</span></span><span style=display:flex><span>            <span style=color:#f92672>&amp;&amp;</span> <span style=color:#a6e22e>matches!</span>(self.write_state, WriteState::Done)
-</span></span><span style=display:flex><span>        {
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> Poll::Ready(Ok(()));
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        Poll::Pending
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><p>The future sequentially checks readiness and performs reads and writes on every wake-up. If either side returns <code>Poll::Pending</code>, the driver continues to the next step instead of yielding immediately. The first error stops the driver.</p><p>The write side runs in three phases: read from the channel of available to write buffers and write them to I/O stream, the flush, then the shutdown. The dedicated <code>Flushing</code> state lets us implement write barriers: it forces an I/O flush and runs a callback once the flush completes.</p><h3 id=backpressure>Backpressure
-<a class=anchor href=#backpressure>#</a></h3><p>We need to apply backpressure to both sides of the driver communication:</p><ul><li>Read side only pulls from the socket when the upstream channel has capacity. If it&rsquo;s full, reading stops and the kernel TCP window naturally pushes back on the peer.</li><li>Write side only pulls the next message after the current one is fully written (and optionally flushed + acked). If the socket can&rsquo;t accept bytes, writing yields with the remaining bytes kept in place.</li></ul><h4 id=read-backpressure-dont-read-unless-you-can-forward>Read backpressure: &ldquo;don&rsquo;t read unless you can forward&rdquo;
-<a class=anchor href=#read-backpressure-dont-read-unless-you-can-forward>#</a></h4><p><strong>Key idea</strong>: buffer at most one message (<code>inbound_buf</code>) until the <code>mpsc</code> receiver <code>tx</code> reserves a slot. If the channel is full, we yield and stop reading.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>poll_read</span>(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> self, cx: <span style=color:#66d9ef>&amp;</span><span style=color:#a6e22e>mut</span> Context<span style=color:#f92672>&lt;</span>&#39;_<span style=color:#f92672>&gt;</span>) -&gt; <span style=color:#a6e22e>Poll</span><span style=color:#f92672>&lt;</span>io::Result<span style=color:#f92672>&lt;</span>()<span style=color:#f92672>&gt;&gt;</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>loop</span> {
-</span></span><span style=display:flex><span>        <span style=color:#75715e>// 1. If we already have a message to forward, try to reserve capacity upstream.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        <span style=color:#66d9ef>if</span> self.inbound_buf.is_some() {
-</span></span><span style=display:flex><span>            <span style=color:#a6e22e>ready!</span>(
-</span></span><span style=display:flex><span>                self.tx
-</span></span><span style=display:flex><span>                    .poll_reserve(cx)
-</span></span><span style=display:flex><span>                    .map_err(<span style=color:#f92672>|</span>_<span style=color:#f92672>|</span> io::Error::new(io::ErrorKind::BrokenPipe, <span style=color:#e6db74>&#34;Channel closed&#34;</span>))<span style=color:#f92672>?</span>
-</span></span><span style=display:flex><span>            );
-</span></span><span style=display:flex><span>            <span style=color:#75715e>// Capacity is guaranteed now; forward the buffered chunk.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>            self.tx
-</span></span><span style=display:flex><span>                .send_item(self.inbound_buf.take().expect(<span style=color:#e6db74>&#34;buffered message missing&#34;</span>))
-</span></span><span style=display:flex><span>                .map_err(<span style=color:#f92672>|</span>_<span style=color:#f92672>|</span> io::Error::new(io::ErrorKind::BrokenPipe, <span style=color:#e6db74>&#34;Channel closed&#34;</span>))<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        <span style=color:#75715e>// 2. Ensure read buffer has enough capacity, then read from the socket.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        <span style=color:#66d9ef>if</span> self.read_buf.capacity() <span style=color:#f92672>&lt;</span> <span style=color:#66d9ef>READ_BUF_CAPACITY</span> {
-</span></span><span style=display:flex><span>            self.read_buf.reserve(<span style=color:#66d9ef>READ_BUF_CAPACITY</span>);
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> n <span style=color:#f92672>=</span> <span style=color:#a6e22e>ready!</span>(tokio_util::io::poll_read_buf(
-</span></span><span style=display:flex><span>            Pin::new(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> self.stream),
-</span></span><span style=display:flex><span>            cx,
-</span></span><span style=display:flex><span>            <span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> self.read_buf
-</span></span><span style=display:flex><span>        ))<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        <span style=color:#75715e>// 3. EOF, finish reads &amp; close upstream channel.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        <span style=color:#66d9ef>if</span> n <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> {
-</span></span><span style=display:flex><span>            self.read_state <span style=color:#f92672>=</span> ReadState::Done;
-</span></span><span style=display:flex><span>            self.tx.close();
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> Poll::Ready(Ok(()));
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        <span style=color:#75715e>// 4. Move the just-read bytes into a message to forward next loop iteration.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        self.inbound_buf <span style=color:#f92672>=</span> Some(self.read_buf.split().freeze());
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><h4 id=write-backpressure-finish-what-you-started-then-maybe-flush--ack>Write backpressure: &ldquo;finish what you started, then maybe flush & ack&rdquo;
-<a class=anchor href=#write-backpressure-finish-what-you-started-then-maybe-flush--ack>#</a></h4><p><strong>Key idea</strong>: keep the current <code>(Bytes, Option&lt;Ack>)</code> in <code>outbound_buf</code>. Don&rsquo;t pull the next message until this one is completely written (and optionally flushed + acked). If the socket can&rsquo;t take bytes now, yield with progress saved.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>poll_write</span>(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> self, cx: <span style=color:#66d9ef>&amp;</span><span style=color:#a6e22e>mut</span> Context<span style=color:#f92672>&lt;</span>&#39;_<span style=color:#f92672>&gt;</span>) -&gt; <span style=color:#a6e22e>Poll</span><span style=color:#f92672>&lt;</span>io::Result<span style=color:#f92672>&lt;</span>()<span style=color:#f92672>&gt;&gt;</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>loop</span> {
-</span></span><span style=display:flex><span>        <span style=color:#75715e>// 1. If nothing buffered, try to pull from the bounded mpsc.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        <span style=color:#66d9ef>if</span> self.outbound_buf.is_none() {
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>match</span> self.rx.poll_recv(cx) {
-</span></span><span style=display:flex><span>                Poll::Ready(Some(msg)) <span style=color:#f92672>=&gt;</span> self.outbound_buf <span style=color:#f92672>=</span> Some(msg),
-</span></span><span style=display:flex><span>                Poll::Ready(None) <span style=color:#f92672>=&gt;</span> { <span style=color:#75715e>// sender closed, finish by flushing then shutdown
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>                    self.write_state.set_flushing(None, FromFlushingTo::ShuttingDown);
-</span></span><span style=display:flex><span>                    <span style=color:#66d9ef>return</span> Poll::Ready(Ok(()));
-</span></span><span style=display:flex><span>                }
-</span></span><span style=display:flex><span>                Poll::Pending <span style=color:#f92672>=&gt;</span> { <span style=color:#75715e>// nothing to send right now, make sure we flush kernel/TLS buffers
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>                    self.write_state.set_flushing(None, FromFlushingTo::Writing);
-</span></span><span style=display:flex><span>                    <span style=color:#66d9ef>return</span> Poll::Pending;
-</span></span><span style=display:flex><span>                }
-</span></span><span style=display:flex><span>            }
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>        <span style=color:#75715e>// 2. Drain the current buffer into the socket, handling partial writes.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        <span style=color:#66d9ef>if</span> <span style=color:#66d9ef>let</span> Some((buf, ack)) <span style=color:#f92672>=</span> self.outbound_buf.as_mut() {
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>while</span> <span style=color:#f92672>!</span>buf.is_empty() {
-</span></span><span style=display:flex><span>                <span style=color:#66d9ef>match</span> <span style=color:#a6e22e>ready!</span>(Pin::new(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> self.stream).poll_write(cx, buf)<span style=color:#f92672>?</span>) {
-</span></span><span style=display:flex><span>                    <span style=color:#ae81ff>0</span> <span style=color:#f92672>=&gt;</span> <span style=color:#66d9ef>return</span> Poll::Ready(Err(io::Error::new(io::ErrorKind::WriteZero, <span style=color:#e6db74>&#34;write zero bytes&#34;</span>))),
-</span></span><span style=display:flex><span>                    n <span style=color:#f92672>=&gt;</span> buf.advance(n),
-</span></span><span style=display:flex><span>                }
-</span></span><span style=display:flex><span>            }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>            <span style=color:#75715e>// 3. Optional message-level completion: flush, then send ack.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>            <span style=color:#66d9ef>if</span> <span style=color:#66d9ef>let</span> Some(ack) <span style=color:#f92672>=</span> ack.take() {
-</span></span><span style=display:flex><span>                self.write_state.set_flushing(Some(ack), FromFlushingTo::Writing);
-</span></span><span style=display:flex><span>                cx.waker().wake_by_ref(); <span style=color:#75715e>// the Poll::Pending is returning without installed waker, so wake manually
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>                <span style=color:#66d9ef>return</span> Poll::Pending;
-</span></span><span style=display:flex><span>            }
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>            <span style=color:#75715e>// 4. Fully written try the next message.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>            self.outbound_buf <span style=color:#f92672>=</span> None;
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><h3 id=cancellation>Cancellation
-<a class=anchor href=#cancellation>#</a></h3><p>A short-circuit cancellation is pretty straightforward in this case:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>let</span> cancel <span style=color:#f92672>=</span> CancellationToken::new();
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>tokio::spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
-</span></span><span style=display:flex><span>    tokio::<span style=color:#a6e22e>select!</span> {
-</span></span><span style=display:flex><span>        Err(err) <span style=color:#f92672>=</span> conn <span style=color:#f92672>=&gt;</span> <span style=color:#a6e22e>panic!</span>(<span style=color:#e6db74>&#34;err: </span><span style=color:#e6db74>{err}</span><span style=color:#e6db74>&#34;</span>),
-</span></span><span style=display:flex><span>        _ <span style=color:#f92672>=</span> cancel.cancelled() <span style=color:#f92672>=&gt;</span> <span style=color:#66d9ef>return</span>,
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>else</span> <span style=color:#f92672>=&gt;</span> <span style=color:#66d9ef>return</span>
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>});
-</span></span></code></pre></div><h3 id=improvements>Improvements
-<a class=anchor href=#improvements>#</a></h3><p>There are several improvements to consider and play with:</p><ul><li>Once again about cancellation safety: understand how critical it is for you to lose buffered data.</li><li>Improve read-buffer allocation and copying; you can tune strategies based on expected frame sizes.</li><li>Randomize the order of read and write calls to avoid starving one side. A simple round-robin toggle is often enough.</li><li>On write errors, drain reads before returning – just like the earlier split example.</li><li>The channel logic uses a single buffer:<ul><li>Try to use <code><a href=https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Receiver.html#method.poll_recv_many target=_blank rel=noopener>poll_recv_many()</a></code> to get more at once instead of <code><a href=https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Receiver.html#method.poll_recv target=_blank rel=noopener>poll_recv()</a></code>.</li><li>Try to use <code><a href=https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Sender.html#method.try_reserve_many target=_blank rel=noopener>try_reserve_many()</a></code> in the sender part.</li><li>Or as an alternative for the above, change the channel to work with multiple buffers instead of one:</li></ul></li></ul><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>let</span> (tx, rx) <span style=color:#f92672>=</span> mpsc::channel::<span style=color:#f92672>&lt;</span>(Vec<span style=color:#f92672>&lt;</span>Bytes<span style=color:#f92672>&gt;</span>, Ack)<span style=color:#f92672>&gt;</span>(<span style=color:#ae81ff>128</span>)
-</span></span></code></pre></div><h2 id=framed-io>Framed I/O
-<a class=anchor href=#framed-io>#</a></h2><p>So far we&rsquo;ve passed raw <code><a href=https://docs.rs/bytes/latest/bytes/struct.Bytes.html target=_blank rel=noopener>Bytes</a></code> through the I/O. But usually it&rsquo;s not what we do in real apps where we work with structures. In practice, streams decode bytes into domain-specific frames/messages/structures and encode frames back to bytes. The encoder/decoder pair is usually called a codec. Tokio provides helpful traits and utilities in <code><a href=https://docs.rs/tokio-util/latest/tokio_util/codec/index.html target=_blank rel=noopener>tokio_util::codec</a></code> crate to build composable framed APIs.</p><p>We can wrap an I/O stream with <code>Framed::new()</code>. If the I/O implements <code>AsyncRead+AsyncWrite</code>, the resulting framed stream also offers <code><a href=https://docs.rs/futures/latest/futures/stream/trait.StreamExt.html#method.split target=_blank rel=noopener>split()</a></code> (from <code><a href=https://docs.rs/futures/latest/futures/stream/trait.StreamExt.html target=_blank rel=noopener>StreamExt</a></code>) because it implements both <code><a href=https://docs.rs/futures/latest/futures/prelude/trait.Stream.html target=_blank rel=noopener>Stream</a></code> and <code><a href=https://docs.rs/futures/latest/futures/sink/trait.Sink.html target=_blank rel=noopener>Sink</a></code>. Internally this behaves like <code>io::split</code>, but uses a specialized <code><a href=https://docs.rs/futures/latest/futures/lock/struct.BiLock.html target=_blank rel=noopener>BiLock</a></code> optimized for two owners mutex lock.</p><p>Here&rsquo;s how it fits together when we use length prefix codec for meesages:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>handle</span><span style=color:#f92672>&lt;</span><span style=color:#66d9ef>IO</span>: <span style=color:#a6e22e>AsyncRead</span> <span style=color:#f92672>+</span> AsyncWrite <span style=color:#f92672>+</span> Unpin<span style=color:#f92672>&gt;</span>(
-</span></span><span style=display:flex><span>    stream: <span style=color:#a6e22e>IO</span>,
-</span></span><span style=display:flex><span>    rx: <span style=color:#a6e22e>mpsc</span>::Receiver<span style=color:#f92672>&lt;</span>Bytes<span style=color:#f92672>&gt;</span>,
-</span></span><span style=display:flex><span>) -&gt; <span style=color:#a6e22e>io</span>::Result<span style=color:#f92672>&lt;</span>()<span style=color:#f92672>&gt;</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> stream <span style=color:#f92672>=</span> Framed::new(stream, LengthDelimitedCodec::new());
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#75715e>// https://docs.rs/futures/latest/futures/lock/struct.BiLock.html
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> (writer, reader) <span style=color:#f92672>=</span> stream.split();
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> reader <span style=color:#f92672>=</span> reader.try_for_each(<span style=color:#f92672>|</span>msg<span style=color:#f92672>|</span> <span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
-</span></span><span style=display:flex><span>        <span style=color:#a6e22e>print!</span>(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, String::from_utf8_lossy(<span style=color:#f92672>&amp;</span>msg));
-</span></span><span style=display:flex><span>        Ok(())
-</span></span><span style=display:flex><span>    });
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> writer <span style=color:#f92672>=</span> ReceiverStream::new(rx).map(Ok).forward(writer);
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    tokio::<span style=color:#a6e22e>try_join!</span>(reader, writer)<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>    Ok(())
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><p>This mirrors the earlier <code>io::split()</code> example but gains the convenience of stream adapters.</p><p>Look how elegant, composable, and compatible the code looks.</p><p>The full code can be found on <a href=https://github.com/brk0v/blog-async-rust-tokio-io/tree/main/src target=_blank rel=noopener>github</a>.</p><h2 id=35-bidirectional-driver-for-framed-io>3.5 Bidirectional driver for framed I/O
-<a class=anchor href=#35-bidirectional-driver-for-framed-io>#</a></h2><p>Finally, we can upgrade the bytes-based driver to a framed one.</p><p>The client API changed a bit:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span> <span style=color:#66d9ef>let</span> (conn, tx, <span style=color:#66d9ef>mut</span> rx) <span style=color:#f92672>=</span> ConnectionFramed::new(stream, LengthDelimitedCodec::new())<span style=color:#f92672>?</span>;
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>tokio::spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#66d9ef>let</span> Err(err) <span style=color:#f92672>=</span> conn.<span style=color:#66d9ef>await</span> {
-</span></span><span style=display:flex><span>        <span style=color:#a6e22e>panic!</span>(<span style=color:#e6db74>&#34;err: </span><span style=color:#e6db74>{err}</span><span style=color:#e6db74>&#34;</span>);
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>});
-</span></span></code></pre></div><p>It is almost identical to the bytes driver, except that it works with encoder/decoder generics and generic inbound/outbound types.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>#[pin_project]</span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>pub</span> <span style=color:#66d9ef>struct</span> <span style=color:#a6e22e>ConnectionFramed</span><span style=color:#f92672>&lt;</span>T, C, In, Out<span style=color:#f92672>&gt;</span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>where</span>
-</span></span><span style=display:flex><span>    T: <span style=color:#a6e22e>AsyncRead</span> <span style=color:#f92672>+</span> AsyncWrite <span style=color:#f92672>+</span> Unpin,
-</span></span><span style=display:flex><span>    C: <span style=color:#a6e22e>Decoder</span><span style=color:#f92672>&lt;</span>Item <span style=color:#f92672>=</span> In, Error <span style=color:#f92672>=</span> io::Error<span style=color:#f92672>&gt;</span> <span style=color:#f92672>+</span> Encoder<span style=color:#f92672>&lt;</span>Out, Error <span style=color:#f92672>=</span> io::Error<span style=color:#f92672>&gt;</span>,
-</span></span><span style=display:flex><span>    In: Send <span style=color:#f92672>+</span> fmt::Debug,
-</span></span><span style=display:flex><span>    Out: Send <span style=color:#f92672>+</span> fmt::Debug,
-</span></span><span style=display:flex><span>{
-</span></span><span style=display:flex><span>    <span style=color:#75715e>#[pin]</span>
-</span></span><span style=display:flex><span>    stream: <span style=color:#a6e22e>Framed</span><span style=color:#f92672>&lt;</span>T, C<span style=color:#f92672>&gt;</span>,
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#75715e>// read from IO
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    inbound_buf: Option<span style=color:#f92672>&lt;</span>In<span style=color:#f92672>&gt;</span>,
-</span></span><span style=display:flex><span>    tx: <span style=color:#a6e22e>PollSender</span><span style=color:#f92672>&lt;</span>In<span style=color:#f92672>&gt;</span>,
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    <span style=color:#75715e>// write to IO
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    outbound_buf: Option<span style=color:#f92672>&lt;</span>Outgoing<span style=color:#f92672>&lt;</span>Out<span style=color:#f92672>&gt;&gt;</span>,
-</span></span><span style=display:flex><span>    rx: <span style=color:#a6e22e>mpsc</span>::Receiver<span style=color:#f92672>&lt;</span>Outgoing<span style=color:#f92672>&lt;</span>Out<span style=color:#f92672>&gt;&gt;</span>,
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>    read_state: <span style=color:#a6e22e>ReadState</span>,
-</span></span><span style=display:flex><span>    write_state: <span style=color:#a6e22e>WriteState</span>,
-</span></span><span style=display:flex><span>}
-</span></span></code></pre></div><p>Everything else follows the same pattern.</p><p>The full code you can find <a href=https://github.com/brk0v/blog-async-rust-tokio-io/tree/main/src target=_blank rel=noopener>here</a></p><h1 id=putting-it-together>Putting it together
-<a class=anchor href=#putting-it-together>#</a></h1><p>Tokio offers several levels of control. Splitting a stream is often sufficient for simple TCP code, especially when paired with <code>try_join!</code> for simple cancellation. Generic I/O benefits from the same pattern via <code>tokio::io::split</code>, while custom drivers provide fine-grained control when splitting is unsafe or when you need customization and additional control. Choose the lightest abstraction that preserves backpressure and cancellation for your use case, and reach for a dedicated driver only when you need the extra guarantees.</p></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script defer src=/my_js/copy-code.js></script></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div></main><div class=cookie-container><p>This website uses "<b>cookies</b>".
-Using this website means you're OK with this.
-If you are <b>NOT</b>, please close the site page.</p><button class=cookie-btn>
-ACCEPT AND CLOSE</button></div><script src=/my_js/cookie.js></script></body></html>
+The first obvious solution, suggested by the documentation, is to split the TCP stream into two parts: a reader and a writer.">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
+<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/async-rust-tokio-io/3-tokio-io-patterns/">
+  <meta property="og:site_name" content="Viacheslav Biriukov">
+  <meta property="og:title" content="Tokio I/O patterns">
+  <meta property="og:description" content="Tokio I/O Patterns # Last updated: Oct 2025 Contents
+TCP split stream Split generic AsyncRead&#43;AsyncWrite stream Bidirectional driver for I/O without split Backpressure Cancellation Framed I/O Bidirectional driver for framed I/O Now let’s look at the possible solutions and weigh their pros and cons.
+TCP split stream # The first obvious solution, suggested by the documentation, is to split the TCP stream into two parts: a reader and a writer.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="docs">
+<title>Tokio I/O patterns | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" >
+<link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+<script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"
+></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+
+    gtag("config", "G-599VSLESJL");
+</script>
+
+<link rel="stylesheet" href="/my_css/cookie.css" />
+<link rel="stylesheet" href="/my_css/copy-code.css" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+/>
+
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+
+      
+
+      
+        <li class="book-section-flat" >
+          
+  
+  
+
+  
+    <span>Async Rust &amp; Tokio I/O Streams</span>
+  
+
+          
+  <ul>
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/async-rust-tokio-io/1-async-rust-with-tokio-io-streams-backpressure-concurrency-and-ergonomics/" class="">
+      
+        1. Backpressure and Concurrency
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/async-rust-tokio-io/2-io-loop/" class="">
+      
+        2. I/O loop
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/async-rust-tokio-io/3-tokio-io-patterns/" class="active">
+      
+        3. Tokio I/O patterns
+      
+    </a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+
+      
+        
+
+      
+        
+
+      
+        
+  </ul>
+
+
+
+
+
+
+
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>More recent series:</b>
+  <ul>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
+    <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
+    <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
+  </ul>
+</div>
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Open Source Projects</b>
+  <ul>
+      <li>
+          <a href="/posts/trixter-chaos-proxy/"> • trixter chaos proxy</a>
+      </li>
+      <li><a href="https://crates.io/crates/tokio-netem"> • tokio-netem</a></li>
+  </ul>
+</div>
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-twitter"></i>
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.linkedin.com/in/biriukov/"  target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
+        Linkedin
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-github"></i>
+        Github
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 30px;">
+  <p xmlns:cc="http://creativecommons.org/ns#">
+    This content is licensed under 
+    <a
+      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
+    </a>
+  </p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Tokio I/O patterns</strong>
+
+  <label for="toc-control">
+    
+  </label>
+</div>
+
+
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown book-article"><h1 id="tokio-io-patterns">
+  Tokio I/O Patterns
+  <a class="anchor" href="#tokio-io-patterns">#</a>
+</h1>
+<p class="updated-right">
+    <i>
+        <time datetime="2025-10">Last updated: Oct 2025</time>
+    </i>
+</p>
+<p><strong>Contents</strong></p>
+<ul>
+<li><a href="/docs/async-rust-tokio-io/3-tokio-io-patterns/#tcp-split-stream">TCP split stream</a></li>
+<li><a href="/docs/async-rust-tokio-io/3-tokio-io-patterns/#split-generic-asyncreadasyncwrite-stream">Split generic <code>AsyncRead+AsyncWrite</code> stream</a></li>
+<li><a href="/docs/async-rust-tokio-io/3-tokio-io-patterns/#bidirectional-driver-for-io-without-split">Bidirectional driver for I/O without split</a>
+<ul>
+<li><a href="/docs/async-rust-tokio-io/3-tokio-io-patterns/#backpressure">Backpressure</a></li>
+<li><a href="/docs/async-rust-tokio-io/3-tokio-io-patterns/#cancellation">Cancellation</a></li>
+</ul>
+</li>
+<li><a href="/docs/async-rust-tokio-io/3-tokio-io-patterns/#framed-io">Framed I/O</a></li>
+<li><a href="/docs/async-rust-tokio-io/3-tokio-io-patterns/#35-bidirectional-driver-for-framed-io">Bidirectional driver for framed I/O</a></li>
+</ul>
+<hr/>
+<p>Now let&rsquo;s look at the possible solutions and weigh their pros and cons.</p>
+<h2 id="tcp-split-stream">
+  TCP split stream
+  <a class="anchor" href="#tcp-split-stream">#</a>
+</h2>
+<p>The first obvious solution, suggested by the documentation, is to split the TCP stream into two parts: a reader and a writer.</p>
+<p>The Tokio <code><a href="https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html" target="_blank" rel="noopener">TcpStream</a></code> API provides <code><a href="https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html#method.split" target="_blank" rel="noopener">split()</a></code> and <code><a href="https://docs.rs/tokio/latest/tokio/net/struct.TcpStream.html#method.into_split" target="_blank" rel="noopener">into_split()</a></code>. They differ in ownership and allocations. Because we stay in one Tokio task, the borrowing <code>split()</code> variant is cheaper.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> stream <span style="color:#f92672">=</span> TcpStream::connect(<span style="color:#f92672">&amp;</span>addr).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> (<span style="color:#66d9ef">mut</span> r, <span style="color:#66d9ef">mut</span> w) <span style="color:#f92672">=</span> stream.split();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> reader <span style="color:#f92672">=</span> <span style="color:#66d9ef">async</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> n <span style="color:#f92672">=</span> r.read(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> read_buf).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> n <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// EOF - server closed connection
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#a6e22e">eprintln!</span>(<span style="color:#e6db74">&#34;Server closed the connection.&#34;</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">print!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, String::from_utf8_lossy(<span style="color:#f92672">&amp;</span>read_buf[<span style="color:#f92672">..</span>n]));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok::<span style="color:#f92672">&lt;</span>_, io::Error<span style="color:#f92672">&gt;</span>(())
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> writer <span style="color:#f92672">=</span> <span style="color:#66d9ef">async</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> <span style="color:#66d9ef">let</span> Some(msg) <span style="color:#f92672">=</span> rx.recv().<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>        w.write_all(<span style="color:#f92672">&amp;</span>msg).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        w.flush().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;client&#39;s written&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok::<span style="color:#f92672">&lt;</span>_, io::Error<span style="color:#f92672">&gt;</span>(())
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>tokio::<span style="color:#a6e22e">try_join!</span>(reader, writer)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>Ok(())
+</span></span></code></pre></div><p>The code creates two futures: reader and writer, and runs them concurrently with <code>try_join!</code>.</p>
+<p>Backpressure on writes occurs naturally in a blocking manner. Each message is first read from <code>rx</code> channel, then written in its own child future, so the reader future itself remains unblocked by it.</p>
+<p>Let&rsquo;s add cancellation that works even under backpressure without contorting the existing futures.</p>
+<p>We can leverage <code>try_join!</code>&rsquo;s short-circuiting by introducing a dedicated cancellation future. If the cancel future errors, <code>try_join!</code> returns immediately and the other tasks stop:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>tokio::<span style="color:#a6e22e">try_join!</span>(reader, writer, cancel)<span style="color:#f92672">?</span>;
+</span></span></code></pre></div><p>where <code>cancel</code> is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> cancel <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> {
+</span></span><span style="display:flex;"><span>        tokio::<span style="color:#a6e22e">select!</span> {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> cancel_token.cancelled() <span style="color:#f92672">=&gt;</span> Err(cancel_err),
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> finish_rx.recv() <span style="color:#f92672">=&gt;</span> Ok(()),
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>and where:</p>
+<ul>
+<li><code>cancel_token</code> – is <code>Tokio</code> <code><a href="https://docs.rs/tokio-util/latest/tokio_util/sync/struct.CancellationToken.html" target="_blank" rel="noopener">CancellationToken</a></code> useful for signalling a cancellation request to one or more tasks.</li>
+<li><code>finish_rx</code> – is a way to exit the <code>cancel</code> future without short-circuiting the <code>try_join!</code>.</li>
+</ul>
+<p>The reader and the writer need to close (drop) their parts of the <code>finish_tx</code> channel on exit (no matter on success or on error).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> (finish_tx, <span style="color:#66d9ef">mut</span> finish_rx) <span style="color:#f92672">=</span> mpsc::channel::<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>(<span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> _guard <span style="color:#f92672">=</span> finish_tx.clone();
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> reader <span style="color:#f92672">=</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> _guard <span style="color:#f92672">=</span> _guard;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> n <span style="color:#f92672">=</span> r.read(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> read_buf).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> n <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// EOF - server closed connection
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#a6e22e">eprintln!</span>(<span style="color:#e6db74">&#34;Server closed the connection.&#34;</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">print!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, String::from_utf8_lossy(<span style="color:#f92672">&amp;</span>read_buf[<span style="color:#f92672">..</span>n]));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok::<span style="color:#f92672">&lt;</span>_, io::Error<span style="color:#f92672">&gt;</span>(())
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> _guard <span style="color:#f92672">=</span> finish_tx.clone();
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> writer <span style="color:#f92672">=</span> <span style="color:#66d9ef">async</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> _guard <span style="color:#f92672">=</span> _guard;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> <span style="color:#66d9ef">let</span> Some(msg) <span style="color:#f92672">=</span> rx.recv().<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>        w.write_all(<span style="color:#f92672">&amp;</span>msg).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        w.flush().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok::<span style="color:#f92672">&lt;</span>_, io::Error<span style="color:#f92672">&gt;</span>(())
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>drop(finish_tx); <span style="color:#75715e">// drop the origin
+</span></span></span></code></pre></div><p>The full code could be found on <a href="https://github.com/brk0v/blog-async-rust-tokio-io/tree/main/src" target="_blank" rel="noopener">github</a></p>
+<p>The above code works, but before pushing it to prod, consider the following improvement and limitations:</p>
+<ul>
+<li>Think about <strong>Cancellation safety</strong>. It&rsquo;s not a simple topic overall, but in our case the message dequeued from the <code>rx</code> channel might be lost during cancelation in backpressure situation. More info <a href="https://docs.rs/tokio/latest/tokio/macro.select.html#cancellation-safety" target="_blank" rel="noopener">here</a> and a lot of examples <a href="https://rfd.shared.oxide.computer/rfd/400" target="_blank" rel="noopener">here</a>.</li>
+<li>On cancellation or write error – drain the reader buffer until an error or EOF. This can be useful to:
+<ul>
+<li>Continue reading the response on a best-effort basis. For example, you might try to read the HTTP header from the buffer for debugging or to forward a truncated response.</li>
+<li>Reuse the underlying TCP/TLS connection.</li>
+</ul>
+</li>
+<li>Trigger custom cleanup logic when cancellation occurs.</li>
+</ul>
+<p>I leave this refinement to the reader.</p>
+<h2 id="split-generic-asyncreadasyncwrite-stream">
+  Split generic <code>AsyncRead+AsyncWrite</code> stream
+  <a class="anchor" href="#split-generic-asyncreadasyncwrite-stream">#</a>
+</h2>
+<p>The split approach works for <code>TcpStream</code> and other basic types from <code>tokio::io</code>. But the real applications ususally favor generics instead: most adapters accept <code>AsyncRead+AsyncWrite</code> so they compose well. For instance:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">IO</span>: <span style="color:#a6e22e">AsyncRead</span> <span style="color:#f92672">+</span> AsyncWrite<span style="color:#f92672">&gt;</span>(stream: <span style="color:#a6e22e">IO</span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">..</span>.
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>You can still split such a stream with <code><a href="https://docs.rs/tokio/latest/tokio/io/fn.split.html" target="_blank" rel="noopener">tokio::io::split()</a></code>. The example becomes:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">IO</span>: <span style="color:#a6e22e">AsyncRead</span> <span style="color:#f92672">+</span> AsyncWrite <span style="color:#f92672">+</span> Unpin<span style="color:#f92672">&gt;</span>(
+</span></span><span style="display:flex;"><span>    stream: <span style="color:#a6e22e">IO</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> rx: <span style="color:#a6e22e">mpsc</span>::Receiver<span style="color:#f92672">&lt;</span>Bytes<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> read_buf <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec!</span>[<span style="color:#ae81ff">0</span><span style="color:#66d9ef">u8</span>; <span style="color:#ae81ff">8192</span>];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> (<span style="color:#66d9ef">mut</span> r, <span style="color:#66d9ef">mut</span> w) <span style="color:#f92672">=</span> tokio::io::split(stream);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> reader <span style="color:#f92672">=</span> <span style="color:#66d9ef">async</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> n <span style="color:#f92672">=</span> r.read(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> read_buf).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> n <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// EOF - server closed connection
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                <span style="color:#a6e22e">eprintln!</span>(<span style="color:#e6db74">&#34;Server closed the connection.&#34;</span>);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">print!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, String::from_utf8_lossy(<span style="color:#f92672">&amp;</span>read_buf[<span style="color:#f92672">..</span>n]));
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Ok::<span style="color:#f92672">&lt;</span>_, io::Error<span style="color:#f92672">&gt;</span>(())
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> writer <span style="color:#f92672">=</span> <span style="color:#66d9ef">async</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">while</span> <span style="color:#66d9ef">let</span> Some(msg) <span style="color:#f92672">=</span> rx.recv().<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>            w.write_all(<span style="color:#f92672">&amp;</span>msg).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>            w.flush().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;client&#39;s written&#34;</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Ok::<span style="color:#f92672">&lt;</span>_, io::Error<span style="color:#f92672">&gt;</span>(())
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    tokio::<span style="color:#a6e22e">try_join!</span>(reader, writer)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>It looks almost the same (omitting cancellation). But there is one caveat: <code>tokio::io::split()</code> uses an internal mutex. However if we try to evaluate the possible contention of this mutex, we can see that, as long as both halves remain in the same task (i.e., you don&rsquo;t <code>spawn()</code>), contention is negligible and the overhead remains minimal.</p>
+<p>The cancellation case mirrors the TCP-specific version.</p>
+<h2 id="bidirectional-driver-for-io-without-split">
+  Bidirectional driver for I/O without split
+  <a class="anchor" href="#bidirectional-driver-for-io-without-split">#</a>
+</h2>
+<p>One important caveat of <code>tokio::io::split()</code>: splitting is not always safe for every stream implementation. The full story is covered in this <a href="https://github.com/tokio-rs/tls/issues/40" target="_blank" rel="noopener">GitHub issue</a>, but the TL;DR is:</p>
+<ul>
+<li>
+<p>Some streams (<code>AsyncRead+AsyncWrite</code>), including TLS transports, do not keep reads and writes independent. A read may need to trigger a write (alerts, key updates, etc.), and vice versa.</p>
+</li>
+<li>
+<p>Because of that coupling, simply splitting into separate read and write tasks can lead to deadlocks, &ldquo;stuck&rdquo; futures, or missed wakeups (i.e. the read half might block waiting on a write event that never gets woken, etc.).</p>
+</li>
+</ul>
+<p>Even though this issue is specific to Tokio tasks and does not affect concurrent child futures (there is a single <a href="https://tokio.rs/tokio/tutorial/async#wakers" target="_blank" rel="noopener">waker</a> per task, so concurrent readers and writers are fine), you might still want to build a lock-free, fully controlled, and highly performant communication layer. In such cases, using <code>io::split()</code> can be unnecessary, or even overkill. For example, the <a href="https://github.com/hyperium/h2" target="_blank" rel="noopener">h2 HTTP/2</a> and the <a href="https://github.com/hyperium/hyper/tree/master/src/proto/h1" target="_blank" rel="noopener">Hyper HTTP/1</a> crates do not rely on <code>io::split()</code> at all, and instead, they adopt a connection-driver approach.</p>
+<p>The connection-driver approach (sometimes called a connection task or connection future) is a pattern where instead of splitting <code>AsyncRead/AsyncWrite</code> and work with its halves, the single <code>Connection</code> future is created that drives the entire protocol state machine. It&rsquo;s called a driver because polling it drives the connection forward.</p>
+<p>Let&rsquo;s write our own concurrent connection-driver.</p>
+<p>First, remember that if we keep the stream&rsquo;s read and write halves in one task, the I/O is multiplexed on readiness and run one after another. This simple model works well for I/O-bound workloads where the time between events is much longer than the processing time.</p>
+<p>Second, we can&rsquo;t directly use concurrent helpers because the stream implements both <code>AsyncRead</code> and <code>AsyncWrite</code>, and borrowing it twice would violate Rust&rsquo;s rules. So instead, we need to implement a custom made future that owns the I/O, makes reads/writes manually, and proxies messages to/from an actor-like interface.</p>
+<p>Tokio&rsquo;s <code><a href="https://docs.rs/tokio/latest/tokio/io/fn.copy_bidirectional.html" target="_blank" rel="noopener">tokio::io::copy_bidirectional</a></code> is a great example: it copies between two streams by juggling buffers and states, preserving backpressure: no mutexes or helper macros are used, just raw async primitives.</p>
+<p>Another example is the <code><a href="https://github.com/linkerd/linkerd2-proxy" target="_blank" rel="noopener">linkerd2</a></code> proxy&rsquo;s <a href="https://github.com/linkerd/linkerd2-proxy/blob/main/linkerd/duplex/src/lib.rs" target="_blank" rel="noopener">duplex copy</a>, which follows similar design ideas.</p>
+<p>Thus let&rsquo;s reproduce the logic for our own use case with one additional feature. So the recap of our driver is:</p>
+<ul>
+<li>The driver acts as an actor around an I/O stream.</li>
+<li>It should provide a channel to feed outbound messages and another channel to collect ready-to-consume reads.</li>
+<li>As a bonus, expose a <a href="https://en.wikipedia.org/wiki/Write_barrier" target="_blank" rel="noopener">write barrier</a> command that guarantees all previous writes are flushed.</li>
+</ul>
+<p>The user API:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> stream <span style="color:#f92672">=</span> TcpStream::connect(<span style="color:#e6db74">&#34;127.0.0.1:8080&#34;</span>).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> stream <span style="color:#f92672">=</span> BufStream::new(stream);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> (conn, tx, <span style="color:#66d9ef">mut</span> rx) <span style="color:#f92672">=</span> Connection::new(stream)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>tokio::spawn(<span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Err(err) <span style="color:#f92672">=</span> conn.<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">panic!</span>(<span style="color:#e6db74">&#34;err: </span><span style="color:#e6db74">{err}</span><span style="color:#e6db74">&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>});
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>tx.send(message).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">while</span> <span style="color:#66d9ef">let</span> Some(buf) <span style="color:#f92672">=</span> rx.recv().<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;recv from server: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, buf);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>where the <code>message</code> is a tuple of a Bytes buffer and an optional callback – to trigger a flush call:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Ack</span> <span style="color:#f92672">=</span> oneshot::Sender<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Outgoing</span> <span style="color:#f92672">=</span> (Bytes, Option<span style="color:#f92672">&lt;</span>Ack<span style="color:#f92672">&gt;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">..</span>.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> (ack_tx, ack_rx) <span style="color:#f92672">=</span> oneshot::channel();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>message: <span style="color:#a6e22e">Outgoing</span> <span style="color:#f92672">=</span> (Bytes::from_static(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;message&#34;</span>), Some(ack_tx));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>tx.send(message).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>_ <span style="color:#f92672">=</span> ack_rx.<span style="color:#66d9ef">await</span>.unwrap(); <span style="color:#75715e">// &lt;--------- barrier
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">..</span>.
+</span></span></code></pre></div><p>The full code can be found on <a href="https://github.com/brk0v/blog-async-rust-tokio-io/tree/main/src" target="_blank" rel="noopener">github</a>. But here I just want to show some important parts.</p>
+<p>The main structure of the <code>Connection</code> with buffers and states:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Connection</span><span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    stream: <span style="color:#a6e22e">T</span>,
+</span></span><span style="display:flex;"><span>    read_buf: <span style="color:#a6e22e">BytesMut</span>, <span style="color:#75715e">// reusable buffer for read IO calls
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// read from IO
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    inbound_buf: Option<span style="color:#f92672">&lt;</span>Bytes<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    tx: <span style="color:#a6e22e">PollSender</span><span style="color:#f92672">&lt;</span>Bytes<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// write to IO
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    outbound_buf: Option<span style="color:#f92672">&lt;</span>Outgoing<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    rx: <span style="color:#a6e22e">mpsc</span>::Receiver<span style="color:#f92672">&lt;</span>Outgoing<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    read_state: <span style="color:#a6e22e">ReadState</span>,
+</span></span><span style="display:flex;"><span>    write_state: <span style="color:#a6e22e">WriteState</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The core of the driver lies in its implementation of the <a href="https://doc.rust-lang.org/std/future/trait.Future.html" target="_blank" rel="noopener"><code>Future</code></a> trait:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">impl</span><span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span> Future <span style="color:#66d9ef">for</span> Connection<span style="color:#f92672">&lt;</span>T<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    T: <span style="color:#a6e22e">AsyncRead</span> <span style="color:#f92672">+</span> AsyncWrite <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Output</span> <span style="color:#f92672">=</span> Result<span style="color:#f92672">&lt;</span>(), io::Error<span style="color:#f92672">&gt;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">poll</span>(<span style="color:#66d9ef">mut</span> self: <span style="color:#a6e22e">Pin</span><span style="color:#f92672">&lt;&amp;</span><span style="color:#66d9ef">mut</span> Self<span style="color:#f92672">&gt;</span>, cx: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> Context<span style="color:#f92672">&lt;</span>&#39;_<span style="color:#f92672">&gt;</span>) -&gt; <span style="color:#a6e22e">Poll</span><span style="color:#f92672">&lt;</span>Self::Output<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">matches!</span>(self.read_state, ReadState::Reading) {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> self.poll_read(cx)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">matches!</span>(self.write_state, WriteState::Writing) {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> self.poll_write(cx)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">matches!</span>(self.write_state, WriteState::Flushing(_)) {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> self.poll_flush(cx)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">matches!</span>(self.write_state, WriteState::ShuttingDown) {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> self.poll_shutdown(cx)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">matches!</span>(self.read_state, ReadState::Done)
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">matches!</span>(self.write_state, WriteState::Done)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> Poll::Ready(Ok(()));
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Poll::Pending
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The future sequentially checks readiness and performs reads and writes on every wake-up. If either side returns <code>Poll::Pending</code>, the driver continues to the next step instead of yielding immediately. The first error stops the driver.</p>
+<p>The write side runs in three phases: read from the channel of available to write buffers and write them to I/O stream, the flush, then the shutdown. The dedicated <code>Flushing</code> state lets us implement write barriers: it forces an I/O flush and runs a callback once the flush completes.</p>
+<h3 id="backpressure">
+  Backpressure
+  <a class="anchor" href="#backpressure">#</a>
+</h3>
+<p>We need to apply backpressure to both sides of the driver communication:</p>
+<ul>
+<li>Read side only pulls from the socket when the upstream channel has capacity. If it&rsquo;s full, reading stops and the kernel TCP window naturally pushes back on the peer.</li>
+<li>Write side only pulls the next message after the current one is fully written (and optionally flushed + acked). If the socket can&rsquo;t accept bytes, writing yields with the remaining bytes kept in place.</li>
+</ul>
+<h4 id="read-backpressure-dont-read-unless-you-can-forward">
+  Read backpressure: &ldquo;don&rsquo;t read unless you can forward&rdquo;
+  <a class="anchor" href="#read-backpressure-dont-read-unless-you-can-forward">#</a>
+</h4>
+<p><strong>Key idea</strong>: buffer at most one message (<code>inbound_buf</code>) until the <code>mpsc</code> receiver <code>tx</code> reserves a slot. If the channel is full, we yield and stop reading.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">poll_read</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self, cx: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> Context<span style="color:#f92672">&lt;</span>&#39;_<span style="color:#f92672">&gt;</span>) -&gt; <span style="color:#a6e22e">Poll</span><span style="color:#f92672">&lt;</span>io::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 1. If we already have a message to forward, try to reserve capacity upstream.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> self.inbound_buf.is_some() {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">ready!</span>(
+</span></span><span style="display:flex;"><span>                self.tx
+</span></span><span style="display:flex;"><span>                    .poll_reserve(cx)
+</span></span><span style="display:flex;"><span>                    .map_err(<span style="color:#f92672">|</span>_<span style="color:#f92672">|</span> io::Error::new(io::ErrorKind::BrokenPipe, <span style="color:#e6db74">&#34;Channel closed&#34;</span>))<span style="color:#f92672">?</span>
+</span></span><span style="display:flex;"><span>            );
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Capacity is guaranteed now; forward the buffered chunk.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            self.tx
+</span></span><span style="display:flex;"><span>                .send_item(self.inbound_buf.take().expect(<span style="color:#e6db74">&#34;buffered message missing&#34;</span>))
+</span></span><span style="display:flex;"><span>                .map_err(<span style="color:#f92672">|</span>_<span style="color:#f92672">|</span> io::Error::new(io::ErrorKind::BrokenPipe, <span style="color:#e6db74">&#34;Channel closed&#34;</span>))<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 2. Ensure read buffer has enough capacity, then read from the socket.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> self.read_buf.capacity() <span style="color:#f92672">&lt;</span> <span style="color:#66d9ef">READ_BUF_CAPACITY</span> {
+</span></span><span style="display:flex;"><span>            self.read_buf.reserve(<span style="color:#66d9ef">READ_BUF_CAPACITY</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> n <span style="color:#f92672">=</span> <span style="color:#a6e22e">ready!</span>(tokio_util::io::poll_read_buf(
+</span></span><span style="display:flex;"><span>            Pin::new(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self.stream),
+</span></span><span style="display:flex;"><span>            cx,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self.read_buf
+</span></span><span style="display:flex;"><span>        ))<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 3. EOF, finish reads &amp; close upstream channel.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> n <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>            self.read_state <span style="color:#f92672">=</span> ReadState::Done;
+</span></span><span style="display:flex;"><span>            self.tx.close();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> Poll::Ready(Ok(()));
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 4. Move the just-read bytes into a message to forward next loop iteration.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        self.inbound_buf <span style="color:#f92672">=</span> Some(self.read_buf.split().freeze());
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h4 id="write-backpressure-finish-what-you-started-then-maybe-flush--ack">
+  Write backpressure: &ldquo;finish what you started, then maybe flush &amp; ack&rdquo;
+  <a class="anchor" href="#write-backpressure-finish-what-you-started-then-maybe-flush--ack">#</a>
+</h4>
+<p><strong>Key idea</strong>: keep the current <code>(Bytes, Option&lt;Ack&gt;)</code> in <code>outbound_buf</code>. Don&rsquo;t pull the next message until this one is completely written (and optionally flushed + acked). If the socket can&rsquo;t take bytes now, yield with progress saved.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">poll_write</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self, cx: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> Context<span style="color:#f92672">&lt;</span>&#39;_<span style="color:#f92672">&gt;</span>) -&gt; <span style="color:#a6e22e">Poll</span><span style="color:#f92672">&lt;</span>io::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 1. If nothing buffered, try to pull from the bounded mpsc.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> self.outbound_buf.is_none() {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">match</span> self.rx.poll_recv(cx) {
+</span></span><span style="display:flex;"><span>                Poll::Ready(Some(msg)) <span style="color:#f92672">=&gt;</span> self.outbound_buf <span style="color:#f92672">=</span> Some(msg),
+</span></span><span style="display:flex;"><span>                Poll::Ready(None) <span style="color:#f92672">=&gt;</span> { <span style="color:#75715e">// sender closed, finish by flushing then shutdown
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                    self.write_state.set_flushing(None, FromFlushingTo::ShuttingDown);
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">return</span> Poll::Ready(Ok(()));
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>                Poll::Pending <span style="color:#f92672">=&gt;</span> { <span style="color:#75715e">// nothing to send right now, make sure we flush kernel/TLS buffers
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                    self.write_state.set_flushing(None, FromFlushingTo::Writing);
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">return</span> Poll::Pending;
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 2. Drain the current buffer into the socket, handling partial writes.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Some((buf, ack)) <span style="color:#f92672">=</span> self.outbound_buf.as_mut() {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">while</span> <span style="color:#f92672">!</span>buf.is_empty() {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">match</span> <span style="color:#a6e22e">ready!</span>(Pin::new(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self.stream).poll_write(cx, buf)<span style="color:#f92672">?</span>) {
+</span></span><span style="display:flex;"><span>                    <span style="color:#ae81ff">0</span> <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">return</span> Poll::Ready(Err(io::Error::new(io::ErrorKind::WriteZero, <span style="color:#e6db74">&#34;write zero bytes&#34;</span>))),
+</span></span><span style="display:flex;"><span>                    n <span style="color:#f92672">=&gt;</span> buf.advance(n),
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 3. Optional message-level completion: flush, then send ack.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Some(ack) <span style="color:#f92672">=</span> ack.take() {
+</span></span><span style="display:flex;"><span>                self.write_state.set_flushing(Some(ack), FromFlushingTo::Writing);
+</span></span><span style="display:flex;"><span>                cx.waker().wake_by_ref(); <span style="color:#75715e">// the Poll::Pending is returning without installed waker, so wake manually
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                <span style="color:#66d9ef">return</span> Poll::Pending;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 4. Fully written try the next message.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            self.outbound_buf <span style="color:#f92672">=</span> None;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="cancellation">
+  Cancellation
+  <a class="anchor" href="#cancellation">#</a>
+</h3>
+<p>A short-circuit cancellation is pretty straightforward in this case:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> cancel <span style="color:#f92672">=</span> CancellationToken::new();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>tokio::spawn(<span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> {
+</span></span><span style="display:flex;"><span>    tokio::<span style="color:#a6e22e">select!</span> {
+</span></span><span style="display:flex;"><span>        Err(err) <span style="color:#f92672">=</span> conn <span style="color:#f92672">=&gt;</span> <span style="color:#a6e22e">panic!</span>(<span style="color:#e6db74">&#34;err: </span><span style="color:#e6db74">{err}</span><span style="color:#e6db74">&#34;</span>),
+</span></span><span style="display:flex;"><span>        _ <span style="color:#f92672">=</span> cancel.cancelled() <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">return</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span> <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>});
+</span></span></code></pre></div><h3 id="improvements">
+  Improvements
+  <a class="anchor" href="#improvements">#</a>
+</h3>
+<p>There are several improvements to consider and play with:</p>
+<ul>
+<li>Once again about cancellation safety: understand how critical it is for you to lose buffered data.</li>
+<li>Improve read-buffer allocation and copying; you can tune strategies based on expected frame sizes.</li>
+<li>Randomize the order of read and write calls to avoid starving one side. A simple round-robin toggle is often enough.</li>
+<li>On write errors, drain reads before returning – just like the earlier split example.</li>
+<li>The channel logic uses a single buffer:
+<ul>
+<li>Try to use <code><a href="https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Receiver.html#method.poll_recv_many" target="_blank" rel="noopener">poll_recv_many()</a></code> to get more at once instead of <code><a href="https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Receiver.html#method.poll_recv" target="_blank" rel="noopener">poll_recv()</a></code>.</li>
+<li>Try to use <code><a href="https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Sender.html#method.try_reserve_many" target="_blank" rel="noopener">try_reserve_many()</a></code> in the sender part.</li>
+<li>Or as an alternative for the above, change the channel to work with multiple buffers instead of one:</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> (tx, rx) <span style="color:#f92672">=</span> mpsc::channel::<span style="color:#f92672">&lt;</span>(Vec<span style="color:#f92672">&lt;</span>Bytes<span style="color:#f92672">&gt;</span>, Ack)<span style="color:#f92672">&gt;</span>(<span style="color:#ae81ff">128</span>)
+</span></span></code></pre></div><h2 id="framed-io">
+  Framed I/O
+  <a class="anchor" href="#framed-io">#</a>
+</h2>
+<p>So far we&rsquo;ve passed raw <code><a href="https://docs.rs/bytes/latest/bytes/struct.Bytes.html" target="_blank" rel="noopener">Bytes</a></code> through the I/O. But usually it&rsquo;s not what we do in real apps where we work with structures. In practice, streams decode bytes into domain-specific frames/messages/structures and encode frames back to bytes. The encoder/decoder pair is usually called a codec. Tokio provides helpful traits and utilities in <code><a href="https://docs.rs/tokio-util/latest/tokio_util/codec/index.html" target="_blank" rel="noopener">tokio_util::codec</a></code> crate to build composable framed APIs.</p>
+<p>We can wrap an I/O stream with <code>Framed::new()</code>. If the I/O implements <code>AsyncRead+AsyncWrite</code>, the resulting framed stream also offers <code><a href="https://docs.rs/futures/latest/futures/stream/trait.StreamExt.html#method.split" target="_blank" rel="noopener">split()</a></code> (from <code><a href="https://docs.rs/futures/latest/futures/stream/trait.StreamExt.html" target="_blank" rel="noopener">StreamExt</a></code>) because it implements both <code><a href="https://docs.rs/futures/latest/futures/prelude/trait.Stream.html" target="_blank" rel="noopener">Stream</a></code> and <code><a href="https://docs.rs/futures/latest/futures/sink/trait.Sink.html" target="_blank" rel="noopener">Sink</a></code>. Internally this behaves like <code>io::split</code>, but uses a specialized <code><a href="https://docs.rs/futures/latest/futures/lock/struct.BiLock.html" target="_blank" rel="noopener">BiLock</a></code> optimized for two owners mutex lock.</p>
+<p>Here&rsquo;s how it fits together when we use length prefix codec for meesages:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">IO</span>: <span style="color:#a6e22e">AsyncRead</span> <span style="color:#f92672">+</span> AsyncWrite <span style="color:#f92672">+</span> Unpin<span style="color:#f92672">&gt;</span>(
+</span></span><span style="display:flex;"><span>    stream: <span style="color:#a6e22e">IO</span>,
+</span></span><span style="display:flex;"><span>    rx: <span style="color:#a6e22e">mpsc</span>::Receiver<span style="color:#f92672">&lt;</span>Bytes<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> stream <span style="color:#f92672">=</span> Framed::new(stream, LengthDelimitedCodec::new());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// https://docs.rs/futures/latest/futures/lock/struct.BiLock.html
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> (writer, reader) <span style="color:#f92672">=</span> stream.split();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> reader <span style="color:#f92672">=</span> reader.try_for_each(<span style="color:#f92672">|</span>msg<span style="color:#f92672">|</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">print!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, String::from_utf8_lossy(<span style="color:#f92672">&amp;</span>msg));
+</span></span><span style="display:flex;"><span>        Ok(())
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> writer <span style="color:#f92672">=</span> ReceiverStream::new(rx).map(Ok).forward(writer);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    tokio::<span style="color:#a6e22e">try_join!</span>(reader, writer)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This mirrors the earlier <code>io::split()</code> example but gains the convenience of stream adapters.</p>
+<p>Look how elegant, composable, and compatible the code looks.</p>
+<p>The full code can be found on <a href="https://github.com/brk0v/blog-async-rust-tokio-io/tree/main/src" target="_blank" rel="noopener">github</a>.</p>
+<h2 id="35-bidirectional-driver-for-framed-io">
+  3.5 Bidirectional driver for framed I/O
+  <a class="anchor" href="#35-bidirectional-driver-for-framed-io">#</a>
+</h2>
+<p>Finally, we can upgrade the bytes-based driver to a framed one.</p>
+<p>The client API changed a bit:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span> <span style="color:#66d9ef">let</span> (conn, tx, <span style="color:#66d9ef">mut</span> rx) <span style="color:#f92672">=</span> ConnectionFramed::new(stream, LengthDelimitedCodec::new())<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>tokio::spawn(<span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Err(err) <span style="color:#f92672">=</span> conn.<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">panic!</span>(<span style="color:#e6db74">&#34;err: </span><span style="color:#e6db74">{err}</span><span style="color:#e6db74">&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>});
+</span></span></code></pre></div><p>It is almost identical to the bytes driver, except that it works with encoder/decoder generics and generic inbound/outbound types.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[pin_project]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ConnectionFramed</span><span style="color:#f92672">&lt;</span>T, C, In, Out<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    T: <span style="color:#a6e22e">AsyncRead</span> <span style="color:#f92672">+</span> AsyncWrite <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>    C: <span style="color:#a6e22e">Decoder</span><span style="color:#f92672">&lt;</span>Item <span style="color:#f92672">=</span> In, Error <span style="color:#f92672">=</span> io::Error<span style="color:#f92672">&gt;</span> <span style="color:#f92672">+</span> Encoder<span style="color:#f92672">&lt;</span>Out, Error <span style="color:#f92672">=</span> io::Error<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    In: Send <span style="color:#f92672">+</span> fmt::Debug,
+</span></span><span style="display:flex;"><span>    Out: Send <span style="color:#f92672">+</span> fmt::Debug,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#[pin]</span>
+</span></span><span style="display:flex;"><span>    stream: <span style="color:#a6e22e">Framed</span><span style="color:#f92672">&lt;</span>T, C<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// read from IO
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    inbound_buf: Option<span style="color:#f92672">&lt;</span>In<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    tx: <span style="color:#a6e22e">PollSender</span><span style="color:#f92672">&lt;</span>In<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// write to IO
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    outbound_buf: Option<span style="color:#f92672">&lt;</span>Outgoing<span style="color:#f92672">&lt;</span>Out<span style="color:#f92672">&gt;&gt;</span>,
+</span></span><span style="display:flex;"><span>    rx: <span style="color:#a6e22e">mpsc</span>::Receiver<span style="color:#f92672">&lt;</span>Outgoing<span style="color:#f92672">&lt;</span>Out<span style="color:#f92672">&gt;&gt;</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    read_state: <span style="color:#a6e22e">ReadState</span>,
+</span></span><span style="display:flex;"><span>    write_state: <span style="color:#a6e22e">WriteState</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Everything else follows the same pattern.</p>
+<p>The full code you can find <a href="https://github.com/brk0v/blog-async-rust-tokio-io/tree/main/src" target="_blank" rel="noopener">here</a></p>
+<h1 id="putting-it-together">
+  Putting it together
+  <a class="anchor" href="#putting-it-together">#</a>
+</h1>
+<p>Tokio offers several levels of control. Splitting a stream is often sufficient for simple TCP code, especially when paired with <code>try_join!</code> for simple cancellation. Generic I/O benefits from the same pattern via <code>tokio::io::split</code>, while custom drivers provide fine-grained control when splitting is unsafe or when you need customization and additional control. Choose the lightest abstraction that preserves backpressure and cancellation for your use case, and reach for a dedicated driver only when you need the extra guarantees.</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+
+ 
+        <script defer src="/my_js/copy-code.js"></script>
+
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+  </main>
+
+  
+<div class="cookie-container">
+    <p>
+        This website uses "<b>cookies</b>".
+        Using this website means you're OK with this.
+        If you are <b>NOT</b>, please close the site page.
+    </p>
+    <button class="cookie-btn">
+        ACCEPT AND CLOSE
+    </button>
+</div>
+<script src="/my_js/cookie.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

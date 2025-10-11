@@ -1,4 +1,9 @@
-<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="
   cgroup v2 and Page Cache
   #
 
@@ -17,95 +22,694 @@ Memory and I/O cgroup ownership
 Safe ad-hoc tasks
 
 
-The cgroup subsystem is the way to distribute and limit system resources fairly. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In addition, the cgroup provides a lot of helpful resource counters and statistics."><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/"><meta property="og:site_name" content="Viacheslav Biriukov"><meta property="og:title" content="cgroup v2 and Page Cache"><meta property="og:description" content="cgroup v2 and Page Cache # Last updated: Oct 2025 Contents
-Overview Memory cgroup files Pressure Stall Information (PSI) Writeback and I/O Memory and I/O cgroup ownership Safe ad-hoc tasks The cgroup subsystem is the way to distribute and limit system resources fairly. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In addition, the cgroup provides a lot of helpful resource counters and statistics."><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="docs"><title>cgroup v2 and Page Cache | Viacheslav Biriukov</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1+E=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script><script defer src=/en.search.min.7e97a0cfe832281a8126c98203712496c0cabeb060b5bfb911edaf36327ad30a.js integrity="sha256-fpegz+gyKBqBJsmCA3EklsDKvrBgtb+5Ee2vNjJ60wo=" crossorigin=anonymous></script><script async src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-599VSLESJL")</script><link rel=stylesheet href=/my_css/cookie.css><link rel=stylesheet href=/my_css/copy-code.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
-<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Viacheslav Biriukov</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li class=book-section-flat><span>Linux Page Cache series</span><ul><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>0. Linux Page Cache for SRE</a></li><li><a href=/docs/page-cache/1-prepare-environment-for-experiments/>1. Prepare environments</a></li><li><a href=/docs/page-cache/2-essential-page-cache-theory/>2. Essential theory</a></li><li><a href=/docs/page-cache/3-page-cache-and-basic-file-operations/>3. Basic file operations</a></li><li><a href=/docs/page-cache/4-page-cache-eviction-and-page-reclaim/>4. Eviction and page reclaim</a></li><li><a href=/docs/page-cache/5-more-about-mmap-file-access/>5. More about mmap()</a></li><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/ class=active>6. cgroup v2</a></li><li><a href=/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/>7. Unique set and working set</a></li><li><a href=/docs/page-cache/8-direct-io-dio/>8. Direct IO</a></li><li><a href=/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/>9. Advanced tools</a></li></ul></li></ul><div style=margin-top:30px;margin-bottom:30px><b>More recent series:</b><ul><li><a href=/rust-tokio-io/>1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px;background-color:#e84118;color:#f0f8ff">new</span></li><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>2. Resolvers and Dual-Stack applications</li><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>3. Linux Page Cache mini book</li><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons>4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li></ul></div><div style=margin-top:30px;margin-bottom:30px><b>Open Source Projects</b><ul><li><a href=https://github.com/brk0v/trixter/tree/main>• trixter chaos proxy</a></li><li><a href=https://crates.io/crates/tokio-netem>• tokio-netem</a></li></ul></div><ul><li><a href=https://twitter.com/brk0v/ target=_blank rel=noopener><i class="bi bi-twitter"></i>
-Twitter</a></li><li><a href=https://www.linkedin.com/in/biriukov/ target=_blank rel=noopener><i class="bi bi-linkedin"></i>
-Linkedin</a></li><li><a href=https://github.com/brk0v/ target=_blank rel=noopener><i class="bi bi-github"></i>
-Github</a></li></ul><div style=margin-top:30px><p xmlns:cc=http://creativecommons.org/ns#>This content is licensed under
-<a href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target=_blank rel="license noopener noreferrer" style=display:inline-block>CC BY-NC 4.0<img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu>
-</label><strong>cgroup v2 and Page Cache</strong>
-<label for=toc-control></label></div></header><article class="markdown book-article"><h1 id=cgroup-v2-and-page-cache>cgroup v2 and Page Cache
-<a class=anchor href=#cgroup-v2-and-page-cache>#</a></h1><p class=updated-right><i><time datetime=2025-10>Last updated: Oct 2025</time></i></p><p><strong>Contents</strong></p><ul><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/#overview>Overview</a></li><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/#memory-cgroup-files>Memory cgroup files</a></li><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/#pressure-stall-information-psi>Pressure Stall Information (PSI)</a></li><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/#writeback-and-io>Writeback and I/O</a></li><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/#memory-and-io-cgroup-ownership>Memory and I/O cgroup ownership</a></li><li><a href=/docs/page-cache/6-cgroup-v2-and-page-cache/#safe-ad-hoc-tasks>Safe ad-hoc tasks</a></li></ul><hr><p>The cgroup subsystem is the way to distribute and limit system resources fairly. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In addition, the cgroup provides a lot of helpful resource counters and statistics.</p><p>The control groups are everywhere. Even though you may not use them explicitly, they are already turned on by default in all modern GNU/Linux distributives and got integrated into <code>systemd</code>. It means that each service in a modern linux system runs under its own cgroup.</p><h2 id=overview>Overview
-<a class=anchor href=#overview>#</a></h2><p>We already touched the cgroup subsystem several times during this series, but let&rsquo;s take a closer look at the entire picture now. The cgroup plays a critical role in the understanding Page Cache usage. It also helps to debug issues and configure software better by providing detailed stats. As was told earlier, the LRU lists use cgroup memory limits to make eviction decisions and to size the length of the LRU lists.</p><p>Another important topic in <a href=https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html target=_blank rel=noopener>cgroup v2</a>, which was unachievable with the previous v1, is a proper way of tracking Page Cache I/O writebacks. The v1 can&rsquo;t understand which memory cgroup generates disk IOPS and therefore, it incorrectly tracks and limits disk operations. Fortunately, the new v2 version fixes these issues. It already provides a bunch of new features which can help with Page Cache writeback.</p><p>The simplest way to find out all cgroups and their limits are to go to the <code>/sys/fs/cgroup</code>. But you can use more convenient ways to get such info:</p><ul><li><code>systemd-cgls</code> and <code>systemd-top</code> to understand what cgroups <code>systemd</code> has;</li><li><code>below</code> a <code>top</code>-like tool for cgroups <a href=https://github.com/facebookincubator/below target=_blank rel=noopener>https://github.com/facebookincubator/below</a></li></ul><h2 id=memory-cgroup-files>Memory cgroup files
-<a class=anchor href=#memory-cgroup-files>#</a></h2><p>Now let&rsquo;s review the most important parts of the cgroup memory controller from the perspective of Page Cache.</p><ol><li><code>memory.current</code> – shows the total amount of memory currently used by the cgroup and its descendants. It, of course, includes Page Cache size.</li></ol><blockquote class="book-hint info"><p><strong>NOTE</strong></p><p>It may be tempting to use this value in order to set your cgroup/container memory limit, but wait a bit for the following chapter.</p></blockquote><ol start=2><li><code>memory.stat</code> – shows a lot of memory counters, the most important for us can be filtered by <code>file</code> keyword:</li></ol><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ grep file /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat
-</span></span><span style=display:flex><span>file <span style=color:#ae81ff>19804160</span>                  ❶
-</span></span><span style=display:flex><span>file_mapped <span style=color:#ae81ff>0</span>                  ❷
-</span></span><span style=display:flex><span>file_dirty <span style=color:#ae81ff>0</span>                   ❸
-</span></span><span style=display:flex><span>file_writeback <span style=color:#ae81ff>0</span>               ❹
-</span></span><span style=display:flex><span>inactive_file <span style=color:#ae81ff>6160384</span>          ❺
-</span></span><span style=display:flex><span>active_file <span style=color:#ae81ff>13643776</span>           ❺
-</span></span><span style=display:flex><span>workingset_refault_file <span style=color:#ae81ff>0</span>      ❻
-</span></span><span style=display:flex><span>workingset_activate_file <span style=color:#ae81ff>0</span>     ❻
-</span></span><span style=display:flex><span>workingset_restore_file <span style=color:#ae81ff>0</span>      ❻
-</span></span></code></pre></div><p>where</p><ul><li>❶ <code>file</code> – the size of the Page Cache;</li><li>❷ <code>file_mapped</code> – mapped file memory size with <code>mmap()</code>;</li><li>❸ <code>file_dirty</code> – dirty pages size;</li><li>❹ <code>file_writeback</code> – how much data is being flushing at the moment;</li><li>❺ <code>inactive_file</code> and <code>active_file</code> – sizes of the LRU lists;</li><li>❻ <code>workingset_refault_file</code>, <code>workingset_activate_file</code> and <code>workingset_restore_file</code> – metrics to better understand memory thrashing and refault logic.</li></ul><ol start=3><li><p><code>memory.numa_stat</code> – shows the above stats but for each <a href=https://en.wikipedia.org/wiki/Non-uniform_memory_access target=_blank rel=noopener>NUMA node</a>.</p></li><li><p><code>memory.min</code>, <code>memory.low</code>, <code>memory.high</code> and <code>memory.max</code> – cgroup limits. I don&rsquo;t want to repeat the <a href=https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html#usage-guidelines target=_blank rel=noopener>cgroup v2 doc</a> and recommend you to go and read it first. But what you need to keep in mind is that using the hard <code>max</code> or <code>min</code> limits is not the best strategy for your applications and systems. The better approach you can choose is to set only <code>low</code> and/or <code>high</code> limits closer to what you think is the working set size of your application. We will talk about measuring and predicting in the next section.</p></li><li><p><code>memory.events</code> – shows how many times the cgroup hit the above limits:</p></li></ol><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>memory.events
-</span></span><span style=display:flex><span>low <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>high <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>max <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>oom <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>oom_kill <span style=color:#ae81ff>0</span>
-</span></span></code></pre></div><ol start=6><li><code>memory.pressure</code> – this file contains Pressure Stall Information (PSI). It shows the general cgroup memory health by measuring the CPU time that was lost due to lack of memory. This file is the key to understanding the reclaiming process in the cgroup and, consequently, Page Cache. Let&rsquo;s talk about PSI in more detail.</li></ol><h2 id=pressure-stall-information-psi>Pressure Stall Information (PSI)
-<a class=anchor href=#pressure-stall-information-psi>#</a></h2><p>Back before PSI times, it was hard to tell whether a system and/or a cgroup has resource contention or not; whether a cgroup limits are overcommitted or under-provisioned. If the limit for a cgroup can be set lower, then where is its threshold? The PSI feature mitigates these confusions and not only allows us to get this information in real-time but also allows us to set up user-space triggers and get notifications to maximize hardware utilization without service degradation and OOM risks.</p><p>The PSI works for memory, CPU and I/O controllers. For example, the output for memory:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>some avg10<span style=color:#f92672>=</span>0.00 avg60<span style=color:#f92672>=</span>0.00 avg300<span style=color:#f92672>=</span>0.00 total<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>full avg10<span style=color:#f92672>=</span>0.00 avg60<span style=color:#f92672>=</span>0.00 avg300<span style=color:#f92672>=</span>0.00 total<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>
-</span></span></code></pre></div><p>where</p><ul><li><code>some</code> – means that at least one task was stalled on memory for some average percentage of wall-time during 10, 60 and 300 seconds. The &ldquo;total&rdquo; field shows the absolute value in microseconds in order to reveal any spikes;</li><li><code>full</code> – means the same but for all tasks in the cgroup. This metric is a good indication of issues and usually means underprovisioning of the resource or wrong software settings.</li></ul><blockquote class="book-hint info"><p><strong>EXAMPLE</strong></p><p><a href=https://man7.org/linux/man-pages/man8/systemd-oomd.service.8.html target=_blank rel=noopener><code>systemd-oom</code></a> daemon, which is a part of modern GNU/Linux systems, uses the PSI to be more proactive than kernel&rsquo;s OOM in recognition of memory scarcity and finding targets for killing.</p></blockquote><p>I also highly recommend reading the original <a href=https://www.kernel.org/doc/html/latest/accounting/psi.html target=_blank rel=noopener>PSI doc</a>.</p><h2 id=writeback-and-io>Writeback and I/O
-<a class=anchor href=#writeback-and-io>#</a></h2><p>One of the most significant features of the cgroup v2 implementation is the possibility to track, observe and limit Page Cache async writeback for each cgroup. Nowadays, the kernel writeback process can identify which cgroup I/O limit to use in order to persist dirty pages to disks.</p><p>But what is also important is that it works in another direction too. If a cgroup experiences memory pressure and tries to reclaim some pages by flushing its dirty pages, it will use its own I/O limits and won&rsquo;t harm the other cgroups. Thus the memory pressure translates into the disk I/O and if there is a lot of writes, eventually, into the disk pressure for the cgroup. Both controllers have the PSI files, which should be used for proactive management and tuning your software settings.</p><p>In order to control dirty pages flush frequency, the linux kernel has several <a href=https://www.kernel.org/doc/Documentation/sysctl/vm.txt target=_blank rel=noopener><code>sysctl</code> knobs</a>. If you want, you can make the background writeback process more or less aggressive:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo sysctl -a | grep dirty
-</span></span><span style=display:flex><span>vm.dirty_background_bytes <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>vm.dirty_background_ratio <span style=color:#f92672>=</span> <span style=color:#ae81ff>10</span>
-</span></span><span style=display:flex><span>vm.dirty_bytes <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>vm.dirty_expire_centisecs <span style=color:#f92672>=</span> <span style=color:#ae81ff>3000</span>
-</span></span><span style=display:flex><span>vm.dirty_ratio <span style=color:#f92672>=</span> <span style=color:#ae81ff>20</span>
-</span></span><span style=display:flex><span>vm.dirty_writeback_centisecs <span style=color:#f92672>=</span> <span style=color:#ae81ff>500</span>
-</span></span><span style=display:flex><span>vm.dirtytime_expire_seconds <span style=color:#f92672>=</span> <span style=color:#ae81ff>43200</span>
-</span></span></code></pre></div><p>Some of the above works for cgroups too. The kernel chooses and applies what reaches first for the entire system or for a cgroup.</p><p>The cgroup v2 also brings new I/O controllers: <code>io.cost</code> and <code>io.latency</code>. They provide 2 different approaches for limiting and guaranteeing disk operations. Please, read the cgroup v2 documentation for more details and distinctions. But I would say that if your setup is not complex, starting with less invasive <code>io.latency</code> makes sense.</p><p>As with the memory controller, the kernel also provides a bunch of files to control and observe I/O:</p><ul><li><code>io.stat</code> – the stat file with per device data;</li><li><code>io.latency</code> – the latency target time in microseconds;</li><li><code>io.pressure</code> – the PSI file;</li><li><code>io.weight</code> – the target weight if <code>io.cost</code> was chosen;</li><li><code>io.cost.qos</code> and <code>io.cost.model</code> – the configuration file of the <code>io.cost</code> cgroup controller.</li></ul><h2 id=memory-and-io-cgroup-ownership>Memory and I/O cgroup ownership
-<a class=anchor href=#memory-and-io-cgroup-ownership>#</a></h2><p>Several processes from multiple cgroups can obviously work with the same files. For example, <code>cgroup1</code> can open and read the first 10 KiB of the file, and sometime later, another <code>cgroup2</code> can append 2 KiB to the end of the same file and read the first 4KiB. The question is, whose memory and I/O limits will the kernel use?</p><p>The logic of memory ownership (therefore and Page Cache) is built based on each page. The ownership of a page is charged on the first access (page fault) and won&rsquo;t switch to any other cgroup until this page will be completely reclaimed and evicted. The term ownership means that these pages will be used to calculate the cgroup Page Cache usage and will be included in all stats.</p><p>For example, <code>cgroup1</code> is the owner of the first 10KiB, and <code>cgroup2</code> – is the owner of the last 2KiB. No matter what <code>cgroup1</code> will do with the file, it can even close it, <code>cgroup1</code> remains the owner of the first 4KiB (not all 10KiB) as long as <code>cgroup2</code> works with this first 4KiB of the file. In this situation, kernel keeps the pages in Page Caches and keeps updating LRU lists accordingly.</p><p>For the cgroup I/O, ownership works per inode. So for our example <code>cgroup2</code> owns all writeback operations for the file. The inode is assigned to the cgroup on the first writeback, but unlike the memory ownership logic, the I/O ownership may migrate to another cgroup if the kernel notices that this other cgroup generates more dirty pages.</p><p>In order to troubleshoot memory ownership, we should use the pair of <code>procfs</code> files: <code>/proc/pid/pagemap</code> and <code>/proc/kpagecgroup</code>. The <code>page-type</code> tool supports showing per page cgroup information, but it&rsquo;s hard to use it for a directory of files and get a well-formatted output. That&rsquo;s why I wrote my own <a href=https://github.com/brk0v/cgtouch target=_blank rel=noopener><code>cgtouch</code></a> tool in order to troubleshoot cgroup memory ownership.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo go run ./main.go /var/tmp/ -v
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>/var/tmp/file1.db
-</span></span><span style=display:flex><span>cgroup inode    percent       pages        path
-</span></span><span style=display:flex><span>           -      85.9%       <span style=color:#ae81ff>28161</span>        not charged
-</span></span><span style=display:flex><span>        <span style=color:#ae81ff>1781</span>      14.1%        <span style=color:#ae81ff>4608</span>        /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>--
-</span></span><span style=display:flex><span>/var/tmp/ubuntu-21.04-live-server-amd64.iso
-</span></span><span style=display:flex><span>cgroup inode    percent       pages        pat
-</span></span><span style=display:flex><span>           -       0.0%           <span style=color:#ae81ff>0</span>        not charged
-</span></span><span style=display:flex><span>        <span style=color:#ae81ff>2453</span>     100.0%       <span style=color:#ae81ff>38032</span>        /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u10.service
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>--
-</span></span><span style=display:flex><span>         Files: <span style=color:#ae81ff>2</span>
-</span></span><span style=display:flex><span>   Directories: <span style=color:#ae81ff>7</span>
-</span></span><span style=display:flex><span>Resident Pages: 42640/70801 166.6M/276.6M 60.2%
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>cgroup inode    percent       pages        path
-</span></span><span style=display:flex><span>           -      39.8%       <span style=color:#ae81ff>28161</span>        not charged
-</span></span><span style=display:flex><span>        <span style=color:#ae81ff>1781</span>       6.5%        <span style=color:#ae81ff>4608</span>        /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope
-</span></span><span style=display:flex><span>        <span style=color:#ae81ff>2453</span>      53.7%       <span style=color:#ae81ff>38032</span>        /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u10.service
-</span></span></code></pre></div><h2 id=safe-ad-hoc-tasks>Safe ad-hoc tasks
-<a class=anchor href=#safe-ad-hoc-tasks>#</a></h2><p>Let&rsquo;s assume we need to run the <code>wget</code> command or manually install some packages by calling a configuration management system (e.g. <code>saltstack</code>). Both of these tasks can be unpredictably heavy for disk I/O. In order to run them safely and not interact with any production load, we should not run them in the root cgroup or the current terminal cgroup, because they usually don&rsquo;t have any limits. So we need a new cgroup with some limits. It would be very tedious and cumbersome to manually create a cgroup for your task and manually configure it for every ad-hoc task. But fortunately, we don&rsquo;t have to, so all modern GNU/Linux distributives come with the <code>systemd</code> out of the box with cgroup v2. The <code>systemd-run</code> with many other cool features from the <code>systemd</code> makes our life easier and saves a lot of time.</p><p>So, for example, <code>wget</code> task can be run in the following manner:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>systemd-run --user -P -t -G --wait -p MemoryMax<span style=color:#f92672>=</span>12M wget http://ubuntu.ipacct.com/releases/21.04/ubuntu-21.04-live-server-amd64.iso
-</span></span><span style=display:flex><span>Running as unit: run-u2.service                         ⬅  LOOK HERE
-</span></span><span style=display:flex><span>Press ^<span style=color:#f92672>]</span> three times within 1s to disconnect TTY.
-</span></span><span style=display:flex><span>--2021-09-11 19:53:33--  http://ubuntu.ipacct.com/releases/21.04/ubuntu-21.04-live-server-amd64.iso
-</span></span><span style=display:flex><span>Resolving ubuntu.ipacct.com <span style=color:#f92672>(</span>ubuntu.ipacct.com<span style=color:#f92672>)</span>... 195.85.215.252, 2a01:9e40::252
-</span></span><span style=display:flex><span>Connecting to ubuntu.ipacct.com <span style=color:#f92672>(</span>ubuntu.ipacct.com<span style=color:#f92672>)</span>|195.85.215.252|:80... connected.
-</span></span><span style=display:flex><span>HTTP request sent, awaiting response... <span style=color:#ae81ff>200</span> OK
-</span></span><span style=display:flex><span>Length: <span style=color:#ae81ff>1174243328</span> <span style=color:#f92672>(</span>1.1G<span style=color:#f92672>)</span> <span style=color:#f92672>[</span>application/octet-stream<span style=color:#f92672>]</span>
-</span></span><span style=display:flex><span>Saving to: ‘ubuntu-21.04-live-server-amd64.iso.5’
-</span></span><span style=display:flex><span>...
-</span></span></code></pre></div><p>The <code>run-u2.service</code> is my brand new cgroup with a memory limit. I can get its metrics:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ find /sys/fs/cgroup/ -name run-u2.service
-</span></span><span style=display:flex><span>/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u2.service
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ cat  /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u2.service/memory.pressure
-</span></span><span style=display:flex><span>some avg10<span style=color:#f92672>=</span>0.00 avg60<span style=color:#f92672>=</span>0.00 avg300<span style=color:#f92672>=</span>0.00 total<span style=color:#f92672>=</span><span style=color:#ae81ff>70234</span>
-</span></span><span style=display:flex><span>full avg10<span style=color:#f92672>=</span>0.00 avg60<span style=color:#f92672>=</span>0.00 avg300<span style=color:#f92672>=</span>0.00 total<span style=color:#f92672>=</span><span style=color:#ae81ff>69717</span>
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ grep file  /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u2.service/memory.stat
-</span></span><span style=display:flex><span>file <span style=color:#ae81ff>11100160</span>
-</span></span><span style=display:flex><span>file_mapped <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>file_dirty <span style=color:#ae81ff>77824</span>
-</span></span><span style=display:flex><span>file_writeback <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>file_thp <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>inactive_file <span style=color:#ae81ff>5455872</span>
-</span></span><span style=display:flex><span>active_file <span style=color:#ae81ff>5644288</span>
-</span></span><span style=display:flex><span>workingset_refault_file <span style=color:#ae81ff>982</span>
-</span></span><span style=display:flex><span>workingset_activate_file <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>workingset_restore_file <span style=color:#ae81ff>0</span>
-</span></span></code></pre></div><p>As you can see from the above we have near 12MiB file memory and some refault.</p><p>To get all power of systemd and cgroup please read its <a href=https://www.freedesktop.org/software/systemd/man/systemd.resource-control.html target=_blank rel=noopener>resource control doc</a>.</p><a href=/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/ class="book-btn right-button">Read next chapter →</a></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script defer src=/my_js/copy-code.js></script></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div></main><div class=cookie-container><p>This website uses "<b>cookies</b>".
-Using this website means you're OK with this.
-If you are <b>NOT</b>, please close the site page.</p><button class=cookie-btn>
-ACCEPT AND CLOSE</button></div><script src=/my_js/cookie.js></script></body></html>
+The cgroup subsystem is the way to distribute and limit system resources fairly. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In addition, the cgroup provides a lot of helpful resource counters and statistics.">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
+<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/page-cache/6-cgroup-v2-and-page-cache/">
+  <meta property="og:site_name" content="Viacheslav Biriukov">
+  <meta property="og:title" content="cgroup v2 and Page Cache">
+  <meta property="og:description" content="cgroup v2 and Page Cache # Last updated: Oct 2025 Contents
+Overview Memory cgroup files Pressure Stall Information (PSI) Writeback and I/O Memory and I/O cgroup ownership Safe ad-hoc tasks The cgroup subsystem is the way to distribute and limit system resources fairly. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In addition, the cgroup provides a lot of helpful resource counters and statistics.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="docs">
+<title>cgroup v2 and Page Cache | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" >
+<link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+<script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"
+></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+
+    gtag("config", "G-599VSLESJL");
+</script>
+
+<link rel="stylesheet" href="/my_css/cookie.css" />
+<link rel="stylesheet" href="/my_css/copy-code.css" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+/>
+
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+
+      
+        
+
+      
+        
+
+      
+        
+
+      
+
+      
+        <li class="book-section-flat" >
+          
+  
+  
+
+  
+    <span>Linux Page Cache series</span>
+  
+
+          
+  <ul>
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/0-linux-page-cache-for-sre/" class="">
+      
+        0. Linux Page Cache for SRE
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/1-prepare-environment-for-experiments/" class="">
+      
+        1. Prepare environments
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/2-essential-page-cache-theory/" class="">
+      
+        2. Essential theory
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/3-page-cache-and-basic-file-operations/" class="">
+      
+        3. Basic file operations
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/4-page-cache-eviction-and-page-reclaim/" class="">
+      
+        4. Eviction and page reclaim
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/5-more-about-mmap-file-access/" class="">
+      
+        5. More about mmap()
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/6-cgroup-v2-and-page-cache/" class="active">
+      
+        6. cgroup v2
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/" class="">
+      
+        7. Unique set and working set
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/8-direct-io-dio/" class="">
+      
+        8. Direct IO
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/page-cache/9-advanced-page-cache-observability-and-troubleshooting-tools/" class="">
+      
+        9. Advanced tools
+      
+    </a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>More recent series:</b>
+  <ul>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
+    <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
+    <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
+  </ul>
+</div>
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Open Source Projects</b>
+  <ul>
+      <li>
+          <a href="/posts/trixter-chaos-proxy/"> • trixter chaos proxy</a>
+      </li>
+      <li><a href="https://crates.io/crates/tokio-netem"> • tokio-netem</a></li>
+  </ul>
+</div>
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-twitter"></i>
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.linkedin.com/in/biriukov/"  target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
+        Linkedin
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-github"></i>
+        Github
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 30px;">
+  <p xmlns:cc="http://creativecommons.org/ns#">
+    This content is licensed under 
+    <a
+      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
+    </a>
+  </p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>cgroup v2 and Page Cache</strong>
+
+  <label for="toc-control">
+    
+  </label>
+</div>
+
+
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown book-article"><h1 id="cgroup-v2-and-page-cache">
+  cgroup v2 and Page Cache
+  <a class="anchor" href="#cgroup-v2-and-page-cache">#</a>
+</h1>
+<p class="updated-right">
+    <i>
+        <time datetime="2025-10">Last updated: Oct 2025</time>
+    </i>
+</p>
+<p><strong>Contents</strong></p>
+<ul>
+<li><a href="/docs/page-cache/6-cgroup-v2-and-page-cache/#overview">Overview</a></li>
+<li><a href="/docs/page-cache/6-cgroup-v2-and-page-cache/#memory-cgroup-files">Memory cgroup files</a></li>
+<li><a href="/docs/page-cache/6-cgroup-v2-and-page-cache/#pressure-stall-information-psi">Pressure Stall Information (PSI)</a></li>
+<li><a href="/docs/page-cache/6-cgroup-v2-and-page-cache/#writeback-and-io">Writeback and I/O</a></li>
+<li><a href="/docs/page-cache/6-cgroup-v2-and-page-cache/#memory-and-io-cgroup-ownership">Memory and I/O cgroup ownership</a></li>
+<li><a href="/docs/page-cache/6-cgroup-v2-and-page-cache/#safe-ad-hoc-tasks">Safe ad-hoc tasks</a></li>
+</ul>
+<hr/>
+<p>The cgroup subsystem is the way to distribute and limit system resources fairly. It organizes all data in a hierarchy where the leaf nodes depend on their parents and inherit their settings. In addition, the cgroup provides a lot of helpful resource counters and statistics.</p>
+<p>The control groups are everywhere. Even though you may not use them explicitly, they are already turned on by default in all modern GNU/Linux distributives and got integrated into <code>systemd</code>. It means that each service in a modern linux system runs under its own cgroup.</p>
+<h2 id="overview">
+  Overview
+  <a class="anchor" href="#overview">#</a>
+</h2>
+<p>We already touched the cgroup subsystem several times during this series, but let&rsquo;s take a closer look at the entire picture now. The cgroup plays a critical role in the understanding Page Cache usage. It also helps to debug issues and configure software better by providing detailed stats. As was told earlier, the LRU lists use cgroup memory limits to make eviction decisions and to size the length of the LRU lists.</p>
+<p>Another important topic in <a href="https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html" target="_blank" rel="noopener">cgroup v2</a>, which was unachievable with the previous v1, is a proper way of tracking Page Cache I/O writebacks. The v1 can&rsquo;t understand which memory cgroup generates disk IOPS and therefore, it incorrectly tracks and limits disk operations. Fortunately, the new v2 version fixes these issues. It already provides a bunch of new features which can help with Page Cache writeback.</p>
+<p>The simplest way to find out all cgroups and their limits are to go to the <code>/sys/fs/cgroup</code>. But you can use more convenient ways to get such info:</p>
+<ul>
+<li><code>systemd-cgls</code> and <code>systemd-top</code> to understand what cgroups <code>systemd</code> has;</li>
+<li><code>below</code> a <code>top</code>-like tool for cgroups <a href="https://github.com/facebookincubator/below" target="_blank" rel="noopener">https://github.com/facebookincubator/below</a></li>
+</ul>
+<h2 id="memory-cgroup-files">
+  Memory cgroup files
+  <a class="anchor" href="#memory-cgroup-files">#</a>
+</h2>
+<p>Now let&rsquo;s review the most important parts of the cgroup memory controller from the perspective of Page Cache.</p>
+<ol>
+<li><code>memory.current</code> – shows the total amount of memory currently used by the cgroup and its descendants. It, of course, includes Page Cache size.</li>
+</ol>
+<blockquote class="book-hint info">
+  <p><strong>NOTE</strong></p>
+<p>It may be tempting to use this value in order to set your cgroup/container memory limit, but wait a bit for the following chapter.</p>
+
+</blockquote>
+
+<ol start="2">
+<li><code>memory.stat</code> – shows a lot of memory counters, the most important for us can be filtered by <code>file</code> keyword:</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ grep file /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope/memory.stat
+</span></span><span style="display:flex;"><span>file <span style="color:#ae81ff">19804160</span>                  ❶
+</span></span><span style="display:flex;"><span>file_mapped <span style="color:#ae81ff">0</span>                  ❷
+</span></span><span style="display:flex;"><span>file_dirty <span style="color:#ae81ff">0</span>                   ❸
+</span></span><span style="display:flex;"><span>file_writeback <span style="color:#ae81ff">0</span>               ❹
+</span></span><span style="display:flex;"><span>inactive_file <span style="color:#ae81ff">6160384</span>          ❺
+</span></span><span style="display:flex;"><span>active_file <span style="color:#ae81ff">13643776</span>           ❺
+</span></span><span style="display:flex;"><span>workingset_refault_file <span style="color:#ae81ff">0</span>      ❻
+</span></span><span style="display:flex;"><span>workingset_activate_file <span style="color:#ae81ff">0</span>     ❻
+</span></span><span style="display:flex;"><span>workingset_restore_file <span style="color:#ae81ff">0</span>      ❻
+</span></span></code></pre></div><p>where</p>
+<ul>
+<li>❶ <code>file</code> – the size of the Page Cache;</li>
+<li>❷ <code>file_mapped</code> – mapped file memory size with <code>mmap()</code>;</li>
+<li>❸ <code>file_dirty</code> –  dirty pages size;</li>
+<li>❹ <code>file_writeback</code> – how much data is being flushing at the moment;</li>
+<li>❺ <code>inactive_file</code> and <code>active_file</code> – sizes of the LRU lists;</li>
+<li>❻ <code>workingset_refault_file</code>, <code>workingset_activate_file</code> and <code>workingset_restore_file</code> – metrics to better understand memory thrashing and refault logic.</li>
+</ul>
+<ol start="3">
+<li>
+<p><code>memory.numa_stat</code> – shows the above stats but for each <a href="https://en.wikipedia.org/wiki/Non-uniform_memory_access" target="_blank" rel="noopener">NUMA node</a>.</p>
+</li>
+<li>
+<p><code>memory.min</code>, <code>memory.low</code>, <code>memory.high</code> and <code>memory.max</code> – cgroup limits. I don&rsquo;t want to repeat the <a href="https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html#usage-guidelines" target="_blank" rel="noopener">cgroup v2 doc</a> and recommend you to go and read it first. But what you need to keep in mind is that using the hard <code>max</code> or <code>min</code> limits is not the best strategy for your applications and systems. The better approach you can choose is to set only <code>low</code> and/or <code>high</code> limits closer to what you think is the working set size of your application. We will talk about measuring and predicting in the next section.</p>
+</li>
+<li>
+<p><code>memory.events</code> – shows how many times the cgroup hit the above limits:</p>
+</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>memory.events
+</span></span><span style="display:flex;"><span>low <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>high <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>max <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>oom <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>oom_kill <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><ol start="6">
+<li><code>memory.pressure</code> – this file contains Pressure Stall Information (PSI). It shows the general cgroup memory health by measuring the CPU time that was lost due to lack of memory. This file is the key to understanding the reclaiming process in the cgroup and, consequently, Page Cache. Let&rsquo;s talk about PSI in more detail.</li>
+</ol>
+<h2 id="pressure-stall-information-psi">
+  Pressure Stall Information (PSI)
+  <a class="anchor" href="#pressure-stall-information-psi">#</a>
+</h2>
+<p>Back before PSI times, it was hard to tell whether a system and/or a cgroup has resource contention or not; whether a cgroup limits are  overcommitted or under-provisioned. If the limit for a cgroup can be set lower, then where is its threshold? The PSI feature mitigates these confusions and not only allows us to get this information in real-time but also allows us to set up user-space triggers and get notifications to maximize hardware utilization without service degradation and OOM risks.</p>
+<p>The PSI works for memory, CPU and I/O controllers. For example, the output for memory:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>some avg10<span style="color:#f92672">=</span>0.00 avg60<span style="color:#f92672">=</span>0.00 avg300<span style="color:#f92672">=</span>0.00 total<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>full avg10<span style="color:#f92672">=</span>0.00 avg60<span style="color:#f92672">=</span>0.00 avg300<span style="color:#f92672">=</span>0.00 total<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>where</p>
+<ul>
+<li><code>some</code> – means that at least one task was stalled on memory for some average percentage of wall-time during 10, 60 and 300 seconds. The &ldquo;total&rdquo; field shows the absolute value in microseconds in order to reveal any spikes;</li>
+<li><code>full</code> – means the same but for all tasks in the cgroup. This metric is a good indication of issues and usually means underprovisioning of the resource or wrong software settings.</li>
+</ul>
+<blockquote class="book-hint info">
+  <p><strong>EXAMPLE</strong></p>
+<p><a href="https://man7.org/linux/man-pages/man8/systemd-oomd.service.8.html" target="_blank" rel="noopener"><code>systemd-oom</code></a> daemon, which is a part of modern GNU/Linux systems, uses the PSI to be more proactive than kernel&rsquo;s OOM in recognition of memory scarcity and finding targets for killing.</p>
+
+</blockquote>
+
+<p>I also highly recommend reading the original <a href="https://www.kernel.org/doc/html/latest/accounting/psi.html" target="_blank" rel="noopener">PSI doc</a>.</p>
+<h2 id="writeback-and-io">
+  Writeback and I/O
+  <a class="anchor" href="#writeback-and-io">#</a>
+</h2>
+<p>One of the most significant features of the cgroup v2 implementation is the possibility to track, observe and limit Page Cache async writeback for each cgroup. Nowadays, the kernel writeback process can identify which cgroup I/O limit to use in order to persist dirty pages to disks.</p>
+<p>But what is also important is that it works in another direction too. If a cgroup experiences memory pressure and tries to reclaim some pages by flushing its dirty pages, it will use its own I/O limits and won&rsquo;t harm the other cgroups. Thus the memory pressure translates into the disk I/O and if there is a lot of writes, eventually, into the disk pressure for the cgroup. Both controllers have the PSI files, which should be used for proactive management and tuning your software settings.</p>
+<p>In order to control dirty pages flush frequency, the linux kernel has several <a href="https://www.kernel.org/doc/Documentation/sysctl/vm.txt" target="_blank" rel="noopener"><code>sysctl</code> knobs</a>. If you want, you can make the background writeback process more or less aggressive:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo sysctl -a | grep dirty
+</span></span><span style="display:flex;"><span>vm.dirty_background_bytes <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>vm.dirty_background_ratio <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>vm.dirty_bytes <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>vm.dirty_expire_centisecs <span style="color:#f92672">=</span> <span style="color:#ae81ff">3000</span>
+</span></span><span style="display:flex;"><span>vm.dirty_ratio <span style="color:#f92672">=</span> <span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>vm.dirty_writeback_centisecs <span style="color:#f92672">=</span> <span style="color:#ae81ff">500</span>
+</span></span><span style="display:flex;"><span>vm.dirtytime_expire_seconds <span style="color:#f92672">=</span> <span style="color:#ae81ff">43200</span>
+</span></span></code></pre></div><p>Some of the above works for cgroups too. The kernel chooses and applies what reaches first for the entire system or for a cgroup.</p>
+<p>The cgroup v2 also brings new I/O controllers: <code>io.cost</code> and <code>io.latency</code>. They provide 2 different approaches for limiting and guaranteeing disk operations. Please, read the cgroup v2 documentation for more details and distinctions. But I would say that if your setup is not complex, starting with less invasive <code>io.latency</code> makes sense.</p>
+<p>As with the memory controller, the kernel also provides a bunch of files to control and observe I/O:</p>
+<ul>
+<li><code>io.stat</code> – the stat file with per device data;</li>
+<li><code>io.latency</code> – the latency target time in microseconds;</li>
+<li><code>io.pressure</code> – the PSI file;</li>
+<li><code>io.weight</code> – the target weight if <code>io.cost</code> was chosen;</li>
+<li><code>io.cost.qos</code> and <code>io.cost.model</code> – the configuration file of the <code>io.cost</code> cgroup controller.</li>
+</ul>
+<h2 id="memory-and-io-cgroup-ownership">
+  Memory and I/O cgroup ownership
+  <a class="anchor" href="#memory-and-io-cgroup-ownership">#</a>
+</h2>
+<p>Several processes from multiple cgroups can obviously work with the same files. For example, <code>cgroup1</code> can open and read the first 10 KiB of the file, and sometime later, another <code>cgroup2</code> can append 2 KiB to the end of the same file and read the first 4KiB. The question is, whose memory and I/O limits will the kernel use?</p>
+<p>The logic of memory ownership (therefore and Page Cache) is built based on each page. The ownership of a page is charged on the first access (page fault) and won&rsquo;t switch to any other cgroup until this page will be completely reclaimed and evicted. The term ownership means that these pages will be used to calculate the cgroup Page Cache usage and will be included in all stats.</p>
+<p>For example, <code>cgroup1</code> is the owner of the first 10KiB, and <code>cgroup2</code> – is the owner of the last 2KiB. No matter what <code>cgroup1</code> will do with the file, it can even close it, <code>cgroup1</code> remains the owner of the first 4KiB (not all 10KiB) as long as <code>cgroup2</code> works with this first 4KiB of the file. In this situation, kernel keeps the pages in Page Caches and keeps updating LRU lists accordingly.</p>
+<p>For the cgroup I/O, ownership works per inode. So for our example <code>cgroup2</code> owns all writeback operations for the file. The inode is assigned to the cgroup on the first writeback, but unlike the memory ownership logic, the I/O ownership may migrate to another cgroup if the kernel notices that this other cgroup generates more dirty pages.</p>
+<p>In order to troubleshoot memory ownership, we should use the pair of <code>procfs</code> files: <code>/proc/pid/pagemap</code> and <code>/proc/kpagecgroup</code>. The <code>page-type</code> tool supports showing per page cgroup information, but it&rsquo;s hard to use it for a directory of files and get a well-formatted output. That&rsquo;s why I wrote my own <a href="https://github.com/brk0v/cgtouch" target="_blank" rel="noopener"><code>cgtouch</code></a> tool in order to troubleshoot cgroup memory ownership.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo go run ./main.go /var/tmp/ -v
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>/var/tmp/file1.db
+</span></span><span style="display:flex;"><span>cgroup inode    percent       pages        path
+</span></span><span style="display:flex;"><span>           -      85.9%       <span style="color:#ae81ff">28161</span>        not charged
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">1781</span>      14.1%        <span style="color:#ae81ff">4608</span>        /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>--
+</span></span><span style="display:flex;"><span>/var/tmp/ubuntu-21.04-live-server-amd64.iso
+</span></span><span style="display:flex;"><span>cgroup inode    percent       pages        pat
+</span></span><span style="display:flex;"><span>           -       0.0%           <span style="color:#ae81ff">0</span>        not charged
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">2453</span>     100.0%       <span style="color:#ae81ff">38032</span>        /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u10.service
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>--
+</span></span><span style="display:flex;"><span>         Files: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>   Directories: <span style="color:#ae81ff">7</span>
+</span></span><span style="display:flex;"><span>Resident Pages: 42640/70801 166.6M/276.6M 60.2%
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cgroup inode    percent       pages        path
+</span></span><span style="display:flex;"><span>           -      39.8%       <span style="color:#ae81ff">28161</span>        not charged
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">1781</span>       6.5%        <span style="color:#ae81ff">4608</span>        /sys/fs/cgroup/user.slice/user-1000.slice/session-3.scope
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">2453</span>      53.7%       <span style="color:#ae81ff">38032</span>        /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u10.service
+</span></span></code></pre></div><h2 id="safe-ad-hoc-tasks">
+  Safe ad-hoc tasks
+  <a class="anchor" href="#safe-ad-hoc-tasks">#</a>
+</h2>
+<p>Let&rsquo;s assume we need to run the <code>wget</code> command or manually install some packages by calling a configuration management system (e.g. <code>saltstack</code>). Both of these tasks can be unpredictably heavy for disk I/O. In order to run them safely and not interact with any production load, we should not run them in the root cgroup or the current terminal cgroup, because they usually don&rsquo;t have any limits. So we need a new cgroup with some limits. It would be very tedious and cumbersome to manually create a cgroup for your task and manually configure it for every ad-hoc task. But fortunately, we don&rsquo;t have to, so all modern GNU/Linux distributives come with the <code>systemd</code> out of the box with cgroup v2. The <code>systemd-run</code> with many other cool features from the <code>systemd</code> makes our life easier and saves a lot of time.</p>
+<p>So, for example, <code>wget</code> task can be run in the following manner:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>systemd-run --user -P -t -G --wait -p MemoryMax<span style="color:#f92672">=</span>12M wget http://ubuntu.ipacct.com/releases/21.04/ubuntu-21.04-live-server-amd64.iso
+</span></span><span style="display:flex;"><span>Running as unit: run-u2.service                         ⬅  LOOK HERE
+</span></span><span style="display:flex;"><span>Press ^<span style="color:#f92672">]</span> three times within 1s to disconnect TTY.
+</span></span><span style="display:flex;"><span>--2021-09-11 19:53:33--  http://ubuntu.ipacct.com/releases/21.04/ubuntu-21.04-live-server-amd64.iso
+</span></span><span style="display:flex;"><span>Resolving ubuntu.ipacct.com <span style="color:#f92672">(</span>ubuntu.ipacct.com<span style="color:#f92672">)</span>... 195.85.215.252, 2a01:9e40::252
+</span></span><span style="display:flex;"><span>Connecting to ubuntu.ipacct.com <span style="color:#f92672">(</span>ubuntu.ipacct.com<span style="color:#f92672">)</span>|195.85.215.252|:80... connected.
+</span></span><span style="display:flex;"><span>HTTP request sent, awaiting response... <span style="color:#ae81ff">200</span> OK
+</span></span><span style="display:flex;"><span>Length: <span style="color:#ae81ff">1174243328</span> <span style="color:#f92672">(</span>1.1G<span style="color:#f92672">)</span> <span style="color:#f92672">[</span>application/octet-stream<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>Saving to: ‘ubuntu-21.04-live-server-amd64.iso.5’
+</span></span><span style="display:flex;"><span>...
+</span></span></code></pre></div><p>The <code>run-u2.service</code> is my brand new cgroup with a memory limit. I can get its metrics:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ find /sys/fs/cgroup/ -name run-u2.service
+</span></span><span style="display:flex;"><span>/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u2.service
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ cat  /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u2.service/memory.pressure
+</span></span><span style="display:flex;"><span>some avg10<span style="color:#f92672">=</span>0.00 avg60<span style="color:#f92672">=</span>0.00 avg300<span style="color:#f92672">=</span>0.00 total<span style="color:#f92672">=</span><span style="color:#ae81ff">70234</span>
+</span></span><span style="display:flex;"><span>full avg10<span style="color:#f92672">=</span>0.00 avg60<span style="color:#f92672">=</span>0.00 avg300<span style="color:#f92672">=</span>0.00 total<span style="color:#f92672">=</span><span style="color:#ae81ff">69717</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ grep file  /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-u2.service/memory.stat
+</span></span><span style="display:flex;"><span>file <span style="color:#ae81ff">11100160</span>
+</span></span><span style="display:flex;"><span>file_mapped <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>file_dirty <span style="color:#ae81ff">77824</span>
+</span></span><span style="display:flex;"><span>file_writeback <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>file_thp <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>inactive_file <span style="color:#ae81ff">5455872</span>
+</span></span><span style="display:flex;"><span>active_file <span style="color:#ae81ff">5644288</span>
+</span></span><span style="display:flex;"><span>workingset_refault_file <span style="color:#ae81ff">982</span>
+</span></span><span style="display:flex;"><span>workingset_activate_file <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>workingset_restore_file <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>As you can see from the above we have near 12MiB file memory and some refault.</p>
+<p>To get all power of systemd and cgroup please read its <a href="https://www.freedesktop.org/software/systemd/man/systemd.resource-control.html" target="_blank" rel="noopener">resource control doc</a>.</p>
+
+
+
+
+  
+
+<a  href="/docs/page-cache/7-how-much-memory-my-program-uses-or-the-tale-of-working-set-size/"   class="book-btn right-button">
+  Read next chapter →
+</a>
+
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+
+ 
+        <script defer src="/my_js/copy-code.js"></script>
+
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+  </main>
+
+  
+<div class="cookie-container">
+    <p>
+        This website uses "<b>cookies</b>".
+        Using this website means you're OK with this.
+        If you are <b>NOT</b>, please close the site page.
+    </p>
+    <button class="cookie-btn">
+        ACCEPT AND CLOSE
+    </button>
+</div>
+<script src="/my_js/cookie.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

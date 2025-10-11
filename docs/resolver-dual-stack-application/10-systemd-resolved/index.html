@@ -1,4 +1,9 @@
-<!doctype html><html lang=en-us dir=ltr><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="
   10. systemd-resolved
   #
 
@@ -25,350 +30,1018 @@ Contents
   10.1 Managing /etc/resolv.conf content
   #
 
-The main issue with /etc/resolv.conf is managing it in modern distributions, which can have multiple sources of nameserver and search domain information due to multiple interfaces (both real and virtual, such as VPN tunnels) with concurrent DHCP clients."><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/"><meta property="og:site_name" content="Viacheslav Biriukov"><meta property="og:title" content="systemd-resolved"><meta property="og:description" content="10. systemd-resolved # Last updated: Oct 2025 Contents
-10.1 Managing /etc/resolv.conf content 10.2 Integrating systemd-resolved into system 10.3 Per link name servers and search domains 10.4 Useful commands 10.5 Querying systemd-resolved 10.5.1 Varlink 10.5.2 D-Bus 10.1 Managing /etc/resolv.conf content # The main issue with /etc/resolv.conf is managing it in modern distributions, which can have multiple sources of nameserver and search domain information due to multiple interfaces (both real and virtual, such as VPN tunnels) with concurrent DHCP clients."><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="docs"><title>systemd-resolved | Viacheslav Biriukov</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1+E=" crossorigin=anonymous><script defer src=/flexsearch.min.js></script><script defer src=/en.search.min.7e97a0cfe832281a8126c98203712496c0cabeb060b5bfb911edaf36327ad30a.js integrity="sha256-fpegz+gyKBqBJsmCA3EklsDKvrBgtb+5Ee2vNjJ60wo=" crossorigin=anonymous></script><script async src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-599VSLESJL")</script><link rel=stylesheet href=/my_css/cookie.css><link rel=stylesheet href=/my_css/copy-code.css><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
-<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Viacheslav Biriukov</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li class=book-section-flat><span>DNS resolvers and Dual-Stack applications</span><ul><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>Resolvers and Dual-Stack applications for SRE</a></li><li><a href=/docs/resolver-dual-stack-application/1-what-is-a-stub-resolver/>1. What is a stub resolver?</a></li><li><a href=/docs/resolver-dual-stack-application/2-history-gethostbyname/>2. History: gethostbyname()</a></li><li><a href=/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/>3. getaddrinfo() and POSIX spec</a></li><li><a href=/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/>4. getaddrinfo() from glibc</a></li><li><a href=/docs/resolver-dual-stack-application/5-getaddrinfo-from-musl-libc/>5. getaddrinfo() from musl libc</a></li><li><a href=/docs/resolver-dual-stack-application/6-dual-stack-applications/>6. Dual-Stack applications</a></li><li><a href=/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/>7. C async non-blocking resolvers</a></li><li><a href=/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/>8. Stub resolvers in languages</a></li><li><a href=/docs/resolver-dual-stack-application/9-dual-stack-software-examples/>9. Dual-stack software examples</a></li><li><a href=/docs/resolver-dual-stack-application/10-systemd-resolved/ class=active>10. systemd-resolved</a></li><li><a href=/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/>11. Querying Nameservers</a></li><li><a href=/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/>12. Present and future</a></li><li><a href=/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/>Troubleshooting tools</a></li></ul></li></ul><div style=margin-top:30px;margin-bottom:30px><b>More recent series:</b><ul><li><a href=/rust-tokio-io/>1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px;background-color:#e84118;color:#f0f8ff">new</span></li><li><a href=/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/>2. Resolvers and Dual-Stack applications</li><li><a href=/docs/page-cache/0-linux-page-cache-for-sre/>3. Linux Page Cache mini book</li><li><a href=/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons>4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li></ul></div><div style=margin-top:30px;margin-bottom:30px><b>Open Source Projects</b><ul><li><a href=https://github.com/brk0v/trixter/tree/main>• trixter chaos proxy</a></li><li><a href=https://crates.io/crates/tokio-netem>• tokio-netem</a></li></ul></div><ul><li><a href=https://twitter.com/brk0v/ target=_blank rel=noopener><i class="bi bi-twitter"></i>
-Twitter</a></li><li><a href=https://www.linkedin.com/in/biriukov/ target=_blank rel=noopener><i class="bi bi-linkedin"></i>
-Linkedin</a></li><li><a href=https://github.com/brk0v/ target=_blank rel=noopener><i class="bi bi-github"></i>
-Github</a></li></ul><div style=margin-top:30px><p xmlns:cc=http://creativecommons.org/ns#>This content is licensed under
-<a href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target=_blank rel="license noopener noreferrer" style=display:inline-block>CC BY-NC 4.0<img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style=height:22px!important;margin-left:3px;vertical-align:text-bottom src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"></a></p></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu>
-</label><strong>systemd-resolved</strong>
-<label for=toc-control></label></div></header><article class="markdown book-article"><h1 id=10-systemd-resolved>10. systemd-resolved
-<a class=anchor href=#10-systemd-resolved>#</a></h1><p class=updated-right><i><time datetime=2025-10>Last updated: Oct 2025</time></i></p><p><strong>Contents</strong></p><ul><li><a href=/docs/resolver-dual-stack-application/10-systemd-resolved/#101-managing-etcresolvconf-content>10.1 Managing <code>/etc/resolv.conf</code> content</a></li><li><a href=/docs/resolver-dual-stack-application/10-systemd-resolved/#102-integrating-systemd-resolved-into-system>10.2 Integrating <code>systemd-resolved </code>into system</a></li><li><a href=/docs/resolver-dual-stack-application/10-systemd-resolved/#103-per-link-name-servers-and-search-domains>10.3 Per link name servers and search domains</a></li><li><a href=/docs/resolver-dual-stack-application/10-systemd-resolved/#104-useful-commands>10.4 Useful commands</a></li><li><a href=/docs/resolver-dual-stack-application/10-systemd-resolved/#105-querying-systemd-resolved>10.5 Querying <code>systemd-resolved</code></a><ul><li><a href=/docs/resolver-dual-stack-application/10-systemd-resolved/#1051-varlink>10.5.1 <code>Varlink</code></a></li><li><a href=/docs/resolver-dual-stack-application/10-systemd-resolved/#1052-d-bus>10.5.2 <code>D-Bus</code></a></li></ul></li></ul><hr><h2 id=101-managing-etcresolvconf-content>10.1 Managing <code>/etc/resolv.conf</code> content
-<a class=anchor href=#101-managing-etcresolvconf-content>#</a></h2><p>The main issue with <code>/etc/resolv.conf</code> is managing it in modern distributions, which can have multiple sources of nameserver and search domain information due to multiple interfaces (both real and virtual, such as VPN tunnels) with concurrent DHCP clients.</p><p>The legacy method to handle this complexity was the <code><a href=https://en.wikipedia.org/wiki/Resolvconf target=_blank rel=noopener>Resolvconf</a></code> project. It set up a number of hooks and updated <code>/etc/resolv.conf</code> appropriately by following some defined rules. However, its main issue is its lack of flexibility and inability to manage several nameservers and search domains on a per-link basis, which is sometimes needed in complex setups.</p><p>To address this, the emergence of <code><a href=https://www.freedesktop.org/software/systemd/man/latest/systemd-resolved.service.html target=_blank rel=noopener>systemd-resolved</a></code> was intended to resolve (^_^) these issues.</p><h2 id=102-integrating-systemd-resolved-into-system>10.2 Integrating <code>systemd-resolved</code> into system
-<a class=anchor href=#102-integrating-systemd-resolved-into-system>#</a></h2><p>Slowly but surely, <code>systemd</code> is taking on more features and responsibilities in modern GNU/Linux distributions. One of these responsibilities is serving as a local source of truth for hostname resolution with <code>systemd-resolved</code>.</p><p>There are several ways you can start using it system-wide or directly in your application.</p><img alt="The ways systemd-resolved can integrate into the system." src=../images/systemd-resolved.png width=60% class=img-center><div class=text-center>Figure 5. – The ways <code>systemd-resolved</code> can integrate into the system.</div><p>For the system wide setup there are currently two ways:</p><ol><li>Using <code>nss</code> module <code>resolve</code> (<code><a href=https://man.archlinux.org/man/core/systemd/libnss_resolve.so.2.8.en target=_blank rel=noopener>man libnss_resolve.so.2</a></code>).</li><li>Delegate the management of <code>/etc/resolv.conf</code> to <code>systemd-resolved</code> by symlinking <code>/run/systemd/resolve/resolv.conf</code>. The file sets the nameserver to <code>127.0.0.53</code> where <code>systemd-resolved</code> is listening and sets <code>search</code> domains.</li></ol><p>The second option is preferred because it also addresses issues with the search domain.</p><p>But <code>systemd-resolved</code> is not just a management tool for <code>/etc/resolv.conf</code>; it also acts as a local cache. It supports <code><a href=https://en.wikipedia.org/wiki/Multicast_DNS target=_blank rel=noopener>mDNS</a></code>, <code>/etc/hosts</code>, and other name sources, and can mix them all using predefined and configurable rules, some of which we will discuss below.</p><h2 id=103-per-link-name-servers-and-search-domains>10.3 Per link name servers and search domains
-<a class=anchor href=#103-per-link-name-servers-and-search-domains>#</a></h2><p>By default the <code>systemd</code> uses a link name server if you have only one interface with DHCP:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl
-</span></span><span style=display:flex><span>Global
-</span></span><span style=display:flex><span>         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC<span style=color:#f92672>=</span>no/unsupported
-</span></span><span style=display:flex><span>  resolv.conf mode: stub
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>Link <span style=color:#ae81ff>2</span> <span style=color:#f92672>(</span>eth0<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>    Current Scopes: DNS
-</span></span><span style=display:flex><span>         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC<span style=color:#f92672>=</span>no/unsupported
-</span></span><span style=display:flex><span>Current DNS Server: 192.168.5.3
-</span></span><span style=display:flex><span>       DNS Servers: 192.168.5.3
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl show-server-state
-</span></span><span style=display:flex><span>Server: 192.168.5.3
-</span></span><span style=display:flex><span>                              Type: link
-</span></span><span style=display:flex><span>                         Interface: eth0
-</span></span><span style=display:flex><span>                   Interface Index: <span style=color:#ae81ff>2</span>
-</span></span><span style=display:flex><span>            Verified feature level: UDP
-</span></span><span style=display:flex><span>            Possible feature level: UDP
-</span></span><span style=display:flex><span>                       DNSSEC Mode: no
-</span></span><span style=display:flex><span>                  DNSSEC Supported: no
-</span></span><span style=display:flex><span>Maximum UDP fragment size received: <span style=color:#ae81ff>512</span>
-</span></span><span style=display:flex><span>               Failed UDP attempts: <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>               Failed TCP attempts: <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>             Seen truncated packet: no
-</span></span><span style=display:flex><span>          Seen OPT RR getting lost: yes
-</span></span><span style=display:flex><span>             Seen RRSIG RR missing: no
-</span></span><span style=display:flex><span>               Seen invalid packet: no
-</span></span><span style=display:flex><span>            Server dropped DO flag: no
-</span></span></code></pre></div><p>You can change this behavior by setting a DNS recursor in the <code>systemd-resolved</code> config file <code>/etc/systemd/resolved.conf</code>.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ini data-lang=ini><span style=display:flex><span><span style=color:#75715e># cat /etc/systemd/resolved.conf</span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>[Resolve]</span>
-</span></span><span style=display:flex><span><span style=color:#a6e22e>DNS</span><span style=color:#f92672>=</span><span style=color:#e6db74>1.1.1.1</span>
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo systemctl restart systemd-resolved
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo resolvectl
-</span></span><span style=display:flex><span>Global
-</span></span><span style=display:flex><span>         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC<span style=color:#f92672>=</span>no/unsupported
-</span></span><span style=display:flex><span>  resolv.conf mode: stub
-</span></span><span style=display:flex><span>       DNS Servers: 1.1.1.1
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>Link <span style=color:#ae81ff>2</span> <span style=color:#f92672>(</span>eth0<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>    Current Scopes: DNS
-</span></span><span style=display:flex><span>         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC<span style=color:#f92672>=</span>no/unsupported
-</span></span><span style=display:flex><span>       DNS Servers: 192.168.5.3
-</span></span></code></pre></div><p>As you can see now we have a global and a link DNS server.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl show-server-state
-</span></span><span style=display:flex><span>Server: 1.1.1.1
-</span></span><span style=display:flex><span>                              Type: system
-</span></span><span style=display:flex><span>            Verified feature level: UDP+EDNS0
-</span></span><span style=display:flex><span>            Possible feature level: UDP+EDNS0
-</span></span><span style=display:flex><span>                       DNSSEC Mode: no
-</span></span><span style=display:flex><span>                  DNSSEC Supported: no
-</span></span><span style=display:flex><span>Maximum UDP fragment size received: <span style=color:#ae81ff>512</span>
-</span></span><span style=display:flex><span>               Failed UDP attempts: <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>               Failed TCP attempts: <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>             Seen truncated packet: no
-</span></span><span style=display:flex><span>          Seen OPT RR getting lost: no
-</span></span><span style=display:flex><span>             Seen RRSIG RR missing: no
-</span></span><span style=display:flex><span>               Seen invalid packet: no
-</span></span><span style=display:flex><span>            Server dropped DO flag: no
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>Server: 192.168.5.3
-</span></span><span style=display:flex><span>                              Type: link
-</span></span><span style=display:flex><span>                         Interface: eth0
-</span></span><span style=display:flex><span>                   Interface Index: <span style=color:#ae81ff>2</span>
-</span></span><span style=display:flex><span>            Verified feature level: n/a
-</span></span><span style=display:flex><span>            Possible feature level: UDP+EDNS0
-</span></span><span style=display:flex><span>                       DNSSEC Mode: no
-</span></span><span style=display:flex><span>                  DNSSEC Supported: no
-</span></span><span style=display:flex><span>Maximum UDP fragment size received: <span style=color:#ae81ff>512</span>
-</span></span><span style=display:flex><span>               Failed UDP attempts: <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>               Failed TCP attempts: <span style=color:#ae81ff>0</span>
-</span></span><span style=display:flex><span>             Seen truncated packet: no
-</span></span><span style=display:flex><span>          Seen OPT RR getting lost: no
-</span></span><span style=display:flex><span>             Seen RRSIG RR missing: no
-</span></span><span style=display:flex><span>               Seen invalid packet: no
-</span></span><span style=display:flex><span>            Server dropped DO flag: no
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl dns
-</span></span><span style=display:flex><span>Global: 1.1.1.1
-</span></span><span style=display:flex><span>Link <span style=color:#ae81ff>2</span> <span style=color:#f92672>(</span>eth0<span style=color:#f92672>)</span>: 192.168.5.3
-</span></span></code></pre></div><p>Run a DNS query:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl query facebook.com
-</span></span><span style=display:flex><span>facebook.com: 2a03:2880:f158:181:face:b00c:0:25de -- link: eth0
-</span></span><span style=display:flex><span>              157.240.214.35                   -- link: eth0
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>-- Information acquired via protocol DNS in 20.4ms.
-</span></span><span style=display:flex><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
-</span></span><span style=display:flex><span>-- Data from: network
-</span></span><span style=display:flex><span>$ resolvectl query facebook.com
-</span></span><span style=display:flex><span>facebook.com: 157.240.214.35                   -- link: eth0
-</span></span><span style=display:flex><span>              2a03:2880:f189:80:face:b00c:0:25de -- link: eth0
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>-- Information acquired via protocol DNS in 15.2ms.
-</span></span><span style=display:flex><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
-</span></span><span style=display:flex><span>-- Data from: cache network
-</span></span></code></pre></div><p>In order to test a link name resolver we need to install our own DNS server. I suggest using <a href=https://coredns.io/ target=_blank rel=noopener>CoreDNS</a>, as it’s simple and powerful for our needs:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ wget https://github.com/coredns/coredns/releases/download/v1.11.1/coredns_1.11.1_linux_arm64.tgz
-</span></span><span style=display:flex><span>$ tar -zxf coredns_1.11.1_linux_arm64.tgz
-</span></span></code></pre></div><p>Configure it with the following config files where we create a zone <code>test.example</code>:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ cat Corefile
-</span></span><span style=display:flex><span>test.example <span style=color:#f92672>{</span>
-</span></span><span style=display:flex><span>        bind 127.0.0.153
-</span></span><span style=display:flex><span>        loadbalance round_robin
-</span></span><span style=display:flex><span>        file test.example.db
-</span></span><span style=display:flex><span><span style=color:#f92672>}</span>
-</span></span></code></pre></div><p>And zone file:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ cat test.example.db
-</span></span><span style=display:flex><span>$ORIGIN test.example.
-</span></span><span style=display:flex><span>@       <span style=color:#ae81ff>3600</span> IN SOA sns.dns.icann.org. noc.dns.icann.org. <span style=color:#ae81ff>2017042745</span> <span style=color:#ae81ff>7200</span> <span style=color:#ae81ff>3600</span> <span style=color:#ae81ff>1209600</span> <span style=color:#ae81ff>3600</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>site    IN      A       127.0.0.1
-</span></span><span style=display:flex><span>        IN      A       127.0.0.2
-</span></span><span style=display:flex><span>        IN      A       127.0.0.3
-</span></span></code></pre></div><p>Now check the search domains:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl domain
-</span></span><span style=display:flex><span>Global:
-</span></span><span style=display:flex><span>Link <span style=color:#ae81ff>2</span> <span style=color:#f92672>(</span>eth0<span style=color:#f92672>)</span>:
-</span></span></code></pre></div><p>Let’s set it to <code>test.example</code>:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl domain eth0 test.example
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo resolvectl domain
-</span></span><span style=display:flex><span>Global:
-</span></span><span style=display:flex><span>Link <span style=color:#ae81ff>2</span> <span style=color:#f92672>(</span>eth0<span style=color:#f92672>)</span>: test.example
-</span></span></code></pre></div><p>The <code>/etc/resolv.conf</code> was updated accordingly:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ cat /etc/resolv.conf
-</span></span><span style=display:flex><span>…
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>nameserver 127.0.0.53
-</span></span><span style=display:flex><span>options edns0 trust-ad
-</span></span><span style=display:flex><span>search test.example  &lt;--------------------------
-</span></span></code></pre></div><p>Setting a name server for <code>eth0</code>:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl dns eth0 127.0.0.153
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl
-</span></span><span style=display:flex><span>Global
-</span></span><span style=display:flex><span>         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC<span style=color:#f92672>=</span>no/unsupported
-</span></span><span style=display:flex><span>  resolv.conf mode: stub
-</span></span><span style=display:flex><span>Current DNS Server: 1.1.1.1
-</span></span><span style=display:flex><span>       DNS Servers: 1.1.1.1 127.0.0.153
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>Link <span style=color:#ae81ff>2</span> <span style=color:#f92672>(</span>eth0<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>    Current Scopes: DNS
-</span></span><span style=display:flex><span>         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC<span style=color:#f92672>=</span>no/unsupported
-</span></span><span style=display:flex><span>Current DNS Server: 127.0.0.153
-</span></span><span style=display:flex><span>        DNS Servers: 127.0.0.153
-</span></span><span style=display:flex><span>        DNS Domain: test.example
-</span></span></code></pre></div><p>The <code>/etc/resolv.conf</code> still has stub only, as expected:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ cat /etc/resolv.conf
-</span></span><span style=display:flex><span>nameserver 127.0.0.53
-</span></span><span style=display:flex><span>options edns0 trust-ad
-</span></span><span style=display:flex><span>search test.example
-</span></span></code></pre></div><p>Let’s make some queries:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl query site.test.example
-</span></span><span style=display:flex><span>site.test.example: 127.0.0.2
-</span></span><span style=display:flex><span>                   127.0.0.1
-</span></span><span style=display:flex><span>                   127.0.0.3
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>-- Information acquired via protocol DNS in 3.2ms.
-</span></span><span style=display:flex><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
-</span></span><span style=display:flex><span>-- Data from: network
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl query facebook.com
-</span></span><span style=display:flex><span>facebook.com: 2a03:2880:f158:181:face:b00c:0:25de -- link: eth0
-</span></span><span style=display:flex><span>              163.70.147.35                       -- link: eth0
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>-- Information acquired via protocol DNS in 16.8ms.
-</span></span><span style=display:flex><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
-</span></span><span style=display:flex><span>-- Data from: network
-</span></span></code></pre></div><p>Query with search domain for <code>site</code> hostname:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl query site
-</span></span><span style=display:flex><span>site: 127.0.0.1
-</span></span><span style=display:flex><span>      127.0.0.3
-</span></span><span style=display:flex><span>      127.0.0.2
-</span></span><span style=display:flex><span>      <span style=color:#f92672>(</span>site.test.example<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>-- Information acquired via protocol DNS in 3.4ms.
-</span></span><span style=display:flex><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
-</span></span><span style=display:flex><span>-- Data from: network
-</span></span></code></pre></div><p>For non-existing <code>site2</code>:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl query site2
-</span></span><span style=display:flex><span>site3: Name <span style=color:#e6db74>&#39;site2&#39;</span> not found
-</span></span></code></pre></div><p>In <code>tcpdump</code> we can see that the request was sent with search domain:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo tcpdump -i any -s0 -A -n port <span style=color:#ae81ff>53</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>17:49:24.467909 lo    In  IP 127.0.0.1.36205 &gt; 127.0.0.153.53: 17745+ <span style=color:#f92672>[</span>1au<span style=color:#f92672>]</span> A? site2.test.example. <span style=color:#f92672>(</span>47<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>17:49:24.468073 lo    In  IP 127.0.0.1.46166 &gt; 127.0.0.153.53: 40292+ <span style=color:#f92672>[</span>1au<span style=color:#f92672>]</span> AAAA? site2.test.example. <span style=color:#f92672>(</span>47<span style=color:#f92672>)</span>
-</span></span></code></pre></div><p>But if we ask for a hostname <code>fb.com</code>, we will see an interesting under the hood:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ dig +short @127.0.0.53 fb.com
-</span></span><span style=display:flex><span>157.240.214.35
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo tcpdump -i any -s0 -A -n port <span style=color:#ae81ff>53</span>
-</span></span><span style=display:flex><span>19:08:01.937480 eth0  Out IP 192.168.5.15.51825 &gt; 1.1.1.1.53: 20123+ <span style=color:#f92672>[</span>1au<span style=color:#f92672>]</span> A? fb.com. <span style=color:#f92672>(</span>35<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:08:01.937501 eth0  Out IP 192.168.5.15.45070 &gt; 1.1.1.1.53: 23151+ <span style=color:#f92672>[</span>1au<span style=color:#f92672>]</span> AAAA? fb.com. <span style=color:#f92672>(</span>35<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:08:01.937522 lo    In  IP 127.0.0.1.35601 &gt; 127.0.0.153.53: 13671+ <span style=color:#f92672>[</span>1au<span style=color:#f92672>]</span> A? fb.com. <span style=color:#f92672>(</span>35<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:08:01.937672 lo    In  IP 127.0.0.1.48931 &gt; 127.0.0.153.53: 11867+ <span style=color:#f92672>[</span>1au<span style=color:#f92672>]</span> AAAA? fb.com. <span style=color:#f92672>(</span>35<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:08:01.937888 lo    In  IP 127.0.0.153.53 &gt; 127.0.0.1.35601: <span style=color:#ae81ff>13671</span> Refused- 0/0/1 <span style=color:#f92672>(</span>35<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:08:01.937909 lo    In  IP 127.0.0.153.53 &gt; 127.0.0.1.48931: <span style=color:#ae81ff>11867</span> Refused- 0/0/1 <span style=color:#f92672>(</span>35<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:08:01.950784 eth0  In  IP 1.1.1.1.53 &gt; 192.168.5.15.51825: <span style=color:#ae81ff>20123</span> 1/0/1 A 157.240.214.35 <span style=color:#f92672>(</span>51<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:08:01.952483 eth0  In  IP 1.1.1.1.53 &gt; 192.168.5.15.45070: <span style=color:#ae81ff>23151</span> 1/0/1 AAAA 2a03:2880:f158:181:face:b00c:0:25de <span style=color:#f92672>(</span>63<span style=color:#f92672>)</span>
-</span></span></code></pre></div><p>The query returns a correct answer, but in the <code>tcpdump</code> we can see that all name servers were asked to provide responses, including our link nameserve <code>127.0.0.153</code>. This default behavior could lead to a very nasty <a href="https://en.wikipedia.org/wiki/DNS_leak#:~:text=A%20DNS%20leak%20is%20a,proxy%20and%20direct%20internet%20users." target=_blank rel=noopener>DNS leak security flaw</a> usually with VPN software:</p><blockquote><p>A <strong>DNS leak</strong> is a security flaw that allows <a href=https://en.wikipedia.org/wiki/DNS target=_blank rel=noopener>DNS</a> requests to be revealed to <a href=https://en.wikipedia.org/wiki/ISP target=_blank rel=noopener>ISP</a> DNS servers, despite the use of a <a href=https://en.wikipedia.org/wiki/VPN target=_blank rel=noopener>VPN</a> service to attempt to conceal them.<sup><a href=https://en.wikipedia.org/wiki/DNS_leak#cite_note-1>[1]</a></sup> Although primarily of concern to VPN users, it is also possible to prevent it for <a href=https://en.wikipedia.org/wiki/Proxy_server target=_blank rel=noopener>proxy</a> and direct internet users.</p></blockquote><p>In order to address this issues we should leverage the <code>Domains</code> <a href=https://www.freedesktop.org/software/systemd/man/latest/systemd.network.html target=_blank rel=noopener>directive</a>:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ini data-lang=ini><span style=display:flex><span><span style=color:#66d9ef>[Resolve]</span>
-</span></span><span style=display:flex><span><span style=color:#a6e22e>DNS</span><span style=color:#f92672>=</span><span style=color:#e6db74>1.1.1.1</span>
-</span></span><span style=display:flex><span><span style=color:#a6e22e>Domains</span><span style=color:#f92672>=</span><span style=color:#e6db74>~.</span>
-</span></span></code></pre></div><blockquote><p><code>Domains=</code></p><p>A whitespace-separated list of domains which should be resolved using the DNS servers on this link. Each item in the list should be a domain name, optionally prefixed with a tilde ("<code>~</code>"). The domains with the prefix are called &ldquo;routing-only domains&rdquo;. The domains without the prefix are called &ldquo;search domains&rdquo; and are first used as search suffixes for extending single-label hostnames (hostnames containing no dots) to become fully qualified domain names (FQDNs). If a single-label hostname is resolved on this interface, each of the specified search domains are appended to it in turn, converting it into a fully qualified domain name, until one of them may be successfully resolved.</p><p>Both &ldquo;search&rdquo; and &ldquo;routing-only&rdquo; domains are used for routing of DNS queries: look-ups for hostnames ending in those domains (hence also single label names, if any &ldquo;search domains&rdquo; are listed), are routed to the DNS servers configured for this interface. The domain routing logic is particularly useful on multi-homed hosts with DNS servers serving particular private DNS zones on each interface.</p><p>The &ldquo;routing-only&rdquo; domain &ldquo;<code>~.</code>&rdquo; (the tilde indicating definition of a routing domain, the dot referring to the DNS root domain which is the implied suffix of all valid DNS names) has special effect. It causes all DNS traffic which does not match another configured domain routing entry to be routed to DNS servers specified for this interface. This setting is useful to prefer a certain set of DNS servers if a link on which they are connected is available.</p></blockquote><p>Get the new config:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl
-</span></span><span style=display:flex><span>Global
-</span></span><span style=display:flex><span>         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC<span style=color:#f92672>=</span>no/unsupported
-</span></span><span style=display:flex><span>  resolv.conf mode: stub
-</span></span><span style=display:flex><span>       DNS Servers: 1.1.1.1 127.0.0.153
-</span></span><span style=display:flex><span>        DNS Domain: ~.
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>Link <span style=color:#ae81ff>2</span> <span style=color:#f92672>(</span>eth0<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>    Current Scopes: DNS
-</span></span><span style=display:flex><span>         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC<span style=color:#f92672>=</span>no/unsupported
-</span></span><span style=display:flex><span>       DNS Servers: 127.0.0.153
-</span></span><span style=display:flex><span>       DNS Domain: test.example
-</span></span></code></pre></div><p>And now if we re-run our query:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl query fb.com
-</span></span><span style=display:flex><span>fb.com: 2a03:2880:f189:80:face:b00c:0:25de     -- link: eth0
-</span></span><span style=display:flex><span>        163.70.147.35                          -- link: eth0
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>-- Information acquired via protocol DNS in 17.7ms.
-</span></span><span style=display:flex><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
-</span></span><span style=display:flex><span>-- Data from: network
-</span></span></code></pre></div><p>And in the <code>tcpdump</code> output we can see only requests to the global resolver:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo tcpdump -i any -s0 -A -n port <span style=color:#ae81ff>53</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:10:38.312632 eth0  Out IP 192.168.5.15.41775 &gt; 1.1.1.1.53: 37889+ <span style=color:#f92672>[</span>1au<span style=color:#f92672>]</span> AAAA? fb.com. <span style=color:#f92672>(</span>35<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:10:38.312656 eth0  Out IP 192.168.5.15.50771 &gt; 1.1.1.1.53: 14510+ <span style=color:#f92672>[</span>1au<span style=color:#f92672>]</span> A? fb.com. <span style=color:#f92672>(</span>35<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:10:38.327208 eth0  In  IP 1.1.1.1.53 &gt; 192.168.5.15.41775: <span style=color:#ae81ff>37889</span> 1/0/1 AAAA 2a03:2880:f189:80:face:b00c:0:25de <span style=color:#f92672>(</span>63<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>E..<span style=color:#f92672>[</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:10:38.329088 eth0  In  IP 1.1.1.1.53 &gt; 192.168.5.15.50771: <span style=color:#ae81ff>14510</span> 1/0/1 A 163.70.147.35 <span style=color:#f92672>(</span>51<span style=color:#f92672>)</span>
-</span></span></code></pre></div><p>And local domains still work:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ resolvectl query site
-</span></span><span style=display:flex><span>site: 127.0.0.2
-</span></span><span style=display:flex><span>      127.0.0.1
-</span></span><span style=display:flex><span>      127.0.0.3
-</span></span><span style=display:flex><span>      <span style=color:#f92672>(</span>site.test.example<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>-- Information acquired via protocol DNS in 1.7ms.
-</span></span><span style=display:flex><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
-</span></span><span style=display:flex><span>-- Data from: network
-</span></span></code></pre></div><p>and only ask local name server with the correct search domain:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>19:11:51.498355 lo    In  IP 127.0.0.1.43769 &gt; 127.0.0.153.53: 57337+ <span style=color:#f92672>[</span>1au<span style=color:#f92672>]</span> AAAA? site.test.example. <span style=color:#f92672>(</span>46<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:11:51.498462 lo    In  IP 127.0.0.1.55548 &gt; 127.0.0.153.53: 44925+ <span style=color:#f92672>[</span>1au<span style=color:#f92672>]</span> A? site.test.example. <span style=color:#f92672>(</span>46<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:11:51.499115 lo    In  IP 127.0.0.153.53 &gt; 127.0.0.1.55548: 44925*- 3/0/1 A 127.0.0.2, A 127.0.0.1, A 127.0.0.3 <span style=color:#f92672>(</span>145<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>19:11:51.499149 lo    In  IP 127.0.0.153.53 &gt; 127.0.0.1.43769: 57337*- 0/1/1 <span style=color:#f92672>(</span>128<span style=color:#f92672>)</span>
-</span></span></code></pre></div><h2 id=104-useful-commands>10.4 Useful commands
-<a class=anchor href=#104-useful-commands>#</a></h2><p>A handy <code>monitor</code> sub command allows us to monitor the ongoing queries:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo resolvectl monitor
-</span></span><span style=display:flex><span>→ Q: cf.com IN AAAA
-</span></span><span style=display:flex><span>← S: success
-</span></span><span style=display:flex><span>← A: cf.com IN SOA merlin.ns.cloudflare.com dns.cloudflare.com <span style=color:#ae81ff>2343786646</span> <span style=color:#ae81ff>10000</span> <span style=color:#ae81ff>2400</span> <span style=color:#ae81ff>604800</span> <span style=color:#ae81ff>1800</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>→ Q: google.com IN AAAA
-</span></span><span style=display:flex><span>← S: success
-</span></span><span style=display:flex><span>← A: google.com IN AAAA 2a00:1450:4009:823::200e
-</span></span></code></pre></div><p>As was mentioned above <code>systemd-resolved</code> provides a local cache:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo resolvectl show-cache
-</span></span><span style=display:flex><span>Scope protocol<span style=color:#f92672>=</span>dns ifindex<span style=color:#f92672>=</span><span style=color:#ae81ff>2</span> ifname<span style=color:#f92672>=</span>eth0
-</span></span><span style=display:flex><span>No entries.
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>Scope protocol<span style=color:#f92672>=</span>dns
-</span></span><span style=display:flex><span>google.com IN AAAA 2a00:1450:4009:823::200e
-</span></span><span style=display:flex><span>google.com IN MX <span style=color:#ae81ff>10</span> smtp.google.com
-</span></span></code></pre></div><h2 id=105-querying-systemd-resolved>10.5 Querying <code>systemd-resolved</code>
-<a class=anchor href=#105-querying-systemd-resolved>#</a></h2><p>Using standard resolver methods like <code>getaddrinfo()</code> or connecting to <code>/etc/resolv.conf</code> nameservers over the DNS protocol will not provide the full power of per-link resolvers and search domains. Therefore, if your application truly needs this information, you can use two alternative interfaces provided by <code>systemd-resolved</code>:</p><ol><li><a href=https://varlink.org/ target=_blank rel=noopener>Varlink</a></li><li><a href=https://www.freedesktop.org/wiki/Software/dbus target=_blank rel=noopener>D-Bus</a></li></ol><h3 id=1051-varlink>10.5.1 <code>Varlink</code>
-<a class=anchor href=#1051-varlink>#</a></h3><p>Install dependencies:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ sudo apt install python3-varlink meson make
-</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ python3 -m varlink.cli info  unix:/run/systemd/resolve/io.systemd.Resolve
-</span></span><span style=display:flex><span>Vendor: The systemd Project
-</span></span><span style=display:flex><span>Product: systemd <span style=color:#f92672>(</span>systemd-resolved<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>Version: <span style=color:#ae81ff>255</span> <span style=color:#f92672>(</span>255.4-1ubuntu8.1<span style=color:#f92672>)</span>
-</span></span><span style=display:flex><span>URL: https://systemd.io/
-</span></span><span style=display:flex><span>Interfaces:
-</span></span><span style=display:flex><span>   io.systemd
-</span></span><span style=display:flex><span>   io.systemd.Resolve
-</span></span><span style=display:flex><span>   org.varlink.service
-</span></span></code></pre></div><p>Build <code>cli</code> tool:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ git co https://github.com/varlink/libvarlink
-</span></span><span style=display:flex><span>$ cd libvarlink
-</span></span><span style=display:flex><span>$ make build
-</span></span></code></pre></div><p>Run:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ build/tool$ ./varlink help unix:/run/systemd/resolve/io.systemd.Resolve/io.systemd.Resolve
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>$ ./varlink call unix:/run/systemd/resolve/io.systemd.Resolve/io.systemd.Resolve.ResolveHostname <span style=color:#e6db74>&#39;{ &#34;name&#34;: &#34;site&#34;}&#39;</span>
-</span></span><span style=display:flex><span><span style=color:#f92672>{</span>
-</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;addresses&#34;</span>: <span style=color:#f92672>[</span>
-</span></span><span style=display:flex><span>    <span style=color:#f92672>{</span>
-</span></span><span style=display:flex><span>      <span style=color:#e6db74>&#34;address&#34;</span>: <span style=color:#f92672>[</span>
-</span></span><span style=display:flex><span>        127,
-</span></span><span style=display:flex><span>        0,
-</span></span><span style=display:flex><span>        0,
-</span></span><span style=display:flex><span>        <span style=color:#ae81ff>1</span>
-</span></span><span style=display:flex><span>      <span style=color:#f92672>]</span>,
-</span></span><span style=display:flex><span>      <span style=color:#e6db74>&#34;family&#34;</span>: <span style=color:#ae81ff>2</span>
-</span></span><span style=display:flex><span>    <span style=color:#f92672>}</span>,
-</span></span><span style=display:flex><span>    <span style=color:#f92672>{</span>
-</span></span><span style=display:flex><span>      <span style=color:#e6db74>&#34;address&#34;</span>: <span style=color:#f92672>[</span>
-</span></span><span style=display:flex><span>        127,
-</span></span><span style=display:flex><span>        0,
-</span></span><span style=display:flex><span>        0,
-</span></span><span style=display:flex><span>        <span style=color:#ae81ff>2</span>
-</span></span><span style=display:flex><span>      <span style=color:#f92672>]</span>,
-</span></span><span style=display:flex><span>      <span style=color:#e6db74>&#34;family&#34;</span>: <span style=color:#ae81ff>2</span>
-</span></span><span style=display:flex><span>    <span style=color:#f92672>}</span>,
-</span></span><span style=display:flex><span>    <span style=color:#f92672>{</span>
-</span></span><span style=display:flex><span>      <span style=color:#e6db74>&#34;address&#34;</span>: <span style=color:#f92672>[</span>
-</span></span><span style=display:flex><span>        127,
-</span></span><span style=display:flex><span>        0,
-</span></span><span style=display:flex><span>        0,
-</span></span><span style=display:flex><span>        <span style=color:#ae81ff>3</span>
-</span></span><span style=display:flex><span>      <span style=color:#f92672>]</span>,
-</span></span><span style=display:flex><span>      <span style=color:#e6db74>&#34;family&#34;</span>: <span style=color:#ae81ff>2</span>
-</span></span><span style=display:flex><span>    <span style=color:#f92672>}</span>
-</span></span><span style=display:flex><span>  <span style=color:#f92672>]</span>,
-</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;flags&#34;</span>: 8388609,
-</span></span><span style=display:flex><span>  <span style=color:#e6db74>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;site.test.example&#34;</span>
-</span></span><span style=display:flex><span><span style=color:#f92672>}</span>
-</span></span></code></pre></div><p>The additional features can be called by specifying the interface by setting <code>ifindex</code>.</p><h3 id=1052-d-bus>10.5.2 <code>D-Bus</code>
-<a class=anchor href=#1052-d-bus>#</a></h3><p>Another way to interact with an extended <code>systemd-resolved</code> interface is via <code>D-Bus</code>.</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ busctl status org.freedesktop.resolve1
-</span></span><span style=display:flex><span>PID<span style=color:#f92672>=</span><span style=color:#ae81ff>3478</span>
-</span></span><span style=display:flex><span>PPID<span style=color:#f92672>=</span><span style=color:#ae81ff>1</span>
-</span></span><span style=display:flex><span>TTY<span style=color:#f92672>=</span>n/a
-</span></span><span style=display:flex><span>UID<span style=color:#f92672>=</span><span style=color:#ae81ff>991</span>
-</span></span><span style=display:flex><span>EUID<span style=color:#f92672>=</span><span style=color:#ae81ff>991</span>
-</span></span><span style=display:flex><span>SUID<span style=color:#f92672>=</span><span style=color:#ae81ff>991</span>
-</span></span><span style=display:flex><span>FSUID<span style=color:#f92672>=</span><span style=color:#ae81ff>991</span>
-</span></span><span style=display:flex><span>GID<span style=color:#f92672>=</span><span style=color:#ae81ff>991</span>
-</span></span><span style=display:flex><span>EGID<span style=color:#f92672>=</span><span style=color:#ae81ff>991</span>
-</span></span><span style=display:flex><span>SGID<span style=color:#f92672>=</span><span style=color:#ae81ff>991</span>
-</span></span><span style=display:flex><span>FSGID<span style=color:#f92672>=</span><span style=color:#ae81ff>991</span>
-</span></span><span style=display:flex><span>SupplementaryGIDs<span style=color:#f92672>=</span><span style=color:#ae81ff>991</span>
-</span></span><span style=display:flex><span>Comm<span style=color:#f92672>=</span>systemd-resolve
-</span></span><span style=display:flex><span>CommandLine<span style=color:#f92672>=</span>/usr/lib/systemd/systemd-resolved
-</span></span><span style=display:flex><span>Label<span style=color:#f92672>=</span>unconfined
-</span></span><span style=display:flex><span>CGroup<span style=color:#f92672>=</span>/system.slice/systemd-resolved.service
-</span></span><span style=display:flex><span>Unit<span style=color:#f92672>=</span>systemd-resolved.service
-</span></span><span style=display:flex><span>Slice<span style=color:#f92672>=</span>system.slice
-</span></span><span style=display:flex><span>UserUnit<span style=color:#f92672>=</span>n/a
-</span></span><span style=display:flex><span>UserSlice<span style=color:#f92672>=</span>n/a
-</span></span><span style=display:flex><span>Session<span style=color:#f92672>=</span>n/a
-</span></span><span style=display:flex><span>AuditLoginUID<span style=color:#f92672>=</span>n/a
-</span></span><span style=display:flex><span>AuditSessionID<span style=color:#f92672>=</span>n/a
-</span></span><span style=display:flex><span>UniqueName<span style=color:#f92672>=</span>:1.42
-</span></span><span style=display:flex><span>EffectiveCapabilities<span style=color:#f92672>=</span>cap_net_raw
-</span></span><span style=display:flex><span>PermittedCapabilities<span style=color:#f92672>=</span>cap_net_raw
-</span></span></code></pre></div><p>Documentation for the API format could be found here: <a href=https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.resolve1.html target=_blank rel=noopener>https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.resolve1.html</a>.</p><p>Run to resolve <code>site</code> hostname:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ busctl call org.freedesktop.resolve1 /org/freedesktop/resolve1 org.freedesktop.resolve1.Manager ResolveHostname isit <span style=color:#ae81ff>0</span> site <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>0</span>
-</span></span></code></pre></div><p>result:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>a<span style=color:#f92672>(</span>iiay<span style=color:#f92672>)</span>st <span style=color:#ae81ff>3</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>2</span> <span style=color:#ae81ff>4</span> <span style=color:#ae81ff>127</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>3</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>2</span> <span style=color:#ae81ff>4</span> <span style=color:#ae81ff>127</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>1</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>2</span> <span style=color:#ae81ff>4</span> <span style=color:#ae81ff>127</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>2</span> <span style=color:#e6db74>&#34;site.test.example&#34;</span> <span style=color:#ae81ff>8388609</span>
-</span></span></code></pre></div><p>Run to resolve <code>fb.com</code> hostname:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>$ busctl call org.freedesktop.resolve1 /org/freedesktop/resolve1 org.freedesktop.resolve1.Manager ResolveHostname isit <span style=color:#ae81ff>0</span> fb.com <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>0</span>
-</span></span></code></pre></div><p>Result:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>a<span style=color:#f92672>(</span>iiay<span style=color:#f92672>)</span>st <span style=color:#ae81ff>2</span> <span style=color:#ae81ff>2</span> <span style=color:#ae81ff>2</span> <span style=color:#ae81ff>4</span> <span style=color:#ae81ff>157</span> <span style=color:#ae81ff>240</span> <span style=color:#ae81ff>221</span> <span style=color:#ae81ff>35</span> <span style=color:#ae81ff>2</span> <span style=color:#ae81ff>10</span> <span style=color:#ae81ff>16</span> <span style=color:#ae81ff>42</span> <span style=color:#ae81ff>3</span> <span style=color:#ae81ff>40</span> <span style=color:#ae81ff>128</span> <span style=color:#ae81ff>241</span> <span style=color:#ae81ff>88</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>130</span> <span style=color:#ae81ff>250</span> <span style=color:#ae81ff>206</span> <span style=color:#ae81ff>176</span> <span style=color:#ae81ff>12</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>0</span> <span style=color:#ae81ff>37</span> <span style=color:#ae81ff>222</span> <span style=color:#e6db74>&#34;fb.com&#34;</span> <span style=color:#ae81ff>8388609</span>
-</span></span></code></pre></div><a href=/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/ class="book-btn right-button">Read next chapter →</a></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script defer src=/my_js/copy-code.js></script></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div></main><div class=cookie-container><p>This website uses "<b>cookies</b>".
-Using this website means you're OK with this.
-If you are <b>NOT</b>, please close the site page.</p><button class=cookie-btn>
-ACCEPT AND CLOSE</button></div><script src=/my_js/cookie.js></script></body></html>
+The main issue with /etc/resolv.conf is managing it in modern distributions, which can have multiple sources of nameserver and search domain information due to multiple interfaces (both real and virtual, such as VPN tunnels) with concurrent DHCP clients.">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
+<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://biriukov.dev/docs/resolver-dual-stack-application/10-systemd-resolved/">
+  <meta property="og:site_name" content="Viacheslav Biriukov">
+  <meta property="og:title" content="systemd-resolved">
+  <meta property="og:description" content="10. systemd-resolved # Last updated: Oct 2025 Contents
+10.1 Managing /etc/resolv.conf content 10.2 Integrating systemd-resolved into system 10.3 Per link name servers and search domains 10.4 Useful commands 10.5 Querying systemd-resolved 10.5.1 Varlink 10.5.2 D-Bus 10.1 Managing /etc/resolv.conf content # The main issue with /etc/resolv.conf is managing it in modern distributions, which can have multiple sources of nameserver and search domain information due to multiple interfaces (both real and virtual, such as VPN tunnels) with concurrent DHCP clients.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="docs">
+<title>systemd-resolved | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" >
+<link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+<script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"
+></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+
+    gtag("config", "G-599VSLESJL");
+</script>
+
+<link rel="stylesheet" href="/my_css/cookie.css" />
+<link rel="stylesheet" href="/my_css/copy-code.css" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+/>
+
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+
+      
+        
+
+      
+
+      
+        <li class="book-section-flat" >
+          
+  
+  
+
+  
+    <span>DNS resolvers and Dual-Stack applications</span>
+  
+
+          
+  <ul>
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/" class="">
+      
+        Resolvers and Dual-Stack applications for SRE
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/1-what-is-a-stub-resolver/" class="">
+      
+        1. What is a stub resolver?
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/2-history-gethostbyname/" class="">
+      
+        2. History: gethostbyname()
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/3-getaddrinfo-and-posix-spec/" class="">
+      
+        3. getaddrinfo() and POSIX spec
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/4-getaddrinfo-from-glibc/" class="">
+      
+        4. getaddrinfo() from glibc
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/5-getaddrinfo-from-musl-libc/" class="">
+      
+        5. getaddrinfo() from musl libc
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/6-dual-stack-applications/" class="">
+      
+        6. Dual-Stack applications
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/7-async-non-blocking-resolvers-in-c/" class="">
+      
+        7. C async non-blocking resolvers
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/8-stub-resolvers-in-languages/" class="">
+      
+        8. Stub resolvers in languages
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/9-dual-stack-software-examples/" class="">
+      
+        9. Dual-stack software examples
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/10-systemd-resolved/" class="active">
+      
+        10. systemd-resolved
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/" class="">
+      
+        11. Querying Nameservers
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/12-present-and-future-of-resolvers-and-dns-related-features/" class="">
+      
+        12. Present and future
+      
+    </a>
+  
+
+        </li>
+      
+    
+
+      
+
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/docs/resolver-dual-stack-application/troubleshooting-tools-for-resolvers-and-dns/" class="">
+      
+        Troubleshooting tools
+      
+    </a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+
+      
+        
+
+      
+        
+  </ul>
+
+
+
+
+
+
+
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>More recent series:</b>
+  <ul>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
+    <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
+    <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
+  </ul>
+</div>
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Open Source Projects</b>
+  <ul>
+      <li>
+          <a href="/posts/trixter-chaos-proxy/"> • trixter chaos proxy</a>
+      </li>
+      <li><a href="https://crates.io/crates/tokio-netem"> • tokio-netem</a></li>
+  </ul>
+</div>
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-twitter"></i>
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.linkedin.com/in/biriukov/"  target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
+        Linkedin
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-github"></i>
+        Github
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 30px;">
+  <p xmlns:cc="http://creativecommons.org/ns#">
+    This content is licensed under 
+    <a
+      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
+    </a>
+  </p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>systemd-resolved</strong>
+
+  <label for="toc-control">
+    
+  </label>
+</div>
+
+
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown book-article"><h1 id="10-systemd-resolved">
+  10. systemd-resolved
+  <a class="anchor" href="#10-systemd-resolved">#</a>
+</h1>
+<p class="updated-right">
+    <i>
+        <time datetime="2025-10">Last updated: Oct 2025</time>
+    </i>
+</p>
+<p><strong>Contents</strong></p>
+<ul>
+<li><a href="/docs/resolver-dual-stack-application/10-systemd-resolved/#101-managing-etcresolvconf-content">10.1 Managing <code>/etc/resolv.conf</code> content</a></li>
+<li><a href="/docs/resolver-dual-stack-application/10-systemd-resolved/#102-integrating-systemd-resolved-into-system">10.2 Integrating <code>systemd-resolved </code>into system</a></li>
+<li><a href="/docs/resolver-dual-stack-application/10-systemd-resolved/#103-per-link-name-servers-and-search-domains">10.3 Per link name servers and search domains</a></li>
+<li><a href="/docs/resolver-dual-stack-application/10-systemd-resolved/#104-useful-commands">10.4 Useful commands</a></li>
+<li><a href="/docs/resolver-dual-stack-application/10-systemd-resolved/#105-querying-systemd-resolved">10.5 Querying <code>systemd-resolved</code></a>
+<ul>
+<li><a href="/docs/resolver-dual-stack-application/10-systemd-resolved/#1051-varlink">10.5.1 <code>Varlink</code></a></li>
+<li><a href="/docs/resolver-dual-stack-application/10-systemd-resolved/#1052-d-bus">10.5.2 <code>D-Bus</code></a></li>
+</ul>
+</li>
+</ul>
+<hr/>
+<h2 id="101-managing-etcresolvconf-content">
+  10.1 Managing <code>/etc/resolv.conf</code> content
+  <a class="anchor" href="#101-managing-etcresolvconf-content">#</a>
+</h2>
+<p>The main issue with <code>/etc/resolv.conf</code> is managing it in modern distributions, which can have multiple sources of nameserver and search domain information due to multiple interfaces (both real and virtual, such as VPN tunnels) with concurrent DHCP clients.</p>
+<p>The legacy method to handle this complexity was the <code><a href="https://en.wikipedia.org/wiki/Resolvconf" target="_blank" rel="noopener">Resolvconf</a></code> project. It set up a number of hooks and updated <code>/etc/resolv.conf</code> appropriately by following some defined rules. However, its main issue is its lack of flexibility and inability to manage several nameservers and search domains on a per-link basis, which is sometimes needed in complex setups.</p>
+<p>To address this, the emergence of <code><a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-resolved.service.html" target="_blank" rel="noopener">systemd-resolved</a></code> was intended to resolve (^_^) these issues.</p>
+<h2 id="102-integrating-systemd-resolved-into-system">
+  10.2 Integrating <code>systemd-resolved</code> into system
+  <a class="anchor" href="#102-integrating-systemd-resolved-into-system">#</a>
+</h2>
+<p>Slowly but surely, <code>systemd</code> is taking on more features and responsibilities in modern GNU/Linux distributions. One of these responsibilities is serving as a local source of truth for hostname resolution with <code>systemd-resolved</code>.</p>
+<p>There are several ways you can start using it system-wide or directly in your application.</p>
+<img alt="The ways systemd-resolved can integrate into the system." src="../images/systemd-resolved.png" width="60%" class="img-center">
+<div class="text-center">
+Figure 5. – The ways <code>systemd-resolved</code> can integrate into the system.
+</div>
+<p>For the system wide setup there are currently two ways:</p>
+<ol>
+<li>Using <code>nss</code> module <code>resolve</code> (<code><a href="https://man.archlinux.org/man/core/systemd/libnss_resolve.so.2.8.en" target="_blank" rel="noopener">man libnss_resolve.so.2</a></code>).</li>
+<li>Delegate the management of <code>/etc/resolv.conf</code> to <code>systemd-resolved</code> by symlinking  <code>/run/systemd/resolve/resolv.conf</code>. The file sets the nameserver to <code>127.0.0.53</code> where <code>systemd-resolved</code> is listening and sets <code>search</code> domains.</li>
+</ol>
+<p>The second option is preferred because it also addresses issues with the search domain.</p>
+<p>But <code>systemd-resolved</code> is not just a management tool for <code>/etc/resolv.conf</code>; it also acts as a local cache. It supports <code><a href="https://en.wikipedia.org/wiki/Multicast_DNS" target="_blank" rel="noopener">mDNS</a></code>, <code>/etc/hosts</code>, and other name sources, and can mix them all using predefined and configurable rules, some of which we will discuss below.</p>
+<h2 id="103-per-link-name-servers-and-search-domains">
+  10.3 Per link name servers and search domains
+  <a class="anchor" href="#103-per-link-name-servers-and-search-domains">#</a>
+</h2>
+<p>By default the <code>systemd</code> uses a link name server if you have only one interface with DHCP:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl
+</span></span><span style="display:flex;"><span>Global
+</span></span><span style="display:flex;"><span>         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC<span style="color:#f92672">=</span>no/unsupported
+</span></span><span style="display:flex;"><span>  resolv.conf mode: stub
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Link <span style="color:#ae81ff">2</span> <span style="color:#f92672">(</span>eth0<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    Current Scopes: DNS
+</span></span><span style="display:flex;"><span>         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC<span style="color:#f92672">=</span>no/unsupported
+</span></span><span style="display:flex;"><span>Current DNS Server: 192.168.5.3
+</span></span><span style="display:flex;"><span>       DNS Servers: 192.168.5.3
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl show-server-state
+</span></span><span style="display:flex;"><span>Server: 192.168.5.3
+</span></span><span style="display:flex;"><span>                              Type: link
+</span></span><span style="display:flex;"><span>                         Interface: eth0
+</span></span><span style="display:flex;"><span>                   Interface Index: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>            Verified feature level: UDP
+</span></span><span style="display:flex;"><span>            Possible feature level: UDP
+</span></span><span style="display:flex;"><span>                       DNSSEC Mode: no
+</span></span><span style="display:flex;"><span>                  DNSSEC Supported: no
+</span></span><span style="display:flex;"><span>Maximum UDP fragment size received: <span style="color:#ae81ff">512</span>
+</span></span><span style="display:flex;"><span>               Failed UDP attempts: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>               Failed TCP attempts: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>             Seen truncated packet: no
+</span></span><span style="display:flex;"><span>          Seen OPT RR getting lost: yes
+</span></span><span style="display:flex;"><span>             Seen RRSIG RR missing: no
+</span></span><span style="display:flex;"><span>               Seen invalid packet: no
+</span></span><span style="display:flex;"><span>            Server dropped DO flag: no
+</span></span></code></pre></div><p>You can change this behavior by setting a DNS recursor in the <code>systemd-resolved</code> config file <code>/etc/systemd/resolved.conf</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#75715e"># cat /etc/systemd/resolved.conf</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">[Resolve]</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">DNS</span><span style="color:#f92672">=</span><span style="color:#e6db74">1.1.1.1</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo systemctl restart systemd-resolved
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo resolvectl
+</span></span><span style="display:flex;"><span>Global
+</span></span><span style="display:flex;"><span>         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC<span style="color:#f92672">=</span>no/unsupported
+</span></span><span style="display:flex;"><span>  resolv.conf mode: stub
+</span></span><span style="display:flex;"><span>       DNS Servers: 1.1.1.1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Link <span style="color:#ae81ff">2</span> <span style="color:#f92672">(</span>eth0<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    Current Scopes: DNS
+</span></span><span style="display:flex;"><span>         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC<span style="color:#f92672">=</span>no/unsupported
+</span></span><span style="display:flex;"><span>       DNS Servers: 192.168.5.3
+</span></span></code></pre></div><p>As you can see now we have a global and a link DNS server.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl show-server-state
+</span></span><span style="display:flex;"><span>Server: 1.1.1.1
+</span></span><span style="display:flex;"><span>                              Type: system
+</span></span><span style="display:flex;"><span>            Verified feature level: UDP+EDNS0
+</span></span><span style="display:flex;"><span>            Possible feature level: UDP+EDNS0
+</span></span><span style="display:flex;"><span>                       DNSSEC Mode: no
+</span></span><span style="display:flex;"><span>                  DNSSEC Supported: no
+</span></span><span style="display:flex;"><span>Maximum UDP fragment size received: <span style="color:#ae81ff">512</span>
+</span></span><span style="display:flex;"><span>               Failed UDP attempts: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>               Failed TCP attempts: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>             Seen truncated packet: no
+</span></span><span style="display:flex;"><span>          Seen OPT RR getting lost: no
+</span></span><span style="display:flex;"><span>             Seen RRSIG RR missing: no
+</span></span><span style="display:flex;"><span>               Seen invalid packet: no
+</span></span><span style="display:flex;"><span>            Server dropped DO flag: no
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Server: 192.168.5.3
+</span></span><span style="display:flex;"><span>                              Type: link
+</span></span><span style="display:flex;"><span>                         Interface: eth0
+</span></span><span style="display:flex;"><span>                   Interface Index: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>            Verified feature level: n/a
+</span></span><span style="display:flex;"><span>            Possible feature level: UDP+EDNS0
+</span></span><span style="display:flex;"><span>                       DNSSEC Mode: no
+</span></span><span style="display:flex;"><span>                  DNSSEC Supported: no
+</span></span><span style="display:flex;"><span>Maximum UDP fragment size received: <span style="color:#ae81ff">512</span>
+</span></span><span style="display:flex;"><span>               Failed UDP attempts: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>               Failed TCP attempts: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>             Seen truncated packet: no
+</span></span><span style="display:flex;"><span>          Seen OPT RR getting lost: no
+</span></span><span style="display:flex;"><span>             Seen RRSIG RR missing: no
+</span></span><span style="display:flex;"><span>               Seen invalid packet: no
+</span></span><span style="display:flex;"><span>            Server dropped DO flag: no
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl dns
+</span></span><span style="display:flex;"><span>Global: 1.1.1.1
+</span></span><span style="display:flex;"><span>Link <span style="color:#ae81ff">2</span> <span style="color:#f92672">(</span>eth0<span style="color:#f92672">)</span>: 192.168.5.3
+</span></span></code></pre></div><p>Run a DNS query:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl query facebook.com
+</span></span><span style="display:flex;"><span>facebook.com: 2a03:2880:f158:181:face:b00c:0:25de -- link: eth0
+</span></span><span style="display:flex;"><span>              157.240.214.35                   -- link: eth0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-- Information acquired via protocol DNS in 20.4ms.
+</span></span><span style="display:flex;"><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
+</span></span><span style="display:flex;"><span>-- Data from: network
+</span></span><span style="display:flex;"><span>$ resolvectl query facebook.com
+</span></span><span style="display:flex;"><span>facebook.com: 157.240.214.35                   -- link: eth0
+</span></span><span style="display:flex;"><span>              2a03:2880:f189:80:face:b00c:0:25de -- link: eth0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-- Information acquired via protocol DNS in 15.2ms.
+</span></span><span style="display:flex;"><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
+</span></span><span style="display:flex;"><span>-- Data from: cache network
+</span></span></code></pre></div><p>In order to test a link name resolver we need to install our own DNS server. I suggest using <a href="https://coredns.io/" target="_blank" rel="noopener">CoreDNS</a>, as it’s simple and powerful for our needs:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ wget https://github.com/coredns/coredns/releases/download/v1.11.1/coredns_1.11.1_linux_arm64.tgz
+</span></span><span style="display:flex;"><span>$ tar -zxf coredns_1.11.1_linux_arm64.tgz
+</span></span></code></pre></div><p>Configure it with the following config files where we create a zone <code>test.example</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ cat Corefile
+</span></span><span style="display:flex;"><span>test.example <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        bind 127.0.0.153
+</span></span><span style="display:flex;"><span>        loadbalance round_robin
+</span></span><span style="display:flex;"><span>        file test.example.db
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>And zone file:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ cat test.example.db
+</span></span><span style="display:flex;"><span>$ORIGIN test.example.
+</span></span><span style="display:flex;"><span>@       <span style="color:#ae81ff">3600</span> IN SOA sns.dns.icann.org. noc.dns.icann.org. <span style="color:#ae81ff">2017042745</span> <span style="color:#ae81ff">7200</span> <span style="color:#ae81ff">3600</span> <span style="color:#ae81ff">1209600</span> <span style="color:#ae81ff">3600</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>site    IN      A       127.0.0.1
+</span></span><span style="display:flex;"><span>        IN      A       127.0.0.2
+</span></span><span style="display:flex;"><span>        IN      A       127.0.0.3
+</span></span></code></pre></div><p>Now check the search domains:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl domain
+</span></span><span style="display:flex;"><span>Global:
+</span></span><span style="display:flex;"><span>Link <span style="color:#ae81ff">2</span> <span style="color:#f92672">(</span>eth0<span style="color:#f92672">)</span>:
+</span></span></code></pre></div><p>Let’s set it to <code>test.example</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl domain eth0 test.example
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo resolvectl domain
+</span></span><span style="display:flex;"><span>Global:
+</span></span><span style="display:flex;"><span>Link <span style="color:#ae81ff">2</span> <span style="color:#f92672">(</span>eth0<span style="color:#f92672">)</span>: test.example
+</span></span></code></pre></div><p>The <code>/etc/resolv.conf</code> was updated accordingly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ cat /etc/resolv.conf
+</span></span><span style="display:flex;"><span>…
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>nameserver 127.0.0.53
+</span></span><span style="display:flex;"><span>options edns0 trust-ad
+</span></span><span style="display:flex;"><span>search test.example  &lt;--------------------------
+</span></span></code></pre></div><p>Setting a name server for <code>eth0</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl dns eth0 127.0.0.153
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl
+</span></span><span style="display:flex;"><span>Global
+</span></span><span style="display:flex;"><span>         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC<span style="color:#f92672">=</span>no/unsupported
+</span></span><span style="display:flex;"><span>  resolv.conf mode: stub
+</span></span><span style="display:flex;"><span>Current DNS Server: 1.1.1.1
+</span></span><span style="display:flex;"><span>       DNS Servers: 1.1.1.1 127.0.0.153
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Link <span style="color:#ae81ff">2</span> <span style="color:#f92672">(</span>eth0<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    Current Scopes: DNS
+</span></span><span style="display:flex;"><span>         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC<span style="color:#f92672">=</span>no/unsupported
+</span></span><span style="display:flex;"><span>Current DNS Server: 127.0.0.153
+</span></span><span style="display:flex;"><span>        DNS Servers: 127.0.0.153
+</span></span><span style="display:flex;"><span>        DNS Domain: test.example
+</span></span></code></pre></div><p>The <code>/etc/resolv.conf</code> still has stub only, as expected:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ cat /etc/resolv.conf
+</span></span><span style="display:flex;"><span>nameserver 127.0.0.53
+</span></span><span style="display:flex;"><span>options edns0 trust-ad
+</span></span><span style="display:flex;"><span>search test.example
+</span></span></code></pre></div><p>Let’s make some queries:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl query site.test.example
+</span></span><span style="display:flex;"><span>site.test.example: 127.0.0.2
+</span></span><span style="display:flex;"><span>                   127.0.0.1
+</span></span><span style="display:flex;"><span>                   127.0.0.3
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-- Information acquired via protocol DNS in 3.2ms.
+</span></span><span style="display:flex;"><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
+</span></span><span style="display:flex;"><span>-- Data from: network
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl query facebook.com
+</span></span><span style="display:flex;"><span>facebook.com: 2a03:2880:f158:181:face:b00c:0:25de -- link: eth0
+</span></span><span style="display:flex;"><span>              163.70.147.35                       -- link: eth0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-- Information acquired via protocol DNS in 16.8ms.
+</span></span><span style="display:flex;"><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
+</span></span><span style="display:flex;"><span>-- Data from: network
+</span></span></code></pre></div><p>Query with search domain for <code>site</code> hostname:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl query site
+</span></span><span style="display:flex;"><span>site: 127.0.0.1
+</span></span><span style="display:flex;"><span>      127.0.0.3
+</span></span><span style="display:flex;"><span>      127.0.0.2
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">(</span>site.test.example<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-- Information acquired via protocol DNS in 3.4ms.
+</span></span><span style="display:flex;"><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
+</span></span><span style="display:flex;"><span>-- Data from: network
+</span></span></code></pre></div><p>For non-existing <code>site2</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl query site2
+</span></span><span style="display:flex;"><span>site3: Name <span style="color:#e6db74">&#39;site2&#39;</span> not found
+</span></span></code></pre></div><p>In <code>tcpdump</code> we can see that the request was sent with search domain:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo tcpdump -i any -s0 -A -n port <span style="color:#ae81ff">53</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>17:49:24.467909 lo    In  IP 127.0.0.1.36205 &gt; 127.0.0.153.53: 17745+ <span style="color:#f92672">[</span>1au<span style="color:#f92672">]</span> A? site2.test.example. <span style="color:#f92672">(</span>47<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>17:49:24.468073 lo    In  IP 127.0.0.1.46166 &gt; 127.0.0.153.53: 40292+ <span style="color:#f92672">[</span>1au<span style="color:#f92672">]</span> AAAA? site2.test.example. <span style="color:#f92672">(</span>47<span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>But if we ask for a hostname <code>fb.com</code>, we will see an interesting under the hood:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ dig +short @127.0.0.53 fb.com
+</span></span><span style="display:flex;"><span>157.240.214.35
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo tcpdump -i any -s0 -A -n port <span style="color:#ae81ff">53</span>
+</span></span><span style="display:flex;"><span>19:08:01.937480 eth0  Out IP 192.168.5.15.51825 &gt; 1.1.1.1.53: 20123+ <span style="color:#f92672">[</span>1au<span style="color:#f92672">]</span> A? fb.com. <span style="color:#f92672">(</span>35<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:08:01.937501 eth0  Out IP 192.168.5.15.45070 &gt; 1.1.1.1.53: 23151+ <span style="color:#f92672">[</span>1au<span style="color:#f92672">]</span> AAAA? fb.com. <span style="color:#f92672">(</span>35<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:08:01.937522 lo    In  IP 127.0.0.1.35601 &gt; 127.0.0.153.53: 13671+ <span style="color:#f92672">[</span>1au<span style="color:#f92672">]</span> A? fb.com. <span style="color:#f92672">(</span>35<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:08:01.937672 lo    In  IP 127.0.0.1.48931 &gt; 127.0.0.153.53: 11867+ <span style="color:#f92672">[</span>1au<span style="color:#f92672">]</span> AAAA? fb.com. <span style="color:#f92672">(</span>35<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:08:01.937888 lo    In  IP 127.0.0.153.53 &gt; 127.0.0.1.35601: <span style="color:#ae81ff">13671</span> Refused- 0/0/1 <span style="color:#f92672">(</span>35<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:08:01.937909 lo    In  IP 127.0.0.153.53 &gt; 127.0.0.1.48931: <span style="color:#ae81ff">11867</span> Refused- 0/0/1 <span style="color:#f92672">(</span>35<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:08:01.950784 eth0  In  IP 1.1.1.1.53 &gt; 192.168.5.15.51825: <span style="color:#ae81ff">20123</span> 1/0/1 A 157.240.214.35 <span style="color:#f92672">(</span>51<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:08:01.952483 eth0  In  IP 1.1.1.1.53 &gt; 192.168.5.15.45070: <span style="color:#ae81ff">23151</span> 1/0/1 AAAA 2a03:2880:f158:181:face:b00c:0:25de <span style="color:#f92672">(</span>63<span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>The query returns a correct answer, but in the <code>tcpdump</code> we can see that all name servers were asked to provide responses, including our link nameserve <code>127.0.0.153</code>. This default behavior could lead to a very nasty <a href="https://en.wikipedia.org/wiki/DNS_leak#:~:text=A%20DNS%20leak%20is%20a,proxy%20and%20direct%20internet%20users." target="_blank" rel="noopener">DNS leak security flaw</a> usually with VPN software:</p>
+<blockquote>
+<p>A <strong>DNS leak</strong> is a security flaw that allows <a href="https://en.wikipedia.org/wiki/DNS" target="_blank" rel="noopener">DNS</a> requests to be revealed to <a href="https://en.wikipedia.org/wiki/ISP" target="_blank" rel="noopener">ISP</a> DNS servers, despite the use of a <a href="https://en.wikipedia.org/wiki/VPN" target="_blank" rel="noopener">VPN</a> service to attempt to conceal them.<sup><a href="https://en.wikipedia.org/wiki/DNS_leak#cite_note-1">[1]</a></sup> Although primarily of concern to VPN users, it is also possible to prevent it for <a href="https://en.wikipedia.org/wiki/Proxy_server" target="_blank" rel="noopener">proxy</a> and direct internet users.</p></blockquote>
+<p>In order to address this issues we should leverage the <code>Domains</code> <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.network.html" target="_blank" rel="noopener">directive</a>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#66d9ef">[Resolve]</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">DNS</span><span style="color:#f92672">=</span><span style="color:#e6db74">1.1.1.1</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">Domains</span><span style="color:#f92672">=</span><span style="color:#e6db74">~.</span>
+</span></span></code></pre></div><blockquote>
+<p><code>Domains=</code></p>
+<p>A whitespace-separated list of domains which should be resolved using the DNS servers on this link. Each item in the list should be a domain name, optionally prefixed with a tilde (&quot;<code>~</code>&quot;). The domains with the prefix are called &ldquo;routing-only domains&rdquo;. The domains without the prefix are called &ldquo;search domains&rdquo; and are first used as search suffixes for extending single-label hostnames (hostnames containing no dots) to become fully qualified domain names (FQDNs). If a single-label hostname is resolved on this interface, each of the specified search domains are appended to it in turn, converting it into a fully qualified domain name, until one of them may be successfully resolved.</p>
+<p>Both &ldquo;search&rdquo; and &ldquo;routing-only&rdquo; domains are used for routing of DNS queries: look-ups for hostnames ending in those domains (hence also single label names, if any &ldquo;search domains&rdquo; are listed), are routed to the DNS servers configured for this interface. The domain routing logic is particularly useful on multi-homed hosts with DNS servers serving particular private DNS zones on each interface.</p>
+<p>The &ldquo;routing-only&rdquo; domain &ldquo;<code>~.</code>&rdquo; (the tilde indicating definition of a routing domain, the dot referring to the DNS root domain which is the implied suffix of all valid DNS names) has special effect. It causes all DNS traffic which does not match another configured domain routing entry to be routed to DNS servers specified for this interface. This setting is useful to prefer a certain set of DNS servers if a link on which they are connected is available.</p></blockquote>
+<p>Get the new config:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl
+</span></span><span style="display:flex;"><span>Global
+</span></span><span style="display:flex;"><span>         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC<span style="color:#f92672">=</span>no/unsupported
+</span></span><span style="display:flex;"><span>  resolv.conf mode: stub
+</span></span><span style="display:flex;"><span>       DNS Servers: 1.1.1.1 127.0.0.153
+</span></span><span style="display:flex;"><span>        DNS Domain: ~.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Link <span style="color:#ae81ff">2</span> <span style="color:#f92672">(</span>eth0<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    Current Scopes: DNS
+</span></span><span style="display:flex;"><span>         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC<span style="color:#f92672">=</span>no/unsupported
+</span></span><span style="display:flex;"><span>       DNS Servers: 127.0.0.153
+</span></span><span style="display:flex;"><span>       DNS Domain: test.example
+</span></span></code></pre></div><p>And now if we re-run our query:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl query fb.com
+</span></span><span style="display:flex;"><span>fb.com: 2a03:2880:f189:80:face:b00c:0:25de     -- link: eth0
+</span></span><span style="display:flex;"><span>        163.70.147.35                          -- link: eth0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-- Information acquired via protocol DNS in 17.7ms.
+</span></span><span style="display:flex;"><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
+</span></span><span style="display:flex;"><span>-- Data from: network
+</span></span></code></pre></div><p>And in the <code>tcpdump</code> output we can see only requests to the global resolver:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo tcpdump -i any -s0 -A -n port <span style="color:#ae81ff">53</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:10:38.312632 eth0  Out IP 192.168.5.15.41775 &gt; 1.1.1.1.53: 37889+ <span style="color:#f92672">[</span>1au<span style="color:#f92672">]</span> AAAA? fb.com. <span style="color:#f92672">(</span>35<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:10:38.312656 eth0  Out IP 192.168.5.15.50771 &gt; 1.1.1.1.53: 14510+ <span style="color:#f92672">[</span>1au<span style="color:#f92672">]</span> A? fb.com. <span style="color:#f92672">(</span>35<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:10:38.327208 eth0  In  IP 1.1.1.1.53 &gt; 192.168.5.15.41775: <span style="color:#ae81ff">37889</span> 1/0/1 AAAA 2a03:2880:f189:80:face:b00c:0:25de <span style="color:#f92672">(</span>63<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>E..<span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:10:38.329088 eth0  In  IP 1.1.1.1.53 &gt; 192.168.5.15.50771: <span style="color:#ae81ff">14510</span> 1/0/1 A 163.70.147.35 <span style="color:#f92672">(</span>51<span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>And local domains still work:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ resolvectl query site
+</span></span><span style="display:flex;"><span>site: 127.0.0.2
+</span></span><span style="display:flex;"><span>      127.0.0.1
+</span></span><span style="display:flex;"><span>      127.0.0.3
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">(</span>site.test.example<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-- Information acquired via protocol DNS in 1.7ms.
+</span></span><span style="display:flex;"><span>-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
+</span></span><span style="display:flex;"><span>-- Data from: network
+</span></span></code></pre></div><p>and only ask local name server with the correct search domain:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>19:11:51.498355 lo    In  IP 127.0.0.1.43769 &gt; 127.0.0.153.53: 57337+ <span style="color:#f92672">[</span>1au<span style="color:#f92672">]</span> AAAA? site.test.example. <span style="color:#f92672">(</span>46<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:11:51.498462 lo    In  IP 127.0.0.1.55548 &gt; 127.0.0.153.53: 44925+ <span style="color:#f92672">[</span>1au<span style="color:#f92672">]</span> A? site.test.example. <span style="color:#f92672">(</span>46<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:11:51.499115 lo    In  IP 127.0.0.153.53 &gt; 127.0.0.1.55548: 44925*- 3/0/1 A 127.0.0.2, A 127.0.0.1, A 127.0.0.3 <span style="color:#f92672">(</span>145<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>19:11:51.499149 lo    In  IP 127.0.0.153.53 &gt; 127.0.0.1.43769: 57337*- 0/1/1 <span style="color:#f92672">(</span>128<span style="color:#f92672">)</span>
+</span></span></code></pre></div><h2 id="104-useful-commands">
+  10.4 Useful commands
+  <a class="anchor" href="#104-useful-commands">#</a>
+</h2>
+<p>A handy <code>monitor</code> sub command allows us to monitor the ongoing queries:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo resolvectl monitor
+</span></span><span style="display:flex;"><span>→ Q: cf.com IN AAAA
+</span></span><span style="display:flex;"><span>← S: success
+</span></span><span style="display:flex;"><span>← A: cf.com IN SOA merlin.ns.cloudflare.com dns.cloudflare.com <span style="color:#ae81ff">2343786646</span> <span style="color:#ae81ff">10000</span> <span style="color:#ae81ff">2400</span> <span style="color:#ae81ff">604800</span> <span style="color:#ae81ff">1800</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>→ Q: google.com IN AAAA
+</span></span><span style="display:flex;"><span>← S: success
+</span></span><span style="display:flex;"><span>← A: google.com IN AAAA 2a00:1450:4009:823::200e
+</span></span></code></pre></div><p>As was mentioned above <code>systemd-resolved</code> provides a local cache:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo resolvectl show-cache
+</span></span><span style="display:flex;"><span>Scope protocol<span style="color:#f92672">=</span>dns ifindex<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span> ifname<span style="color:#f92672">=</span>eth0
+</span></span><span style="display:flex;"><span>No entries.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Scope protocol<span style="color:#f92672">=</span>dns
+</span></span><span style="display:flex;"><span>google.com IN AAAA 2a00:1450:4009:823::200e
+</span></span><span style="display:flex;"><span>google.com IN MX <span style="color:#ae81ff">10</span> smtp.google.com
+</span></span></code></pre></div><h2 id="105-querying-systemd-resolved">
+  10.5 Querying <code>systemd-resolved</code>
+  <a class="anchor" href="#105-querying-systemd-resolved">#</a>
+</h2>
+<p>Using standard resolver methods like <code>getaddrinfo()</code> or connecting to <code>/etc/resolv.conf</code> nameservers over the DNS protocol will not provide the full power of per-link resolvers and search domains. Therefore, if your application truly needs this information, you can use two alternative interfaces provided by <code>systemd-resolved</code>:</p>
+<ol>
+<li><a href="https://varlink.org/" target="_blank" rel="noopener">Varlink</a></li>
+<li><a href="https://www.freedesktop.org/wiki/Software/dbus" target="_blank" rel="noopener">D-Bus</a></li>
+</ol>
+<h3 id="1051-varlink">
+  10.5.1 <code>Varlink</code>
+  <a class="anchor" href="#1051-varlink">#</a>
+</h3>
+<p>Install dependencies:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ sudo apt install python3-varlink meson make
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ python3 -m varlink.cli info  unix:/run/systemd/resolve/io.systemd.Resolve
+</span></span><span style="display:flex;"><span>Vendor: The systemd Project
+</span></span><span style="display:flex;"><span>Product: systemd <span style="color:#f92672">(</span>systemd-resolved<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Version: <span style="color:#ae81ff">255</span> <span style="color:#f92672">(</span>255.4-1ubuntu8.1<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>URL: https://systemd.io/
+</span></span><span style="display:flex;"><span>Interfaces:
+</span></span><span style="display:flex;"><span>   io.systemd
+</span></span><span style="display:flex;"><span>   io.systemd.Resolve
+</span></span><span style="display:flex;"><span>   org.varlink.service
+</span></span></code></pre></div><p>Build <code>cli</code> tool:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ git co https://github.com/varlink/libvarlink
+</span></span><span style="display:flex;"><span>$ cd libvarlink
+</span></span><span style="display:flex;"><span>$ make build
+</span></span></code></pre></div><p>Run:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ build/tool$ ./varlink help unix:/run/systemd/resolve/io.systemd.Resolve/io.systemd.Resolve
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ ./varlink call unix:/run/systemd/resolve/io.systemd.Resolve/io.systemd.Resolve.ResolveHostname <span style="color:#e6db74">&#39;{ &#34;name&#34;: &#34;site&#34;}&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;addresses&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;address&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>        127,
+</span></span><span style="display:flex;"><span>        0,
+</span></span><span style="display:flex;"><span>        0,
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;family&#34;</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;address&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>        127,
+</span></span><span style="display:flex;"><span>        0,
+</span></span><span style="display:flex;"><span>        0,
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;family&#34;</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;address&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>        127,
+</span></span><span style="display:flex;"><span>        0,
+</span></span><span style="display:flex;"><span>        0,
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;family&#34;</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">]</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;flags&#34;</span>: 8388609,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;site.test.example&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>The additional features can be called by specifying the interface by setting <code>ifindex</code>.</p>
+<h3 id="1052-d-bus">
+  10.5.2 <code>D-Bus</code>
+  <a class="anchor" href="#1052-d-bus">#</a>
+</h3>
+<p>Another way to interact with an extended <code>systemd-resolved</code> interface is via <code>D-Bus</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ busctl status org.freedesktop.resolve1
+</span></span><span style="display:flex;"><span>PID<span style="color:#f92672">=</span><span style="color:#ae81ff">3478</span>
+</span></span><span style="display:flex;"><span>PPID<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>TTY<span style="color:#f92672">=</span>n/a
+</span></span><span style="display:flex;"><span>UID<span style="color:#f92672">=</span><span style="color:#ae81ff">991</span>
+</span></span><span style="display:flex;"><span>EUID<span style="color:#f92672">=</span><span style="color:#ae81ff">991</span>
+</span></span><span style="display:flex;"><span>SUID<span style="color:#f92672">=</span><span style="color:#ae81ff">991</span>
+</span></span><span style="display:flex;"><span>FSUID<span style="color:#f92672">=</span><span style="color:#ae81ff">991</span>
+</span></span><span style="display:flex;"><span>GID<span style="color:#f92672">=</span><span style="color:#ae81ff">991</span>
+</span></span><span style="display:flex;"><span>EGID<span style="color:#f92672">=</span><span style="color:#ae81ff">991</span>
+</span></span><span style="display:flex;"><span>SGID<span style="color:#f92672">=</span><span style="color:#ae81ff">991</span>
+</span></span><span style="display:flex;"><span>FSGID<span style="color:#f92672">=</span><span style="color:#ae81ff">991</span>
+</span></span><span style="display:flex;"><span>SupplementaryGIDs<span style="color:#f92672">=</span><span style="color:#ae81ff">991</span>
+</span></span><span style="display:flex;"><span>Comm<span style="color:#f92672">=</span>systemd-resolve
+</span></span><span style="display:flex;"><span>CommandLine<span style="color:#f92672">=</span>/usr/lib/systemd/systemd-resolved
+</span></span><span style="display:flex;"><span>Label<span style="color:#f92672">=</span>unconfined
+</span></span><span style="display:flex;"><span>CGroup<span style="color:#f92672">=</span>/system.slice/systemd-resolved.service
+</span></span><span style="display:flex;"><span>Unit<span style="color:#f92672">=</span>systemd-resolved.service
+</span></span><span style="display:flex;"><span>Slice<span style="color:#f92672">=</span>system.slice
+</span></span><span style="display:flex;"><span>UserUnit<span style="color:#f92672">=</span>n/a
+</span></span><span style="display:flex;"><span>UserSlice<span style="color:#f92672">=</span>n/a
+</span></span><span style="display:flex;"><span>Session<span style="color:#f92672">=</span>n/a
+</span></span><span style="display:flex;"><span>AuditLoginUID<span style="color:#f92672">=</span>n/a
+</span></span><span style="display:flex;"><span>AuditSessionID<span style="color:#f92672">=</span>n/a
+</span></span><span style="display:flex;"><span>UniqueName<span style="color:#f92672">=</span>:1.42
+</span></span><span style="display:flex;"><span>EffectiveCapabilities<span style="color:#f92672">=</span>cap_net_raw
+</span></span><span style="display:flex;"><span>PermittedCapabilities<span style="color:#f92672">=</span>cap_net_raw
+</span></span></code></pre></div><p>Documentation for the API format could be found here: <a href="https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.resolve1.html" target="_blank" rel="noopener">https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.resolve1.html</a>.</p>
+<p>Run to resolve <code>site</code> hostname:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ busctl call org.freedesktop.resolve1 /org/freedesktop/resolve1 org.freedesktop.resolve1.Manager ResolveHostname isit <span style="color:#ae81ff">0</span> site <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>result:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>a<span style="color:#f92672">(</span>iiay<span style="color:#f92672">)</span>st <span style="color:#ae81ff">3</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">4</span> <span style="color:#ae81ff">127</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">3</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">4</span> <span style="color:#ae81ff">127</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">1</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">4</span> <span style="color:#ae81ff">127</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">2</span> <span style="color:#e6db74">&#34;site.test.example&#34;</span> <span style="color:#ae81ff">8388609</span>
+</span></span></code></pre></div><p>Run to resolve <code>fb.com</code> hostname:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ busctl call org.freedesktop.resolve1 /org/freedesktop/resolve1 org.freedesktop.resolve1.Manager ResolveHostname isit <span style="color:#ae81ff">0</span> fb.com <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>Result:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>a<span style="color:#f92672">(</span>iiay<span style="color:#f92672">)</span>st <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">4</span> <span style="color:#ae81ff">157</span> <span style="color:#ae81ff">240</span> <span style="color:#ae81ff">221</span> <span style="color:#ae81ff">35</span> <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">16</span> <span style="color:#ae81ff">42</span> <span style="color:#ae81ff">3</span> <span style="color:#ae81ff">40</span> <span style="color:#ae81ff">128</span> <span style="color:#ae81ff">241</span> <span style="color:#ae81ff">88</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">130</span> <span style="color:#ae81ff">250</span> <span style="color:#ae81ff">206</span> <span style="color:#ae81ff">176</span> <span style="color:#ae81ff">12</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">37</span> <span style="color:#ae81ff">222</span> <span style="color:#e6db74">&#34;fb.com&#34;</span> <span style="color:#ae81ff">8388609</span>
+</span></span></code></pre></div>
+
+
+
+  
+
+<a  href="/docs/resolver-dual-stack-application/11-querying-nameservers-on-dual-stack-hosts/"   class="book-btn right-button">
+  Read next chapter →
+</a>
+
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+
+ 
+        <script defer src="/my_js/copy-code.js"></script>
+
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+  </main>
+
+  
+<div class="cookie-container">
+    <p>
+        This website uses "<b>cookies</b>".
+        Using this website means you're OK with this.
+        If you are <b>NOT</b>, please close the site page.
+    </p>
+    <button class="cookie-btn">
+        ACCEPT AND CLOSE
+    </button>
+</div>
+<script src="/my_js/cookie.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
