@@ -276,12 +276,12 @@ https://github.com/alex-shpak/hugo-book
   Chaos Engineering and Network Fault Injection
   <a class="anchor" href="#chaos-engineering-and-network-fault-injection">#</a>
 </h2>
-<img style="float:right; padding-top:5px;" alt="Trixter: A Chaos Proxy for Simulating Network Faults" src="../images/trixter.png" width="40%" class="img-center">
 <p>Chaos engineering is the practice of <strong>deliberately injecting controlled failures</strong> into systems to observe their behavior and <strong>improve their resilience</strong>. One common chaos experiment is network-level fault injection, which involves artificial inserting network problems like latency, packet loss, or corruption to test how services cope. This is valuable because many modern systems are distributed (at least have clients and servers); introducing network slowness or errors can <strong>reveal hidden bugs, timeout issues, or insufficient retry logic in microservices</strong>. By simulating unreliable networks in a controlled way, SREs can ensure their applications are resilient against real-world network chaos (like spikes in latency or occasional outages).</p>
 <h2 id="introducing-trixter--a-chaos-monkey-for-tcp">
   Introducing Trixter – A Chaos Monkey for TCP
   <a class="anchor" href="#introducing-trixter--a-chaos-monkey-for-tcp">#</a>
 </h2>
+<img class="img-center" style="float:right; padding-top:5px;" alt="Trixter: A Chaos Proxy for Simulating Network Faults" src="../images/trixter.png" width="30%" >
 <p><code><a href="https://github.com/brk0v/trixter" target="_blank" rel="noopener">Trixter</a></code> is a <strong>high-performance chaos proxy designed for injecting network faults at the TCP</strong> layer. In essence, it’s a TCP proxy that sits between a client and server, forwarding traffic but intentionally sabotaging it according to your specifications.</p>
 <p>Trixter is <strong>runtime-tunable too</strong>, so you can adjust fault parameters on the fly per connection without restarting the proxy.</p>
 <p><em>How it works</em>: You run Trixter as a proxy on a specified listening port, pointing it to an upstream service. Under normal conditions, it simply relays traffic. But you can configure Trixter to inject various network failures in transit. For example, <strong>add artificial delay</strong> to each packet, <strong>throttle the bandwidth</strong>, <strong>drop a connection</strong> with some probability, <strong>corrupt a percentage of packets</strong> by injecting a trash, or even <strong>terminate connections</strong> to simulate outages by some timeout or by calling a REST API call.</p>
