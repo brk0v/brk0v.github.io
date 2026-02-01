@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://biriukov.dev/posts/async-rust-gocha-cancelation-select-future-then/</loc>
+    <loc>https://biriukov.dev/posts/async-rust-gocha-tokio-cancelation-select-future-then/</loc>
   </url><url>
     <loc>https://biriukov.dev/posts/trixter-chaos-proxy/</loc>
   </url><url>
