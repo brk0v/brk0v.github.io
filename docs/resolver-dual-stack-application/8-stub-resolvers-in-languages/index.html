@@ -63,7 +63,7 @@ Let’s now take a look at other popular languages and understand the capabiliti
 <link rel="icon" href="/favicon.png" >
 <link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.0fb616db67f774cec7b095ec9292d93802a23f307ac14f7bfd7c8971c1e37057.js" integrity="sha256-D7YW22f3dM7HsJXskpLZOAKiPzB6wU97/XyJccHjcFc=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -447,11 +447,17 @@ https://github.com/alex-shpak/hugo-book
 
 
 
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Blog:</b>
+  <ul>
+    <li><a href="/posts/async-rust-gocha-cancelation-select-future-then/">Async Rust gotcha: evolving tokio::select! code&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+  </ul>
+</div>
 
 <div style="margin-top: 30px; margin-bottom: 30px">
   <b>More recent series:</b>
   <ul>
-    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics</li>
     <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
     <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
     <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
@@ -710,7 +716,8 @@ https://github.com/alex-shpak/hugo-book
 </span></span></code></pre></div><p>The params of <code>loop.create_connection()</code>are:</p>
 <blockquote>
 <p><code>happy_eyeballs_delay</code>, if given, enables Happy Eyeballs for this connection. It should be a floating-point number representing the amount of time in seconds to wait for a connection attempt to complete, before starting the next attempt in parallel. This is the &ldquo;Connection Attempt Delay&rdquo; as defined in <a href="https://datatracker.ietf.org/doc/html/rfc8305.html" target="_blank" rel="noopener">RFC 8305</a>. A sensible default value recommended by the RFC is 0.25 (250 milliseconds).</p>
-<p><code>interleave</code> –  controls address reordering when a host name resolves to multiple IP addresses. If 0 or unspecified, no reordering is done, and addresses are tried in the order returned by <a href="https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.getaddrinfo" target="_blank" rel="noopener">getaddrinfo()</a>. If a positive integer is specified, the addresses are interleaved by address family, and the given integer is interpreted as &ldquo;First Address Family Count&rdquo; as defined in <a href="https://datatracker.ietf.org/doc/html/rfc8305.html" target="_blank" rel="noopener">RFC 8305</a>. The default is 0 if happy_eyeballs_delay is not specified, and 1 if it is.</p></blockquote>
+<p><code>interleave</code> –  controls address reordering when a host name resolves to multiple IP addresses. If 0 or unspecified, no reordering is done, and addresses are tried in the order returned by <a href="https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.getaddrinfo" target="_blank" rel="noopener">getaddrinfo()</a>. If a positive integer is specified, the addresses are interleaved by address family, and the given integer is interpreted as &ldquo;First Address Family Count&rdquo; as defined in <a href="https://datatracker.ietf.org/doc/html/rfc8305.html" target="_blank" rel="noopener">RFC 8305</a>. The default is 0 if happy_eyeballs_delay is not specified, and 1 if it is.</p>
+</blockquote>
 <h2 id="82-go-golang">
   8.2 Go (golang)
   <a class="anchor" href="#82-go-golang">#</a>
@@ -1094,7 +1101,8 @@ lets applications connect to, and accept connections from, both
 IPv4 and IPv6 hosts. However, in the case an application would
 rather use IPv4 only sockets, then this property can be set to true.
 The implication is that it will not be possible for the application
-to communicate with IPv6 only hosts.</p></blockquote>
+to communicate with IPv6 only hosts.</p>
+</blockquote>
 <ol start="2">
 <li><code>java.net.preferIPv6Addresse</code>:</li>
 </ol>
@@ -1108,7 +1116,8 @@ for applications that depend on the representation of an IPv4 address
 (e.g. 192.168.1.1). This property can be set to <strong>true</strong> to
 change that preference and use IPv6 addresses over IPv4 ones where
 possible, or <strong>system</strong> to preserve the order of the addresses as
-returned by the system-wide <code>java.net.spi.InetAddressResolver</code> resolver.</p></blockquote>
+returned by the system-wide <code>java.net.spi.InetAddressResolver</code> resolver.</p>
+</blockquote>
 <p>Internally the following static variables are initialized in <code><a href="https://github.com/openjdk/jdk/blob/3abe8a6e5e459fb764b8cef2425be50fe1a83fab/src/java.base/share/classes/java/net/InetAddress.java#L1455-L1465" target="_blank" rel="noopener">java.net.InetAdress</a></code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>    <span style="color:#66d9ef">static</span> {
 </span></span><span style="display:flex;"><span>        <span style="color:#75715e">// create the impl</span>
@@ -1374,7 +1383,8 @@ returned by the system-wide <code>java.net.spi.InetAddressResolver</code> resolv
 <p>It uses <code>getaddrinfo()</code> <a href="https://github.com/libuv/libuv/blob/master/docs/src/guide/networking.rst#querying-dns" target="_blank" rel="noopener">internally</a>.</p>
 <blockquote>
 <p><code>libuv</code> provides asynchronous DNS resolution. For this it provides its own <code>getaddrinfo</code> replacement [3]. In the callback you can perform normal socket operations on the retrieved addresses. Let&rsquo;s connect to Libera.chat to see an example of DNS resolution.</p>
-<p>[3] - <code>libuv</code> use the system <code>getaddrinfo</code> in the <code>libuv</code> threadpool.</p></blockquote>
+<p>[3] - <code>libuv</code> use the system <code>getaddrinfo</code> in the <code>libuv</code> threadpool.</p>
+</blockquote>
 <p><a href="https://github.com/libuv/libuv/blob/76f7fb26b9ac8ede4406fa786acb7480d9b48ff5/src/unix/getaddrinfo.c#L98-L105" target="_blank" rel="noopener">Code</a>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">uv__getaddrinfo_work</span>(<span style="color:#66d9ef">struct</span> uv__work<span style="color:#f92672">*</span> w) {
 </span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">uv_getaddrinfo_t</span><span style="color:#f92672">*</span> req;

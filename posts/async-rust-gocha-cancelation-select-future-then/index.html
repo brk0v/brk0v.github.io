@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="
+ … or a story about Cancellation safety, FutureExt::then(), insufficient tests, and I/O actors.
+
+
+    
+        Posted: Feb 2026
+    
+
+
+  TL;DR
+  #
+
+
+stream.next().then() is not cancellation safe if you have an await point inside the async closure – data can be lost.
+Make your tests exercise Poll::Pending paths. If you test with tokio::io::duplex(N), it rarely goes pending, so cancellation bugs might not show up.
+Be careful iterating your application with tokio::select!, because the missing or simple tests could lead to data losses due to cancellation safety issues. Assume any branch can be dropped at any .await unless you’ve designed it to be restart/cancel-safe.
+Follow the single I/O actor model – no mutexes, no sharing I/O objects.
+Use tokio::mpsc permits with reserve() to consume data from streams only when you have capacity on the next step (producer side). This propagates backpressure and preserves data.
+
+
+
+  Intro
+  #
+
+Rust adoption keeps accelerating, and many new teams are writing Async Rust for production systems for the first time. Developers arrive from both low-level systems backgrounds and enterprise ecosystems – but Async Rust, and Tokio especially, comes with a few crucial concepts that can make or break your ability to build high-performance, zero-cost abstraction networking code.">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
+<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://biriukov.dev/posts/async-rust-gocha-cancelation-select-future-then/">
+  <meta property="og:site_name" content="Viacheslav Biriukov">
+  <meta property="og:title" content="Async Rust gotcha: evolving tokio::select! code has sharp edges">
+  <meta property="og:description" content="… or a story about Cancellation safety, FutureExt::then(), insufficient tests, and I/O actors.
+Posted: Feb 2026 TL;DR # stream.next().then() is not cancellation safe if you have an await point inside the async closure – data can be lost. Make your tests exercise Poll::Pending paths. If you test with tokio::io::duplex(N), it rarely goes pending, so cancellation bugs might not show up. Be careful iterating your application with tokio::select!, because the missing or simple tests could lead to data losses due to cancellation safety issues. Assume any branch can be dropped at any .await unless you’ve designed it to be restart/cancel-safe. Follow the single I/O actor model – no mutexes, no sharing I/O objects. Use tokio::mpsc permits with reserve() to consume data from streams only when you have capacity on the next step (producer side). This propagates backpressure and preserves data. Intro # Rust adoption keeps accelerating, and many new teams are writing Async Rust for production systems for the first time. Developers arrive from both low-level systems backgrounds and enterprise ecosystems – but Async Rust, and Tokio especially, comes with a few crucial concepts that can make or break your ability to build high-performance, zero-cost abstraction networking code.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+<title>Async Rust gotcha: evolving tokio::select! code has sharp edges | Viacheslav Biriukov</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" >
+<link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.0fb616db67f774cec7b095ec9292d93802a23f307ac14f7bfd7c8971c1e37057.js" integrity="sha256-D7YW22f3dM7HsJXskpLZOAKiPzB6wU97/XyJccHjcFc=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+<script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-599VSLESJL"
+></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+
+    gtag("config", "G-599VSLESJL");
+</script>
+
+<link rel="stylesheet" href="/my_css/cookie.css" />
+<link rel="stylesheet" href="/my_css/copy-code.css" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+/>
+
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>Viacheslav Biriukov</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+
+      
+        
+
+      
+        
+
+      
+        
+
+      
+        
+  </ul>
+
+
+
+
+
+
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Blog:</b>
+  <ul>
+    <li><a href="/posts/async-rust-gocha-cancelation-select-future-then/">Async Rust gotcha: evolving tokio::select! code&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+  </ul>
+</div>
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>More recent series:</b>
+  <ul>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics</li>
+    <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
+    <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
+    <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
+  </ul>
+</div>
+
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Open Source Projects</b>
+  <ul>
+      <li>
+          <a href="/posts/trixter-chaos-proxy/"> • trixter chaos proxy</a>
+      </li>
+      <li><a href="https://crates.io/crates/tokio-netem"> • tokio-netem</a></li>
+  </ul>
+</div>
+
+
+
+
+
+  
+<ul>
+  
+  <li>
+    <a href="https://twitter.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-twitter"></i>
+        Twitter
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://www.linkedin.com/in/biriukov/"  target="_blank" rel="noopener"><i class="bi bi-linkedin"></i>
+        Linkedin
+      </a>
+  </li>
+  
+  <li>
+    <a href="https://github.com/brk0v/"  target="_blank" rel="noopener"><i class="bi bi-github"></i>
+        Github
+      </a>
+  </li>
+  
+</ul>
+
+
+
+
+
+<div style="margin-top: 30px;">
+  <p xmlns:cc="http://creativecommons.org/ns#">
+    This content is licensed under 
+    <a
+      href="http://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1" target="_blank"
+      rel="license noopener noreferrer" style="display:inline-block; ">CC BY-NC 4.0<img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img
+      style="height:22px!important;margin-left:3px;vertical-align:text-bottom;"
+      src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1">
+    </a>
+  </p>
+</div>
+</nav>
+
+
+
+
+  <script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Async Rust gotcha: evolving tokio::select! code has sharp edges</strong>
+
+  <label for="toc-control">
+    
+  </label>
+</div>
+
+
+  
+ 
+      </header>
+
+      
+      
+<article class="markdown book-post">
+  <h1>
+    <a href="/posts/async-rust-gocha-cancelation-select-future-then/">Async Rust gotcha: evolving tokio::select! code has sharp edges</a>
+  </h1>
+  
+
+
+  
+
+  
+
+
+
+<p style="margin-top:-12px;">
+<p style="font-size:120%;"> … or a story about Cancellation safety, <code>FutureExt::then()</code>, insufficient tests, and I/O actors.</p>
+</p>
+<p class="updated-right">
+    <i>
+        <time datetime="2025-10">Posted: Feb 2026</time>
+    </i>
+</p>
+<h4 id="tldr">
+  TL;DR
+  <a class="anchor" href="#tldr">#</a>
+</h4>
+<ul>
+<li><code>stream.next().then()</code> is not cancellation safe if you have an await point inside the async closure – <strong>data can be lost</strong>.</li>
+<li><strong>Make your tests exercise <a href="https://doc.rust-lang.org/beta/std/task/enum.Poll.html" target="_blank" rel="noopener"><code>Poll::Pending</code></a> paths.</strong> If you test with <code>tokio::io::duplex(N)</code>, it rarely goes pending, so cancellation bugs might not show up.</li>
+<li>Be careful iterating your application with <code>tokio::select!</code>, because the missing or simple tests could lead to data losses due to cancellation safety issues. Assume <strong>any branch can be dropped at any <code>.await</code></strong> unless you’ve designed it to be restart/cancel-safe.</li>
+<li><strong>Follow the single I/O actor model</strong> – no mutexes, no sharing I/O objects.</li>
+<li>Use <code>tokio::mpsc</code> permits with <code>reserve()</code> to consume data from streams <strong>only when you have capacity</strong> on the next step (producer side). This propagates backpressure and preserves data.</li>
+</ul>
+<hr/>
+<h2 id="intro">
+  Intro
+  <a class="anchor" href="#intro">#</a>
+</h2>
+<p>Rust adoption keeps accelerating, and many new teams are writing Async Rust for production systems for the first time. Developers arrive from both low-level systems backgrounds and enterprise ecosystems – but Async Rust, and Tokio especially, comes with a few crucial concepts that can make or break your ability to build high-performance, zero-cost abstraction networking code.</p>
+<p>This post is a short case study in how a seemingly harmless refactor can silently break cancellation safety and lead to surprising runtime behavior.</p>
+<p>We will start with a simple stream-drain loop, add cancellation, add a heartbeat, then see how <code>FutureExt::then()</code> creates a drop-on-cancel hazard. Finally, we will fix it with an I/O actor and explicit backpressure.</p>
+<img class="img-center" style="" alt="spider man tokio select Cancellation safety poll::pending" src="../images/spiderman.jpg" width="60%">
+<h2 id="initial-code-drain-a-stream-into-an-asyncwrite">
+  Initial code: drain a stream into an <code>AsyncWrite</code>
+  <a class="anchor" href="#initial-code-drain-a-stream-into-an-asyncwrite">#</a>
+</h2>
+<p>We start with a straightforward loop: where every message is read until the end of the stream occurs, and is processed by writing to a <code>AsyncWrite</code> object:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> bytes::Bytes;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> futures::{Stream, StreamExt};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio::io::{self, AsyncWrite, AsyncWriteExt};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">drain_stream_to_writer</span><span style="color:#f92672">&lt;</span>S, W<span style="color:#f92672">&gt;</span>(<span style="color:#66d9ef">mut</span> stream: <span style="color:#a6e22e">S</span>, <span style="color:#66d9ef">mut</span> out: <span style="color:#a6e22e">W</span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    S: <span style="color:#a6e22e">Stream</span><span style="color:#f92672">&lt;</span>Item<span style="color:#f92672">=</span>Bytes<span style="color:#f92672">&gt;</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>    W: <span style="color:#a6e22e">AsyncWrite</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> <span style="color:#66d9ef">let</span> Some(msg) <span style="color:#f92672">=</span> stream.next().<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>        out.write_all(<span style="color:#f92672">&amp;</span>msg).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        out.flush().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This code is straightforward and easy to reason about: if you pull an item, you fully process it before pulling the next one. If there is no capacity in the <code>AsyncWrite</code>, the async code returns <a href="https://doc.rust-lang.org/beta/std/task/enum.Poll.html" target="_blank" rel="noopener"><code>Poll::Pending</code></a>, and no more items are read from the stream.</p>
+<h2 id="adding-cancellation">
+  Adding cancellation
+  <a class="anchor" href="#adding-cancellation">#</a>
+</h2>
+<p>Let&rsquo;s assume that later, we decided to add a cancellation mechanism. We need to stop the processing before EOF of the stream. For example, the program gets a <code>SIGTERM</code>. In order to do that, we can add a classic &ldquo;<code>loop { select! { ... } }</code>&rdquo; pattern and a cancellation token. The code could look like the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> bytes::Bytes;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> futures::{Stream, StreamExt};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio::io::{self, AsyncWrite, AsyncWriteExt};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio_util::sync::CancellationToken;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">drain_stream_to_writer</span><span style="color:#f92672">&lt;</span>S, W<span style="color:#f92672">&gt;</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> stream: <span style="color:#a6e22e">S</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> out: <span style="color:#a6e22e">W</span>,
+</span></span><span style="display:flex;"><span>    cancel: <span style="color:#a6e22e">CancellationToken</span>,
+</span></span><span style="display:flex;"><span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    S: <span style="color:#a6e22e">Stream</span><span style="color:#f92672">&lt;</span>Item<span style="color:#f92672">=</span>Bytes<span style="color:#f92672">&gt;</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>    W: <span style="color:#a6e22e">AsyncWrite</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>        tokio::<span style="color:#a6e22e">select!</span> {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> cancel.cancelled() <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// decide what &#34;shutdown&#34; means for your app:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                <span style="color:#75715e">// flush()? and/or shutdown()?
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                <span style="color:#66d9ef">break</span>; <span style="color:#75715e">// exit from the loop
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            maybe_msg <span style="color:#f92672">=</span> stream.next() <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">match</span> maybe_msg {
+</span></span><span style="display:flex;"><span>                    Some(msg) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                        out.write_all(<span style="color:#f92672">&amp;</span>msg).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>                        out.flush().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                    None <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">break</span>,  <span style="color:#75715e">// EOF for the stream
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>When the cancellation signal is received, the <code>drain_stream_to_writer</code> exits and all variables are dropped. This includes the <code>stream</code> variable and the <code>out</code> <code>AsyncWrite</code> object. No more future <code>poll()</code> functions are called, all resources are freed.</p>
+<h3 id="why-this-might-not-do-what-you-expect">
+  Why this might not do what you expect
+  <a class="anchor" href="#why-this-might-not-do-what-you-expect">#</a>
+</h3>
+<p>Once <code>select!</code> picks the stream branch and you enter it, you might spend time inside:</p>
+<ul>
+<li><code>write_all().await</code></li>
+<li><code>flush().await</code></li>
+</ul>
+<p>During that time, the cancellation branch is not being polled. This means that this structure <strong>does not interrupt an in-flight write</strong>. It only checks cancellation <em>between</em> loop iterations.</p>
+<h2 id="the-tempting-refactor-futureextthen">
+  The tempting refactor: <code>FutureExt::then()</code>
+  <a class="anchor" href="#the-tempting-refactor-futureextthen">#</a>
+</h2>
+<p>If you look closer at the code, you can see that what we need is &ldquo;read the next item, then process it in one future that can return <code>Poll::Pending</code> to <code>select!</code>.&rdquo;</p>
+<p>If we read the <code>Future</code> and <code>FutureExt</code> docs, or ask an LLM, we can bump into <code>FutureExt::then()</code>.</p>
+<p>The <code>FutureExt::then()</code> <a href="https://docs.rs/futures-util/0.3.31/src/futures_util/future/future/mod.rs.html#191-195" target="_blank" rel="noopener">doc string</a> in version 0.3.31:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#e6db74">/// Chain on a computation for when a future finished, passing the result of
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">/// the future to the provided closure `f`.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">///
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">/// The returned value of the closure must implement the `Future` trait
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">/// and can represent some more work to be done before the composed future
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">/// is finished.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">///
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">/// The closure `f` is only run *after* successful completion of the `self`
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">/// future.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">///
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">/// Note that this function consumes the receiving future and returns a
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">/// wrapped version of it.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">/// ```
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"></span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">then</span><span style="color:#f92672">&lt;</span>Fut, F<span style="color:#f92672">&gt;</span>(self, f: <span style="color:#a6e22e">F</span>) -&gt; <span style="color:#a6e22e">Then</span><span style="color:#f92672">&lt;</span>Self, Fut, F<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    F: FnOnce(Self::Output) -&gt; <span style="color:#a6e22e">Fut</span>,
+</span></span><span style="display:flex;"><span>    Fut: <span style="color:#a6e22e">Future</span>,
+</span></span><span style="display:flex;"><span>    Self: Sized,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    assert_future::<span style="color:#f92672">&lt;</span>Fut::Output, _<span style="color:#f92672">&gt;</span>(Then::new(self, f))
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>FutureExt::then()</code> looks exactly like what we need, and we can rewrite our code using it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> bytes::Bytes;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> futures::{Stream, StreamExt, FutureExt};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio::io::{self, AsyncWrite, AsyncWriteExt};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio_util::sync::CancellationToken;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">drain_stream_to_writer</span><span style="color:#f92672">&lt;</span>S, W<span style="color:#f92672">&gt;</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> stream: <span style="color:#a6e22e">S</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> out: <span style="color:#a6e22e">W</span>,
+</span></span><span style="display:flex;"><span>    cancel: <span style="color:#a6e22e">CancellationToken</span>,
+</span></span><span style="display:flex;"><span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    S: <span style="color:#a6e22e">Stream</span><span style="color:#f92672">&lt;</span>Item<span style="color:#f92672">=</span>Bytes<span style="color:#f92672">&gt;</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>    W: <span style="color:#a6e22e">AsyncWrite</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>        tokio::<span style="color:#a6e22e">select!</span> {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> cancel.cancelled() <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">break</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            eof <span style="color:#f92672">=</span> stream.next().then(<span style="color:#f92672">|</span>maybe_msg<span style="color:#f92672">|</span> <span style="color:#66d9ef">async</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">match</span> maybe_msg {
+</span></span><span style="display:flex;"><span>                    Some(msg) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                        out.write_all(<span style="color:#f92672">&amp;</span>msg).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>                        out.flush().<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                    None <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> eof { <span style="color:#66d9ef">break</span>; }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Here, instead of blocking in the <code>select!</code> arm, we generate a new future every time that can return <code>Poll::Pending</code> and can be canceled.</p>
+<p>This <em>looks</em> elegant… and it could lead to <strong>bugs</strong>.</p>
+<h2 id="extending-select-the-bug-becomes-more-likely">
+  Extending <code>select!</code>: the bug becomes more likely
+  <a class="anchor" href="#extending-select-the-bug-becomes-more-likely">#</a>
+</h2>
+<p>Later we got a feature request to add a heartbeat/keepalive/ping-pong message. If there are no messages received from the stream, we need to send a special &ldquo;healthcheck&rdquo; message in order to keep our writer alive.</p>
+<p>Adding a periodic heartbeat to our code might look simple and innocent. It&rsquo;s as easy as:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> bytes::Bytes;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> futures::{Stream, StreamExt, FutureExt};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio::io::{self, AsyncWrite, AsyncWriteExt};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio_util::sync::CancellationToken;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::time::Duration;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">drain_stream_to_writer</span><span style="color:#f92672">&lt;</span>S, W<span style="color:#f92672">&gt;</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> stream: <span style="color:#a6e22e">S</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> out: <span style="color:#a6e22e">W</span>,
+</span></span><span style="display:flex;"><span>    cancel: <span style="color:#a6e22e">CancellationToken</span>,
+</span></span><span style="display:flex;"><span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    S: <span style="color:#a6e22e">Stream</span><span style="color:#f92672">&lt;</span>Item<span style="color:#f92672">=</span>Bytes<span style="color:#f92672">&gt;</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>    W: <span style="color:#a6e22e">AsyncWrite</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Send heartbeat every 200ms
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tick <span style="color:#f92672">=</span> tokio::time::interval(Duration::from_millis(<span style="color:#ae81ff">200</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>        tokio::<span style="color:#a6e22e">select!</span> {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> cancel.cancelled() <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">break</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Added this part
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            _ <span style="color:#f92672">=</span> tick.tick() <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                out.write_all(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;healthcheck&#34;</span>).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>                out.flush().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            eof <span style="color:#f92672">=</span> stream.next().then(<span style="color:#f92672">|</span>maybe_msg<span style="color:#f92672">|</span> <span style="color:#66d9ef">async</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">match</span> maybe_msg {
+</span></span><span style="display:flex;"><span>                    Some(msg) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                        out.write_all(<span style="color:#f92672">&amp;</span>msg).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>                        out.flush().<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                    None <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> eof { <span style="color:#66d9ef">break</span>; }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The code above even passes the following unit test:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[cfg(test)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">mod</span> tests {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> <span style="color:#66d9ef">super</span>::<span style="color:#f92672">*</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> bytes::Bytes;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> tokio::io::AsyncReadExt;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> tokio::sync::mpsc;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> tokio_stream::wrappers::ReceiverStream;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#[tokio::test(flavor = </span><span style="color:#e6db74">&#34;current_thread&#34;</span><span style="color:#75715e">, start_paused = true)]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">drains_stream_to_writer_with_optional_healthcheck</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> (tx, rx) <span style="color:#f92672">=</span> mpsc::channel::<span style="color:#f92672">&lt;</span>Bytes<span style="color:#f92672">&gt;</span>(<span style="color:#ae81ff">8</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> stream <span style="color:#f92672">=</span> ReceiverStream::new(rx);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> (<span style="color:#66d9ef">mut</span> reader, writer) <span style="color:#f92672">=</span> tokio::io::duplex(<span style="color:#ae81ff">1024</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> cancel <span style="color:#f92672">=</span> CancellationToken::new();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> drain_task <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>            tokio::spawn(<span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> { drain_stream_to_writer(stream, writer, cancel).<span style="color:#66d9ef">await</span> });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        tx.send(Bytes::from_static(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;|hello1&#34;</span>)).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>        tx.send(Bytes::from_static(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;|hello2&#34;</span>)).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>        tx.send(Bytes::from_static(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;|hello3&#34;</span>)).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>        drop(tx);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> buf <span style="color:#f92672">=</span> Vec::new();
+</span></span><span style="display:flex;"><span>        reader.read_to_end(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> buf).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        drain_task.<span style="color:#66d9ef">await</span>.unwrap().unwrap();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">assert!</span>(
+</span></span><span style="display:flex;"><span>            buf.windows(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;hello3&#34;</span>.len()).any(<span style="color:#f92672">|</span>w<span style="color:#f92672">|</span> w <span style="color:#f92672">==</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;hello3&#34;</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;expected output to contain &#39;hello3&#39;, got: {:?}&#34;</span>,
+</span></span><span style="display:flex;"><span>            String::from_utf8_lossy(<span style="color:#f92672">&amp;</span>buf)
+</span></span><span style="display:flex;"><span>        );
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>But the real problem is that this code and the test contain bugs.</p>
+<p>To trigger and understand it, we need to take into account backpressure and future concurrency intersections.</p>
+<h2 id="what-happens-the-cancellation-safety-mental-model">
+  What happens: the cancellation-safety mental model
+  <a class="anchor" href="#what-happens-the-cancellation-safety-mental-model">#</a>
+</h2>
+<img class="img-center" style="float:right; padding-top:10px;" alt="surprised pikachu on tokio select" src="../images/pikachu_select.png" width="40%">
+<p><code>tokio::select!</code> polls multiple futures and picks the first branch that can make progress. When one branch wins, the other futures are <strong>dropped</strong>. Dropping a future is cancellation, and it can happen at any <code>.await</code>.</p>
+<p>In the code above, the stream branch future is effectively:</p>
+<ol>
+<li><code>stream.next()</code> – <strong>pulls an item from the stream</strong>, then</li>
+<li><code>FutureExt::then()</code> – <strong>does async side effects on that item</strong>.</li>
+</ol>
+<p>If <code>stream.next()</code> returns <code>Ready(Some(item))</code>, the stream has already advanced – the item is gone from the source.</p>
+<p>Now the <code>then()</code> future starts doing its processing and may hit an <code>.await</code> and return <code>Poll::Pending</code>.</p>
+<p>If, while that processing is pending, the tick branch becomes ready (returns <code>Poll::Ready</code>), <code>select!</code> can pick the tick branch and <strong>drop</strong> the in-flight <code>then</code> future.</p>
+<p>That means:</p>
+<ul>
+<li>your processing future is canceled mid-flight,</li>
+<li>the item is already consumed from the stream,</li>
+<li>the stream cannot “re-yield” it,</li>
+<li>result: <strong>lost work, lost item</strong>.</li>
+</ul>
+<p>Tokio&rsquo;s docs call this out under <a href="https://docs.rs/tokio/latest/tokio/macro.select.html#cancellation-safety" target="_blank" rel="noopener"><strong>cancellation safety</strong></a>.</p>
+<h2 id="tests-why-your-unit-tests-might-not-catch-it">
+  Tests: why your unit tests might not catch it
+  <a class="anchor" href="#tests-why-your-unit-tests-might-not-catch-it">#</a>
+</h2>
+<p>Cancellation bugs are easy to miss when your test I/O never meaningfully returns <code>Poll::Pending</code>.</p>
+<p>A common pattern is using <code>tokio::io::duplex(N)</code> or dummy writers in tests, but:</p>
+<ul>
+<li>if <code>N</code> is large enough, writes complete immediately – all <code>.await</code> points return <code>Poll::Ready</code>,</li>
+<li>if the reader drains aggressively, the writer rarely blocks,</li>
+<li>if you don’t force the tick to win while the write is pending, you won’t see the race.</li>
+</ul>
+<p>Thus to catch it, you want tests that:</p>
+<ul>
+<li>use a <strong>tiny</strong> duplex buffer – so the writer blocks by returning <code>Poll::Pending</code>,</li>
+<li><strong>delay reads</strong> from the other end – so the reader returns <code>Poll::Pending</code>,</li>
+<li><strong>advance time</strong> so the tick branch becomes ready while the data branch is pending.</li>
+</ul>
+<p>The test code above is testing only the simplest, the happiest code path possible:
+no backpressure, no <code>Poll::Pending</code> returned by futures. Every future in that test runs one after another, sequentially without intersections, which is bad for tests because the real production would not be so generous.</p>
+<p>Therefore the above unit test could be rewritten to catch the issue by setting a <code>tokio::io::duplex</code> buffer to <code>1</code>, and adding a sleep to advance the paused clocks:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[cfg(test)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">mod</span> tests {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> <span style="color:#66d9ef">super</span>::<span style="color:#f92672">*</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> bytes::Bytes;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> tokio::io::AsyncReadExt;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> tokio::sync::mpsc;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> tokio::time;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> std::time::Duration;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> tokio_stream::wrappers::ReceiverStream;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#[tokio::test(flavor = </span><span style="color:#e6db74">&#34;current_thread&#34;</span><span style="color:#75715e">, start_paused = true)]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">drains_stream_to_writer_with_optional_healthcheck</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> (tx, rx) <span style="color:#f92672">=</span> mpsc::channel::<span style="color:#f92672">&lt;</span>Bytes<span style="color:#f92672">&gt;</span>(<span style="color:#ae81ff">8</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> stream <span style="color:#f92672">=</span> ReceiverStream::new(rx);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> (<span style="color:#66d9ef">mut</span> reader, writer) <span style="color:#f92672">=</span> tokio::io::duplex(<span style="color:#ae81ff">1</span>); <span style="color:#75715e">// &lt;--------- HERE
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">let</span> cancel <span style="color:#f92672">=</span> CancellationToken::new();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> drain_task <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>            tokio::spawn(<span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> { drain_stream_to_writer(stream, writer, cancel).<span style="color:#66d9ef">await</span> });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        tx.send(Bytes::from_static(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;|hello1&#34;</span>)).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>        tx.send(Bytes::from_static(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;|hello2&#34;</span>)).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>        tx.send(Bytes::from_static(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;|hello3&#34;</span>)).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>        drop(tx);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        time::sleep(Duration::from_secs(<span style="color:#ae81ff">1</span>)).<span style="color:#66d9ef">await</span>; <span style="color:#75715e">// &lt;--------- HERE
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> buf <span style="color:#f92672">=</span> Vec::new();
+</span></span><span style="display:flex;"><span>        reader.read_to_end(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> buf).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        drain_task.<span style="color:#66d9ef">await</span>.unwrap().unwrap();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">assert!</span>(
+</span></span><span style="display:flex;"><span>            buf.windows(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;hello3&#34;</span>.len()).any(<span style="color:#f92672">|</span>w<span style="color:#f92672">|</span> w <span style="color:#f92672">==</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;hello3&#34;</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;expected output to contain &#39;hello3&#39;, got: {:?}&#34;</span>,
+</span></span><span style="display:flex;"><span>            String::from_utf8_lossy(<span style="color:#f92672">&amp;</span>buf)
+</span></span><span style="display:flex;"><span>        );
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Now the test is failing.</p>
+<h2 id="streamextthen">
+  <code>StreamExt::then()</code>
+  <a class="anchor" href="#streamextthen">#</a>
+</h2>
+<p>It’s tempting to say: &ldquo;OK, I’ll switch to <code>StreamExt::then()</code>, because according to the documentation, it’s designed for per-item async work.&rdquo;</p>
+<p>With <code>StreamExt::then</code>, once the stream pulls an item, the combinator stores the &ldquo;in-progress&rdquo; future internally until it can yield the processed output. If <code>tokio::select!</code> stops polling <code>next()</code> temporarily (because the tick branch wins), you don&rsquo;t lose the item – you just pause polling. On the next <code>next()</code>, the stream continues where it left off.</p>
+<p>Let&rsquo;s try to rewrite our code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">drain_stream_to_writer</span><span style="color:#f92672">&lt;</span>S, W<span style="color:#f92672">&gt;</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> stream: <span style="color:#a6e22e">S</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> out: <span style="color:#a6e22e">W</span>,
+</span></span><span style="display:flex;"><span>    cancel: <span style="color:#a6e22e">CancellationToken</span>,
+</span></span><span style="display:flex;"><span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    S: <span style="color:#a6e22e">Stream</span><span style="color:#f92672">&lt;</span>Item<span style="color:#f92672">=</span>Bytes<span style="color:#f92672">&gt;</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>    W: <span style="color:#a6e22e">AsyncWrite</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tick <span style="color:#f92672">=</span> tokio::time::interval(Duration::from_millis(<span style="color:#ae81ff">10</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create a new stream
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> stream <span style="color:#f92672">=</span> stream.then(<span style="color:#f92672">|</span>msg<span style="color:#f92672">|</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;msg: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, <span style="color:#f92672">&amp;</span>msg);
+</span></span><span style="display:flex;"><span>        out.write_all(<span style="color:#f92672">&amp;</span>msg).<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>        out.flush().<span style="color:#66d9ef">await</span>.unwrap();
+</span></span><span style="display:flex;"><span>        msg
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    tokio::<span style="color:#a6e22e">pin!</span>(stream);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>        tokio::<span style="color:#a6e22e">select!</span> {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> cancel.cancelled() <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>               <span style="color:#66d9ef">break</span>; <span style="color:#75715e">// in real code you need to decide if you want to flush and/or shutdown.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> tick.tick() <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                out.write_all(<span style="color:#f92672">&amp;</span>Bytes::from_static(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;healthcheck&#34;</span>)).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>                out.flush().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            maybe_item <span style="color:#f92672">=</span> stream.next() <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> Some(_msg) <span style="color:#f92672">=</span> maybe_item <span style="color:#66d9ef">else</span> { <span style="color:#66d9ef">break</span> };
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>But this code doesn&rsquo;t compile.</p>
+<p>Here we have two writers to the <code>out</code> <code>AsyncWrite</code> object. <code>StreamExt::then()</code> is moving it into the <code>FnMut</code> closure, and the Rust compiler is not happy. Let&rsquo;s dive into it.</p>
+<h2 id="a-difference-between-fnonce-and-fnmut">
+  A difference between <code>FnOnce</code> and <code>FnMut</code>
+  <a class="anchor" href="#a-difference-between-fnonce-and-fnmut">#</a>
+</h2>
+<p>When we use <code>FutureExt::then()</code> it takes <code>FnOnce</code> because it runs exactly once (one future completion). But <code>StreamExt::then()</code> takes <code>FnMut</code> because it runs many times (once per item).</p>
+<p>That affects what you can capture.</p>
+<p>This does <em>not</em> compile as written. You can’t escape from the <code>FnMut</code>. To simplify the example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> count <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> stream <span style="color:#f92672">=</span> stream.then(<span style="color:#f92672">|</span>item<span style="color:#f92672">|</span> <span style="color:#66d9ef">async</span> {
+</span></span><span style="display:flex;"><span>    count <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>; <span style="color:#75715e">// ❌ borrow/move issues across `.await`
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    item
+</span></span><span style="display:flex;"><span>});
+</span></span></code></pre></div><p>In our case, the <code>out</code> <code>AsyncWrite</code> is a variable we want to use both inside a closure and outside. So we need to find a workaround. For <code>FnMut</code> there are:</p>
+<ul>
+<li><code>Arc&lt;AtomicUsize&gt;</code> – which are usually used for counters.</li>
+<li><code>Arc&lt;tokio::sync::Mutex&lt;_&gt;&gt;</code> for shared state.</li>
+<li>send updates through a channel.</li>
+</ul>
+<blockquote>
+<p>If we try to go with a mutex path, the important side note is: we can&rsquo;t use the <code>std::sync::Mutex</code>. In async code we should not hold the guard across <code>.await</code> points because it leads to deadlocks. That&rsquo;s exactly what we would need. The solution is to use <code>tokio::sync::Mutex</code>, but it&rsquo;s much slower and has runtime overhead. <a href="https://tokio.rs/tokio/tutorial/shared-state" target="_blank" rel="noopener">Tokio&rsquo;s tutorial explains why in more detail.</a></p>
+</blockquote>
+<p>Thus, it could be tempting to drop a <code>tokio::sync::Mutex</code> and live your life. But it leads to leaked abstractions, additional locking and subtle design. The better idiomatic Async Rust solution is to use I/O actors.</p>
+<h2 id="the-robust-fix-io-actor">
+  The robust fix: I/O actor
+  <a class="anchor" href="#the-robust-fix-io-actor">#</a>
+</h2>
+<p>I already touched on the I/O actors in my series <a href="https://biriukov.dev/rust-tokio-io/" target="_blank" rel="noopener">Async Rust with Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics</a>. So if you want more, check it out.</p>
+<p>Here we are only going to rewrite our case.</p>
+<h3 id="the-design">
+  The design
+  <a class="anchor" href="#the-design">#</a>
+</h3>
+<p>The actor model follows a few simple rules:</p>
+<ul>
+<li>One task (the <strong>writer actor</strong>) owns the <code>AsyncWrite</code> object and performs all writes <strong>in order</strong>.</li>
+<li>Other logic sends commands to it over an <code>mpsc</code> channel.</li>
+<li>Backpressure is explicit via a bounded channel (<code>mpsc</code>) and a <strong>permit</strong> via <code>tx.reserve()</code> before calling <code>stream.next()</code>.</li>
+</ul>
+<p>The last part is important because it removes a dangerous window:</p>
+<blockquote>
+<p>&ldquo;I consumed an item from the stream, but then I got canceled by a heartbeat before I could hand it off.&rdquo;</p>
+</blockquote>
+<p>Let me show the code and we discuss it afterwards:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> bytes::Bytes;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> futures::{Stream, StreamExt};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio::io::{self, AsyncWrite, AsyncWriteExt};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio::sync::mpsc;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio::time::{self, Duration, MissedTickBehavior};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio_util::sync::CancellationToken;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Debug)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">enum</span> <span style="color:#a6e22e">WriteCmd</span> {
+</span></span><span style="display:flex;"><span>    Data(Bytes),
+</span></span><span style="display:flex;"><span>    Healthcheck,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">writer_actor</span><span style="color:#f92672">&lt;</span>W<span style="color:#f92672">&gt;</span>(<span style="color:#66d9ef">mut</span> out: <span style="color:#a6e22e">W</span>, <span style="color:#66d9ef">mut</span> rx: <span style="color:#a6e22e">mpsc</span>::Receiver<span style="color:#f92672">&lt;</span>WriteCmd<span style="color:#f92672">&gt;</span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    W: <span style="color:#a6e22e">AsyncWrite</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> <span style="color:#66d9ef">let</span> Some(cmd) <span style="color:#f92672">=</span> rx.recv().<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">match</span> cmd {
+</span></span><span style="display:flex;"><span>            WriteCmd::Data(msg) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                out.write_all(<span style="color:#f92672">&amp;</span>msg).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>                out.flush().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            WriteCmd::Healthcheck <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                out.write_all(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;healthcheck&#34;</span>).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>                out.flush().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">drain_stream_to_writer</span><span style="color:#f92672">&lt;</span>S, W<span style="color:#f92672">&gt;</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> stream: <span style="color:#a6e22e">S</span>,
+</span></span><span style="display:flex;"><span>    out: <span style="color:#a6e22e">W</span>,
+</span></span><span style="display:flex;"><span>    cancel: <span style="color:#a6e22e">CancellationToken</span>,
+</span></span><span style="display:flex;"><span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    S: <span style="color:#a6e22e">Stream</span><span style="color:#f92672">&lt;</span>Item<span style="color:#f92672">=</span>Bytes<span style="color:#f92672">&gt;</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>    W: <span style="color:#a6e22e">AsyncWrite</span> <span style="color:#f92672">+</span> Unpin <span style="color:#f92672">+</span> Send <span style="color:#f92672">+</span> &#39;static,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tick <span style="color:#f92672">=</span> time::interval(Duration::from_millis(<span style="color:#ae81ff">200</span>));
+</span></span><span style="display:flex;"><span>    tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// bounded queue for backpressure and memory bound
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> (tx, rx) <span style="color:#f92672">=</span> mpsc::channel::<span style="color:#f92672">&lt;</span>WriteCmd<span style="color:#f92672">&gt;</span>(<span style="color:#ae81ff">8</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// single owner of the writer
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> writer_task <span style="color:#f92672">=</span> tokio::spawn(<span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> { writer_actor(out, rx).<span style="color:#66d9ef">await</span> });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// hold at most one permit at a time to send a message
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> permit: Option<span style="color:#f92672">&lt;</span>mpsc::Permit<span style="color:#f92672">&lt;</span>&#39;_, WriteCmd<span style="color:#f92672">&gt;&gt;</span> <span style="color:#f92672">=</span> None;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>        tokio::<span style="color:#a6e22e">select!</span> {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> cancel.cancelled() <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">break</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 1. Acquire capacity first (without consuming the stream).
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            p <span style="color:#f92672">=</span> tx.reserve(), <span style="color:#66d9ef">if</span> permit.is_none() <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">match</span> p {
+</span></span><span style="display:flex;"><span>                    Ok(p) <span style="color:#f92672">=&gt;</span> permit <span style="color:#f92672">=</span> Some(p),
+</span></span><span style="display:flex;"><span>                    Err(_) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">break</span>, <span style="color:#75715e">// writer is gone
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 2. With capacity, pull exactly one stream item and enqueue it.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            maybe_item <span style="color:#f92672">=</span> stream.next(), <span style="color:#66d9ef">if</span> permit.is_some() <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">match</span> maybe_item {
+</span></span><span style="display:flex;"><span>                    Some(msg) <span style="color:#f92672">=&gt;</span> permit.take().unwrap().send(WriteCmd::Data(msg)),
+</span></span><span style="display:flex;"><span>                    None <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">break</span>,
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 3. Or send a healthcheck, but only if we have capacity.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            _ <span style="color:#f92672">=</span> tick.tick(), <span style="color:#66d9ef">if</span> permit.is_some() <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                permit.take().unwrap().send(WriteCmd::Healthcheck);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Closing sequence:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// - drop any unused permit (returns capacity)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// - drop tx to close the channel, so writer exits its loop
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    drop(permit);
+</span></span><span style="display:flex;"><span>    drop(tx);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">match</span> writer_task.<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>        Ok(res) <span style="color:#f92672">=&gt;</span> res,
+</span></span><span style="display:flex;"><span>        Err(join_err) <span style="color:#f92672">=&gt;</span> Err(io::Error::new(io::ErrorKind::Other, join_err.to_string())),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="what-the-permit-is-doing-the-key-idea">
+  What the permit is doing (the key idea)
+  <a class="anchor" href="#what-the-permit-is-doing-the-key-idea">#</a>
+</h3>
+<p>If we instead did:</p>
+<ul>
+<li><code>let msg = stream.next().await;</code></li>
+<li><code>tx.send(msg).await;</code></li>
+</ul>
+<p>…the second await can block (channel full). If the program is canceled between those two steps, the item will be waiting for capacity instead of canceling.</p>
+<p>With <code>reserve()</code>:</p>
+<ul>
+<li>you wait for capacity <strong>first</strong>,</li>
+<li>then you pull from the stream only when you can immediately hand it off,</li>
+<li>sending via a permit does <strong>not</strong> need an extra <code>.await</code> for capacity, so there is no blocking inside <code>select!</code>.</li>
+</ul>
+<p>This closes the &ldquo;consume then await&rdquo; cancellation hole.</p>
+<h3 id="one-more-nuance-write_all-is-not-message-atomic-under-cancellation">
+  One more nuance: <code>write_all()</code> is not message-atomic under cancellation
+  <a class="anchor" href="#one-more-nuance-write_all-is-not-message-atomic-under-cancellation">#</a>
+</h3>
+<p>Even with an actor, cancellation can still leave partially written data on the wire. <code>write_all()</code> loops internally, but if the task is dropped mid-loop, you may have a partial message.</p>
+<p>If you need message-level atomicity, you need protocol-level framing and recovery (length-prefixing, checksums, idempotency, etc.). The actor model gives you ownership + ordering; it doesn&rsquo;t make partial writes impossible.
+For more details check out my <a href="https://biriukov.dev/rust-tokio-io/" target="_blank" rel="noopener">Async Rust with Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics</a> where I show some framing examples.</p>
+<h2 id="alternative-solution-split-the-work-and-use-tokiotry_join">
+  Alternative solution: split the work and use <code>tokio::try_join!</code>
+  <a class="anchor" href="#alternative-solution-split-the-work-and-use-tokiotry_join">#</a>
+</h2>
+<p>There is also an alternative solution for our code without using loop with <code>tokio::select!</code> as a core part. As Kornel <a href="https://users.rust-lang.org/t/tokio-io-starvation/136891/9" target="_blank" rel="noopener">expressed on users.rust-lang.org forum</a>:</p>
+<p>
+    <img class="" style="padding-top:5px;" alt="select! is full of footguns. Avoid it as much as possible." src="../images/tokio_select.png" width="80%" >
+</p>
+<p>You can keep the stream loop and the heartbeat loop as two independent futures and run them with <code>tokio::try_join!</code>. A third future is responsible for cancellation only. This keeps cancellation in one place and removes the repeated <code>select!</code> and token checks inside the worker loops. When the cancel future completes, <code>try_join!</code> short-circuits and drops the other two futures. A small <code>finish</code> channel lets the cancel future exit cleanly when both workers finish on their own; each worker holds a cloned sender as a drop-guard.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">drain_stream_to_writer_try_join</span><span style="color:#f92672">&lt;</span>S, W<span style="color:#f92672">&gt;</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">mut</span> stream: <span style="color:#a6e22e">S</span>,
+</span></span><span style="display:flex;"><span>    out: <span style="color:#a6e22e">W</span>,
+</span></span><span style="display:flex;"><span>    cancel: <span style="color:#a6e22e">CancellationToken</span>,
+</span></span><span style="display:flex;"><span>) -&gt; <span style="color:#a6e22e">io</span>::Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>    S: <span style="color:#a6e22e">Stream</span><span style="color:#f92672">&lt;</span>Item<span style="color:#f92672">=</span>Bytes<span style="color:#f92672">&gt;</span> <span style="color:#f92672">+</span> Unpin,
+</span></span><span style="display:flex;"><span>    W: <span style="color:#a6e22e">AsyncWrite</span> <span style="color:#f92672">+</span> Unpin <span style="color:#f92672">+</span> Send <span style="color:#f92672">+</span> &#39;static,
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> (tx, rx) <span style="color:#f92672">=</span> mpsc::channel::<span style="color:#f92672">&lt;</span>WriteCmd<span style="color:#f92672">&gt;</span>(<span style="color:#ae81ff">8</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> writer_task <span style="color:#f92672">=</span> tokio::spawn(<span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> { writer_actor(out, rx).<span style="color:#66d9ef">await</span> });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Child token so we can stop the loops without canceling the parent.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> shutdown <span style="color:#f92672">=</span> cancel.child_token();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// When both workers finish, this channel is closed and the cancel future exits.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> (finish_tx, <span style="color:#66d9ef">mut</span> finish_rx) <span style="color:#f92672">=</span> mpsc::channel::<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span>(<span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> stream_task <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> tx <span style="color:#f92672">=</span> tx.clone();
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> shutdown <span style="color:#f92672">=</span> shutdown.clone();
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> _guard <span style="color:#f92672">=</span> finish_tx.clone();
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> _guard <span style="color:#f92672">=</span> _guard;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> permit <span style="color:#f92672">=</span> tx
+</span></span><span style="display:flex;"><span>                    .reserve()
+</span></span><span style="display:flex;"><span>                    .<span style="color:#66d9ef">await</span>
+</span></span><span style="display:flex;"><span>                    .map_err(<span style="color:#f92672">|</span>_<span style="color:#f92672">|</span> io::Error::new(io::ErrorKind::BrokenPipe, <span style="color:#e6db74">&#34;writer closed&#34;</span>))<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">match</span> stream.next().<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>                    Some(msg) <span style="color:#f92672">=&gt;</span> permit.send(WriteCmd::Data(msg)),
+</span></span><span style="display:flex;"><span>                    None <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                        shutdown.cancel();
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">return</span> Ok(());
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> heartbeat_task <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> tx <span style="color:#f92672">=</span> tx.clone();
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> _guard <span style="color:#f92672">=</span> finish_tx.clone();
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> _guard <span style="color:#f92672">=</span> _guard;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tick <span style="color:#f92672">=</span> time::interval(Duration::from_millis(<span style="color:#ae81ff">200</span>));
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>                tick.tick().<span style="color:#66d9ef">await</span>;
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> permit <span style="color:#f92672">=</span> tx
+</span></span><span style="display:flex;"><span>                    .reserve()
+</span></span><span style="display:flex;"><span>                    .<span style="color:#66d9ef">await</span>
+</span></span><span style="display:flex;"><span>                    .map_err(<span style="color:#f92672">|</span>_<span style="color:#f92672">|</span> io::Error::new(io::ErrorKind::BrokenPipe, <span style="color:#e6db74">&#34;writer closed&#34;</span>))<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>                permit.send(WriteCmd::Healthcheck);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    drop(finish_tx); <span style="color:#75715e">// drop the origin
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Cancellation is centralized here.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> cancel_task <span style="color:#f92672">=</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">move</span> {
+</span></span><span style="display:flex;"><span>        tokio::<span style="color:#a6e22e">select!</span> {
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> shutdown.cancelled() <span style="color:#f92672">=&gt;</span> Err(io::Error::new(io::ErrorKind::Interrupted, <span style="color:#e6db74">&#34;cancelled&#34;</span>)),
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=</span> finish_rx.recv() <span style="color:#f92672">=&gt;</span> Ok(()),
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> join_res <span style="color:#f92672">=</span> tokio::<span style="color:#a6e22e">try_join!</span>(stream_task, heartbeat_task, cancel_task);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">match</span> join_res {
+</span></span><span style="display:flex;"><span>        Ok(_) <span style="color:#f92672">=&gt;</span> {}
+</span></span><span style="display:flex;"><span>        Err(err) <span style="color:#66d9ef">if</span> err.kind() <span style="color:#f92672">==</span> io::ErrorKind::Interrupted <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Cancellation or EOF-triggered shutdown is a normal exit.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        }
+</span></span><span style="display:flex;"><span>        Err(err) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">return</span> Err(err),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    drop(tx);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">match</span> writer_task.<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>        Ok(res) <span style="color:#f92672">=&gt;</span> res,
+</span></span><span style="display:flex;"><span>        Err(join_err) <span style="color:#f92672">=&gt;</span> Err(io::Error::new(io::ErrorKind::Other, join_err.to_string())),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>More examples and explanation – <a href="https://biriukov.dev/docs/async-rust-tokio-io/3-tokio-io-patterns/" target="_blank" rel="noopener">Tokio I/O Patterns</a>.</p>
+<p>The key idea is that only the cancel future polls the token. The worker loops are straight-line <code>await</code>s, and <code>try_join!</code> does the short-circuiting when cancellation (or EOF-triggered shutdown) occurs.</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+
+ 
+        <script defer src="/my_js/copy-code.js"></script>
+
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+  </main>
+
+  
+<div class="cookie-container">
+    <p>
+        This website uses "<b>cookies</b>".
+        Using this website means you're OK with this.
+        If you are <b>NOT</b>, please close the site page.
+    </p>
+    <button class="cookie-btn">
+        ACCEPT AND CLOSE
+    </button>
+</div>
+<script src="/my_js/cookie.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

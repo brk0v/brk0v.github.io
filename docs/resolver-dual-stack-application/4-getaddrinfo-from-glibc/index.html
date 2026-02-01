@@ -38,7 +38,7 @@ The standard in POSIX describes only the behavior and interface of the getaddrin
 <link rel="icon" href="/favicon.png" >
 <link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.0fb616db67f774cec7b095ec9292d93802a23f307ac14f7bfd7c8971c1e37057.js" integrity="sha256-D7YW22f3dM7HsJXskpLZOAKiPzB6wU97/XyJccHjcFc=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -422,11 +422,17 @@ https://github.com/alex-shpak/hugo-book
 
 
 
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Blog:</b>
+  <ul>
+    <li><a href="/posts/async-rust-gocha-cancelation-select-future-then/">Async Rust gotcha: evolving tokio::select! code&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+  </ul>
+</div>
 
 <div style="margin-top: 30px; margin-bottom: 30px">
   <b>More recent series:</b>
   <ul>
-    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics</li>
     <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
     <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
     <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
@@ -564,7 +570,8 @@ Figure 2. – <code>glibc</code> <code>getaddrinfo()</code> internals with Name 
 </h2>
 <p><a href="https://en.wikipedia.org/wiki/Name_Service_Switch" target="_blank" rel="noopener">Name service switch (NSS)</a> is a framework used to manage the sources from which various name service information is obtained and is which order it’s requested. The system configuration file for NSS is located at <code>/etc/nsswitch.conf</code> (<code><a href="https://man7.org/linux/man-pages/man5/nsswitch.conf.5.html" target="_blank" rel="noopener">man 5 nsswitch.conf</a></code>).</p>
 <blockquote>
-<p>The Name Service Switch (NSS) configuration file, <code>/etc/nsswitch.conf</code>, is used by the GNU C Library and certain other applications to determine the sources from which to obtain name-service information in a range of categories, and in what order.  Each category of information is identified by a database name.</p></blockquote>
+<p>The Name Service Switch (NSS) configuration file, <code>/etc/nsswitch.conf</code>, is used by the GNU C Library and certain other applications to determine the sources from which to obtain name-service information in a range of categories, and in what order.  Each category of information is identified by a database name.</p>
+</blockquote>
 <p>It’s possible to write your own NSS module. The module is a shared library that adheres to a defined <a href="https://www.gnu.org/software/libc/manual/html_node/NSS-Modules-Interface.html" target="_blank" rel="noopener">API</a> and should be named and placed according to the following format from the <code><a href="https://man7.org/linux/man-pages/man5/nsswitch.conf.5.html" target="_blank" rel="noopener">man 5 nsswitch.conf</a></code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>/lib/libnss_custom.so.2
 </span></span></code></pre></div><p>for a module named <code>custom</code>.</p>
@@ -665,7 +672,8 @@ Figure 2. – <code>glibc</code> <code>getaddrinfo()</code> internals with Name 
 <p>It’s worth noting that you should be cautious when calling <code>getaddrinfo()</code> in a multithreaded application, as <code>getaddrinfo()</code> invokes <code>getenv()</code>. This is detailed in the <code>resolv.conf</code>  (<code><a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html" target="_blank" rel="noopener">man 5 resolv.conf</a></code>).</p>
 <blockquote>
 <p>The search keyword of a system&rsquo;s resolv.conf file can be overridden on a per-process basis by setting the environment variable <code>LOCALDOMAIN</code> to a space-separated list of search domains.</p>
-<p>The options keyword of a system&rsquo;s resolv.conf file can be amended on a per-process basis by setting the environment variable <code>RES_OPTIONS</code> to a space-separated list of resolver options as explained above under options.</p></blockquote>
+<p>The options keyword of a system&rsquo;s resolv.conf file can be amended on a per-process basis by setting the environment variable <code>RES_OPTIONS</code> to a space-separated list of resolver options as explained above under options.</p>
+</blockquote>
 <p>So there are two environment variables: <code>LOCALDOMAIN</code> and <code>RES_OPTIONS</code>. This means that <code>getaddrinfo()</code> calls <code>getenv()</code>internally, but <code>setenv()</code> is not thread safe according to its own <a href="https://man7.org/linux/man-pages/man3/setenv.3.html" target="_blank" rel="noopener">man</a>.</p>
 <blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>setenv<span style="color:#f92672">()</span>, unsetenv<span style="color:#f92672">()</span>    │ Thread safety │ MT-Unsafe const:env
@@ -682,12 +690,14 @@ Figure 2. – <code>glibc</code> <code>getaddrinfo()</code> internals with Name 
 <li>
 <p><code>nameserver</code> – parameter allows you to specify up to three nameservers, which will be queried in sequence. Note that in contrast, the <code><a href="https://www.musl-libc.org/" target="_blank" rel="noopener">musl libc</a></code> implementation queries all specified nameservers in parallel (see the <code>musl libc</code> chapter below for details).</p>
 <blockquote>
-<p>The algorithm used is to try a name server, and if the query times out, try the next, until out of name servers, then repeat trying all the name servers until a maximum number of retries are made.</p></blockquote>
+<p>The algorithm used is to try a name server, and if the query times out, try the next, until out of name servers, then repeat trying all the name servers until a maximum number of retries are made.</p>
+</blockquote>
 </li>
 <li>
 <p><code>search</code> – it’s a search list of domains to use for a hostname lookup.</p>
 <blockquote>
-<p>Resolver queries having fewer than <code>ndots</code> dots (default is 1) in them will be attempted using each component of the search path in turn until a match is found.</p></blockquote>
+<p>Resolver queries having fewer than <code>ndots</code> dots (default is 1) in them will be attempted using each component of the search path in turn until a match is found.</p>
+</blockquote>
 <p>This means that if the domain name used in <code>getaddrinfo()</code> contains fewer than the specified <code>ndots</code> (explained further below), the resolver will append the <code>search</code> domain from the list and attempt to resolve it first.</p>
 </li>
 <li>

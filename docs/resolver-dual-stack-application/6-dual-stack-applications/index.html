@@ -53,7 +53,7 @@ How can we easily listen on all IPv4 and all IPv6 addresses? Do we need separate
 <link rel="icon" href="/favicon.png" >
 <link rel="stylesheet" href="/book.min.1e13c2d8521416f2409b2e0e47b515c4ee90f2718cddd31ea96d2f739bc9d7e1.css" integrity="sha256-HhPC2FIUFvJAmy4OR7UVxO6Q8nGM3dMeqW0vc5vJ1&#43;E=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.dcb69b7f72cf406432b553b1dca142c9cc7ac0f7ea624f296af7cfa987b92fe5.js" integrity="sha256-3Labf3LPQGQytVOx3KFCycx6wPfqYk8pavfPqYe5L&#43;U=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.0fb616db67f774cec7b095ec9292d93802a23f307ac14f7bfd7c8971c1e37057.js" integrity="sha256-D7YW22f3dM7HsJXskpLZOAKiPzB6wU97/XyJccHjcFc=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -437,11 +437,17 @@ https://github.com/alex-shpak/hugo-book
 
 
 
+<div style="margin-top: 30px; margin-bottom: 30px">
+  <b>Blog:</b>
+  <ul>
+    <li><a href="/posts/async-rust-gocha-cancelation-select-future-then/">Async Rust gotcha: evolving tokio::select! code&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+  </ul>
+</div>
 
 <div style="margin-top: 30px; margin-bottom: 30px">
   <b>More recent series:</b>
   <ul>
-    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics&nbsp;<span style="padding:0 2px;border-radius:2px ;background-color:#e84118;color: aliceblue;">new</span></li>
+    <li><a href="/rust-tokio-io/">1. Async Rust & Tokio I/O Streams: Backpressure, Concurrency, and Ergonomics</li>
     <li><a href="/docs/resolver-dual-stack-application/0-sre-should-know-about-gnu-linux-resolvers-and-dual-stack-applications/">2. Resolvers and Dual-Stack applications</li>
     <li><a href="/docs/page-cache/0-linux-page-cache-for-sre/">3. Linux Page Cache mini book</li>
     <li><a href="/docs/fd-pipe-session-terminal/0-sre-should-know-about-gnu-linux-shell-related-internals-file-descriptors-pipes-terminals-user-sessions-process-groups-and-daemons">4. File descriptors, pipes, terminals, user sessions, process groups and daemons</li>
@@ -589,7 +595,8 @@ https://github.com/alex-shpak/hugo-book
 <p>3.7 Compatibility with IPv4 Nodes</p>
 <p>The API also provides a different type of compatibility: the ability  for IPv6 applications to interoperate with IPv4 applications.  This feature uses the IPv4-mapped IPv6 address format defined in the IPv6 addressing architecture specification [2].  This address format allows the IPv4 address of an IPv4 node to be represented as an IPv6 address.  The IPv4 address is encoded into the low-order 32 bits of the IPv6 address, and the high-order 96 bits hold the fixed prefix <code>0:0:0:0:0:FFFF</code>. IPv4-mapped addresses are written as follows:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span> ::FFFF:&lt;IPv4-address&gt;
-</span></span></code></pre></div><p>These addresses can be generated automatically by the <code>getaddrinfo()</code> function, as described in Section 6.1. Applications may use <code>AF_INET6</code> sockets to open TCP connections to IPv4 nodes, or send UDP packets to IPv4 nodes, by simply encoding the destination&rsquo;s IPv4 address as an IPv4-mapped IPv6 address, and passing that address, within a <code>sockaddr_in6</code> structure, in the <code>connect()</code> or <code>sendto()</code> call.  When applications use <code>AF_INET6</code> sockets to accept TCP connections from IPv4 nodes, or receive UDP packets from IPv4 nodes, the system returns the peer&rsquo;s address to the application in the <code>accept()</code>, <code>recvfrom()</code>, or <code>getpeername()</code> call using a <code>sockaddr_in6</code> structure encoded this way.</p></blockquote>
+</span></span></code></pre></div><p>These addresses can be generated automatically by the <code>getaddrinfo()</code> function, as described in Section 6.1. Applications may use <code>AF_INET6</code> sockets to open TCP connections to IPv4 nodes, or send UDP packets to IPv4 nodes, by simply encoding the destination&rsquo;s IPv4 address as an IPv4-mapped IPv6 address, and passing that address, within a <code>sockaddr_in6</code> structure, in the <code>connect()</code> or <code>sendto()</code> call.  When applications use <code>AF_INET6</code> sockets to accept TCP connections from IPv4 nodes, or receive UDP packets from IPv4 nodes, the system returns the peer&rsquo;s address to the application in the <code>accept()</code>, <code>recvfrom()</code>, or <code>getpeername()</code> call using a <code>sockaddr_in6</code> structure encoded this way.</p>
+</blockquote>
 <p><code>getaddrinfo()</code> in server code plays several roles:</p>
 <ul>
 <li>It allows the use of hostnames to bind a socket if the node parameter of <code>getaddrinfo()</code> is set.</li>
@@ -704,7 +711,8 @@ https://github.com/alex-shpak/hugo-book
 <p>③ – <code>NULL</code> for node with the <code>AI_PASSIVE</code> flag uses either <code>INADDR_ANY</code> for IPv4 address, or <code>IN6ADDR_ANY_INIT</code> for IPv6 address.</p>
 <p>④ – The <a href="https://www.rfc-editor.org/rfc/rfc6724" target="_blank" rel="noopener">RFC 6724</a> (Default Address Selection for Internet Protocol Version 6 (IPv6)) clearly explains how to use the returned list of addresses in the applications:</p>
 <blockquote>
-<p>Well-behaved applications SHOULD NOT simply use the first address returned from an API such as <code>getaddrinfo()</code> and then give up if it fails. For many applications, it is appropriate to iterate through the list of addresses returned from <code>getaddrinfo()</code> until a working address is found. For other applications, it might be appropriate to try multiple addresses in parallel (e.g., with some small delay in between) and use the first one to succeed.</p></blockquote>
+<p>Well-behaved applications SHOULD NOT simply use the first address returned from an API such as <code>getaddrinfo()</code> and then give up if it fails. For many applications, it is appropriate to iterate through the list of addresses returned from <code>getaddrinfo()</code> until a working address is found. For other applications, it might be appropriate to try multiple addresses in parallel (e.g., with some small delay in between) and use the first one to succeed.</p>
+</blockquote>
 <p>The last sentence concerns the client programs and will be discussed later.</p>
 <blockquote class="book-hint info">
   In our example, we <code>bind()</code> and <code>listen()</code> only to the first successful address, but if you’re writing a real server, it may be necessary to listen to multiple addresses due to security concerns. Therefore, your code should create multiple listeners and accept connections on all of them simultaneously.
@@ -764,7 +772,8 @@ https://github.com/alex-shpak/hugo-book
 <blockquote>
 <p>If this flag is set to true (nonzero), then the socket is restricted to sending and receiving IPv6 packets only. In this case, an IPv4 and an IPv6 application can bind to a single port at the same time.</p>
 <p>If this flag is set to false (zero), then the socket can be used to send and receive packets to and from an IPv6 address or an IPv4-mapped IPv6 address. The argument is a pointer to a boolean value in an integer.</p>
-<p>The default value for this flag is defined by the contents of the file <code>/proc/sys/net/ipv6/bindv6only</code>.  The default value for that file is 0 (false).</p></blockquote>
+<p>The default value for this flag is defined by the contents of the file <code>/proc/sys/net/ipv6/bindv6only</code>.  The default value for that file is 0 (false).</p>
+</blockquote>
 <h4 id="6111-nginx-and-envoy-envoyproxy-and-ipv6_v6only">
   6.1.1.1 Nginx and Envoy (Envoyproxy) and <code>IPV6_V6ONLY</code>
   <a class="anchor" href="#6111-nginx-and-envoy-envoyproxy-and-ipv6_v6only">#</a>
@@ -1074,16 +1083,19 @@ https://github.com/alex-shpak/hugo-book
 </ul>
 <p>The <code>AI_ADDRCONFIG</code> <code>hints</code> flag is intended to help mitigate such issues and reduce traffic and latency. However, there is an important caveat with its heuristics. First, let’s read the section of man page for <code>getaddrinfo()</code>:</p>
 <blockquote>
-<p>If <code>hints.ai_flags</code> includes the <code>AI_ADDRCONFIG</code> flag, then IPv4 addresses are returned in the list pointed to by res only if the local system has at least one IPv4 address configured, and IPv6 addresses are returned only if the local system has at least one IPv6 address configured.  The loopback address is not considered for this case as valid as a configured address.</p></blockquote>
+<p>If <code>hints.ai_flags</code> includes the <code>AI_ADDRCONFIG</code> flag, then IPv4 addresses are returned in the list pointed to by res only if the local system has at least one IPv4 address configured, and IPv6 addresses are returned only if the local system has at least one IPv6 address configured.  The loopback address is not considered for this case as valid as a configured address.</p>
+</blockquote>
 <p>The exception is made only for loopback addresses. Any other IPv6 addresses are considered valid, even for link-local scoped addresses, which are configured automatically when a link is up.</p>
 <p>The conclusion is not favorable; the <code>AI_ADDRCONFIG</code> flag could potentially be useful only with IPv6-only hosts with a fully disabled IPv4 stack (because autoconfigured IPv4 addresses are also valid addresses) or IPv4 only.</p>
 <p>But thanks to <a href="https://datatracker.ietf.org/doc/html/rfc6724" target="_blank" rel="noopener">RFC 6724</a>’s sorting algorithm (discussed in the next chapter) – which includes Rule 2: Prefer matching scope in Section 6 – the return order will prefer IPv4 over IPv6 if there are no global scope IPv6 source addresses on the device. Which we already saw with our getaddrinfo() experiments in Chapter 3.</p>
 <p>The <code>AI_ADDRCONFIG</code> is enabled by default (<code><a href="https://man7.org/linux/man-pages/man3/getaddrinfo.3.html" target="_blank" rel="noopener">man 3 getaddrinfo</a></code>):</p>
 <blockquote>
-<p>Specifying hints as <code>NULL</code> is equivalent to setting <code>ai_socktype</code> and <code>ai_protocol</code> to 0; <code>ai_family</code> to <code>AF_UNSPEC</code>; and ai_flags to (<code>AI_V4MAPPED | AI_ADDRCONFIG</code>).</p></blockquote>
+<p>Specifying hints as <code>NULL</code> is equivalent to setting <code>ai_socktype</code> and <code>ai_protocol</code> to 0; <code>ai_family</code> to <code>AF_UNSPEC</code>; and ai_flags to (<code>AI_V4MAPPED | AI_ADDRCONFIG</code>).</p>
+</blockquote>
 <p>which violates POSIX, but helps to improve user experience:</p>
 <blockquote>
-<p>According to POSIX.1, specifying hints as NULL should cause <code>ai_flags</code> to be assumed as 0. The GNU C library instead assumes a value of (<code>AI_V4MAPPED | AI_ADDRCONFIG</code>) for this case, since this value is considered an improvement on the specification.</p></blockquote>
+<p>According to POSIX.1, specifying hints as NULL should cause <code>ai_flags</code> to be assumed as 0. The GNU C library instead assumes a value of (<code>AI_V4MAPPED | AI_ADDRCONFIG</code>) for this case, since this value is considered an improvement on the specification.</p>
+</blockquote>
 <p>If we look under the hood, how <code>getaddrinfo()</code> manages to figure out existing addresses, we will see the<code><a href="https://codebrowser.dev/glibc/glibc/sysdeps/unix/sysv/linux/check_pf.c.html#__check_pf" target="_blank" rel="noopener">__check_pf()</a></code> function. It has a cache for the responses, and in case of a cache miss or a stale entry,  it connects to  <code>NETLINK</code> socket and queries routing information, which is parsed in the <code><a href="https://codebrowser.dev/glibc/glibc/sysdeps/unix/sysv/linux/check_pf.c.html#make_request" target="_blank" rel="noopener">make_request()</a></code> function afterwords to find an answer:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">void</span>
 </span></span><span style="display:flex;"><span>attribute_hidden
@@ -1125,7 +1137,8 @@ https://github.com/alex-shpak/hugo-book
 <p>For example, when using the DNS, if no <code>AAAA</code> records are found then a query is made for <code>A</code> records and any found are returned as IPv4-mapped IPv6 addresses.</p>
 <p>The <code>AI_V4MAPPED</code> flag shall be ignored unless ai_family equals <code>AF_INET6</code>.</p>
 <p>If the <code>AI_ALL</code> flag is used with the <code>AI_V4MAPPED</code> flag, then <code>getaddrinfo()</code> shall return all matching IPv6 and IPv4 addresses.</p>
-<p>For example, when using the DNS, queries are made for both <code>AAAA</code> records and <code>A</code> records, and <code>getaddrinfo()</code> returns the combined results of both queries.  Any IPv4 addresses found are returned as IPv4-mapped IPv6 addresses.</p></blockquote>
+<p>For example, when using the DNS, queries are made for both <code>AAAA</code> records and <code>A</code> records, and <code>getaddrinfo()</code> returns the combined results of both queries.  Any IPv4 addresses found are returned as IPv4-mapped IPv6 addresses.</p>
+</blockquote>
 <p>Thus the <code>AI_V4MAPPED</code> could help write a tool which wants to deal only with addresses in IPv6 format.</p>
 <blockquote class="book-hint info">
   For IPv6-only hosts with no IPv4 connectivity, there is no routing for IPv4-mapped addresses because they are a special case in the IPv6 address space. If you need to route such addresses, you can, for instance, set up <code><a href="https://en.wikipedia.org/wiki/NAT64" target="_blank" rel="noopener">NAT64</a></code>.
@@ -1158,7 +1171,8 @@ For example <code><a href="https://kubernetes.io/docs/tutorials/stateful-applica
 <p>Let’s not forget that the original goal of introducing IPv6 addresses was to migrate to them as soon as possible. Over time, this has evolved to a goal of eventually migrating. With this in mind, it makes sense to prioritize returning IPv6 addresses first, if they exist, and IPv4 addresses next. This approach was standardized in <a href="https://datatracker.ietf.org/doc/html/rfc3484" target="_blank" rel="noopener">RFC 3484</a> and later updated in <a href="https://datatracker.ietf.org/doc/html/rfc6724" target="_blank" rel="noopener">RFC  6724: Default Address Selection for Internet Protocol Version 6 (IPv6)</a>. These RFCs provide two algorithms for address selection: one for source address selection (which occurs inside the Linux kernel and won’t be covered in detail here) and the destination address selection algorithm described in <a href="https://datatracker.ietf.org/doc/html/rfc6724#section-6" target="_blank" rel="noopener">Section 6</a> of the document.</p>
 <p>Thus, in order to seamlessly and smoothly migrate a dual-stack application from IPv4 to IPv6, it should follow <a href="https://datatracker.ietf.org/doc/html/rfc6724" target="_blank" rel="noopener">RFC 6724</a> and behave well, where:</p>
 <blockquote>
-<p>Well-behaved applications SHOULD NOT simply use the first address returned from an API such as getaddrinfo() and then give up if it fails.  For many applications, it is appropriate to iterate through the list of addresses returned from <code>getaddrinfo()</code> until a working address is found.  For other applications, it might be appropriate to try multiple addresses in parallel (e.g., with some small delay in between) and use the first one to succeed.</p></blockquote>
+<p>Well-behaved applications SHOULD NOT simply use the first address returned from an API such as getaddrinfo() and then give up if it fails.  For many applications, it is appropriate to iterate through the list of addresses returned from <code>getaddrinfo()</code> until a working address is found.  For other applications, it might be appropriate to try multiple addresses in parallel (e.g., with some small delay in between) and use the first one to succeed.</p>
+</blockquote>
 <p>So the algorithm is the following:</p>
 <div class="text-center">
 
@@ -1217,7 +1231,8 @@ flowchart TD
 </ul>
 <p>But before we start, let’s take a closer look at each of these components.</p>
 <blockquote>
-<p>The IPv6 addressing architecture [RFC4291] allows multiple unicast addresses to be assigned to interfaces. These addresses might have different reachability scopes (link-local, site-local, or global).</p></blockquote>
+<p>The IPv6 addressing architecture [RFC4291] allows multiple unicast addresses to be assigned to interfaces. These addresses might have different reachability scopes (link-local, site-local, or global).</p>
+</blockquote>
 <p>Here we need to quickly remind ourselves what scopes are there:</p>
 <ul>
 <li>host scope – <code>::1</code> and <code>127.0.0.1</code></li>
@@ -1226,7 +1241,8 @@ flowchart TD
 <li>global scope – all other addresses (for IPv6 usually starts with <code>2000::/3</code>), including IPv4 private networks such as <code>192.168.0.0/16</code>, <code>172.16.0.0/12</code> and <code>10.0.0.0/8</code>.</li>
 </ul>
 <blockquote>
-<p>These addresses might also be &ldquo;preferred&rdquo; or &ldquo;deprecated&rdquo; [<a href="https://datatracker.ietf.org/doc/html/rfc4862" target="_blank" rel="noopener">RFC4862</a>]. Privacy considerations have introduced the concepts of &ldquo;public addresses&rdquo; and &ldquo;temporary addresses&rdquo; [<a href="https://datatracker.ietf.org/doc/html/rfc4941" target="_blank" rel="noopener">RFC4941</a>].  The mobility architecture introduces &ldquo;home addresses&rdquo; and &ldquo;care-of addresses&rdquo;  [<a href="https://datatracker.ietf.org/doc/html/rfc6275" target="_blank" rel="noopener">RFC6275</a>].</p></blockquote>
+<p>These addresses might also be &ldquo;preferred&rdquo; or &ldquo;deprecated&rdquo; [<a href="https://datatracker.ietf.org/doc/html/rfc4862" target="_blank" rel="noopener">RFC4862</a>]. Privacy considerations have introduced the concepts of &ldquo;public addresses&rdquo; and &ldquo;temporary addresses&rdquo; [<a href="https://datatracker.ietf.org/doc/html/rfc4941" target="_blank" rel="noopener">RFC4941</a>].  The mobility architecture introduces &ldquo;home addresses&rdquo; and &ldquo;care-of addresses&rdquo;  [<a href="https://datatracker.ietf.org/doc/html/rfc6275" target="_blank" rel="noopener">RFC6275</a>].</p>
+</blockquote>
 <p>Policy table is an auxiliary data structure to help sort source and destination addresses. It has a default value:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Prefix        Precedence Label
 </span></span><span style="display:flex;"><span>::1/128               <span style="color:#ae81ff">50</span>     <span style="color:#ae81ff">0</span>
@@ -1243,13 +1259,15 @@ flowchart TD
 <p>2.1.  Policy Table</p>
 <p>The policy table is a longest-matching-prefix lookup table, much like a routing table.  Given an address A, a lookup in the policy table produces two values: a precedence value denoted Precedence(A) and a classification or label denoted Label(A).</p>
 <p>The precedence value Precedence(A) is used for sorting destination addresses.  If Precedence(A) &gt; Precedence(B), we say that address A has higher precedence than address B, meaning that our algorithm will prefer to sort destination address A before destination address B.</p>
-<p>The label value Label(A) allows for policies that prefer a particular source address prefix for use with a destination address prefix.  The algorithms prefer to use a source address S with a destination address D if Label(S) = Label(D).</p></blockquote>
+<p>The label value Label(A) allows for policies that prefer a particular source address prefix for use with a destination address prefix.  The algorithms prefer to use a source address S with a destination address D if Label(S) = Label(D).</p>
+</blockquote>
 <p>Also the destination address selection algorithm  needs to know a source address for the destination address. We will review how a stub resolver can obtain thin information later in this chapter.</p>
 <blockquote>
 <ol start="5">
 <li>Source Address Selection</li>
 </ol>
-<p>The source address selection algorithm produces as output a single source address for use with a given destination address.  This algorithm only applies to IPv6 destination addresses, not IPv4 addresses.</p></blockquote>
+<p>The source address selection algorithm produces as output a single source address for use with a given destination address.  This algorithm only applies to IPv6 destination addresses, not IPv4 addresses.</p>
+</blockquote>
 <p>Now we can review the rules with examples.</p>
 <p><strong>Rule 1  Avoid unusable destinations.</strong></p>
 <p>If a stub resolver knows that a destination address is unreachable, it should deprioritize (pessimize) it.</p>
@@ -1287,10 +1305,12 @@ flowchart TD
 <p>Let’s now explore the details of how to obtain a source address for a given destination.</p>
 <p>The algorithm is using a feature of <code>connect</code> (<code><a href="https://man7.org/linux/man-pages/man2/connect.2.html" target="_blank" rel="noopener">man 2 connect</a></code>) syscall for <code>SOCK_DGRAM</code> (<code>UDP</code>) sockets:</p>
 <blockquote>
-<p>If the socket <code>sockfd</code> is of type <code>SOCK_DGRAM</code>, then <code>addr</code> is the address to which datagrams are sent by default, and the only address from which datagrams are received.</p></blockquote>
+<p>If the socket <code>sockfd</code> is of type <code>SOCK_DGRAM</code>, then <code>addr</code> is the address to which datagrams are sent by default, and the only address from which datagrams are received.</p>
+</blockquote>
 <p>But what  is more interesting for us is that we can run <code>getsockname</code> (<code><a href="https://man7.org/linux/man-pages/man2/getsockname.2.html" target="_blank" rel="noopener">man 2 getsockname</a></code>) afterwards for the file descriptor and get the source address for the destination:</p>
 <blockquote>
-<p><code>getsockname()</code> returns the current address to which the socket <code>sockfd</code> is bound, in the buffer pointed to by <code>addr</code>.</p></blockquote>
+<p><code>getsockname()</code> returns the current address to which the socket <code>sockfd</code> is bound, in the buffer pointed to by <code>addr</code>.</p>
+</blockquote>
 <p>All code lives for <code>getaddrinfo()</code> of <code>glibc</code> <a href="https://codebrowser.dev/glibc/glibc/nss/getaddrinfo.c.html#2471" target="_blank" rel="noopener">here</a>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">/* We overwrite the type with SOCK_DGRAM since we do not
 </span></span></span><span style="display:flex;"><span><span style="color:#75715e"> want connect() to connect to the other side.  If we
@@ -1352,10 +1372,12 @@ flowchart TD
 <p>We have yet to address a very crucial issue: the reliability of IPv6 network routing in the real world. This problem is so significant that it has been a major obstacle to migration, leading to the development of new RFCs to promote IPv6 adoption.</p>
 <p>From the <a href="https://datatracker.ietf.org/doc/html/rfc6555" target="_blank" rel="noopener">RFC 6555 Happy Eyeballs: Success with Dual-Stack Hosts</a>:</p>
 <blockquote>
-<p>In order to use applications over IPv6, it is necessary that users enjoy nearly identical performance as compared to IPv4.  A combination of today&rsquo;s applications, IPv6 tunneling, IPv6 service  providers, and some of today&rsquo;s content providers all cause the user experience to suffer.  For IPv6, a content provider may  ensure a positive user experience by using a DNS white list of IPv6  service providers who peer directly with them. However, this does not scale well (to the number of DNS servers worldwide or the number of content providers worldwide) and does  react to intermittent network path outages.</p></blockquote>
+<p>In order to use applications over IPv6, it is necessary that users enjoy nearly identical performance as compared to IPv4.  A combination of today&rsquo;s applications, IPv6 tunneling, IPv6 service  providers, and some of today&rsquo;s content providers all cause the user experience to suffer.  For IPv6, a content provider may  ensure a positive user experience by using a DNS white list of IPv6  service providers who peer directly with them. However, this does not scale well (to the number of DNS servers worldwide or the number of content providers worldwide) and does  react to intermittent network path outages.</p>
+</blockquote>
 <p>To addresses this issue, let’s revisit the following quote from  <a href="https://datatracker.ietf.org/doc/html/rfc6724" target="_blank" rel="noopener">RFC  6724: Default Address Selection for Internet Protocol Version 6 (IPv6)</a> first:</p>
 <blockquote>
-<p>Well-behaved applications SHOULD NOT simply use the first address returned from an API such as getaddrinfo() and then give up if it fails.  For many applications, it is appropriate to iterate through the list of addresses returned from <code>getaddrinfo()</code> until a working address is found.  <strong>For other applications, it might be appropriate to try multiple addresses in parallel (e.g., with some small delay in between) and use the first one to succeed.</strong></p></blockquote>
+<p>Well-behaved applications SHOULD NOT simply use the first address returned from an API such as getaddrinfo() and then give up if it fails.  For many applications, it is appropriate to iterate through the list of addresses returned from <code>getaddrinfo()</code> until a working address is found.  <strong>For other applications, it might be appropriate to try multiple addresses in parallel (e.g., with some small delay in between) and use the first one to succeed.</strong></p>
+</blockquote>
 <p>The last sentence essentially captures the gist of the Happy Eyeballs algorithm: when it is impossible to determine the state of the network in advance, but the system is configured correctly with both global scope IP families, the only option is to use both families concurrently, with some preference given to IPv6.</p>
 <p>There are two RFCs about Happy Eyeballs algorithm:</p>
 <ol>
@@ -1364,7 +1386,8 @@ flowchart TD
 </ol>
 <p>The motivation for the emergence of the above RFCs was the desire to create a standardized algorithm that prioritizes IPv6 addresses. This was necessary to combat the variety of existing algorithms that did not prioritize IPv6, thereby failing to encourage infrastructure upgrades and reduce reliance on outdated IPv4 hardware. Additionally, making numerous concurrent connections simultaneously can harm the network by overloading network equipment, routers, and servers. As stated in <a href="https://datatracker.ietf.org/doc/html/rfc6555" target="_blank" rel="noopener">RFC 6555</a>:</p>
 <blockquote>
-<p>Instead, applications reduce connection setup delays themselves, by more aggressively making connections on IPv6 and IPv4.  There are a variety of algorithms that can be envisioned.  This document specifies requirements for any such algorithm, with the goals that the network and servers not be inordinately harmed with a simple doubling of traffic on IPv6 and IPv4 and the host&rsquo;s address preference be honored.</p></blockquote>
+<p>Instead, applications reduce connection setup delays themselves, by more aggressively making connections on IPv6 and IPv4.  There are a variety of algorithms that can be envisioned.  This document specifies requirements for any such algorithm, with the goals that the network and servers not be inordinately harmed with a simple doubling of traffic on IPv6 and IPv4 and the host&rsquo;s address preference be honored.</p>
+</blockquote>
 <blockquote>
 <ol start="4">
 <li>Algorithm Requirements</li>
@@ -1377,7 +1400,8 @@ flowchart TD
 <li>
 <p>Avoids thrashing the network, by not (always) making simultaneous connection attempts on both IPv6 and IPv4</p>
 </li>
-</ol></blockquote>
+</ol>
+</blockquote>
 <p>By following these not-always-simple rules, you can create a client application that is reliable, flexible, and predictable.</p>
 <p>It’s time to look at alternative stub resolvers and examples of real high load software.</p>
 <img alt="IPv4 and IPv6" src="../images/dns_two_buttons_pressed.png" width="40%" class="img-center">
